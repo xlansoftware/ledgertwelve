@@ -3,9 +3,11 @@ import reactLogo from './assets/react.svg'
 import viteLogo from './assets/vite.svg'
 import heroImg from './assets/hero.png'
 import './App.css'
+import { getWeatherForecast } from './services/api'
 
 function App() {
   const [count, setCount] = useState(0)
+  const [weather, setWeather] = useState("Call /api")
 
   return (
     <>
@@ -28,6 +30,15 @@ function App() {
         >
           Count is {count}
         </button>
+
+        <button
+          type="button"
+          className="counter"
+          onClick={() => getWeatherForecast().then((value) => setWeather(JSON.stringify(value)))}
+        >
+          {weather}
+        </button>
+
       </section>
 
       <div className="ticks"></div>

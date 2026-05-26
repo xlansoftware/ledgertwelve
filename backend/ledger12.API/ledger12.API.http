@@ -1,6 +1,6 @@
 @ledger12.API_HostAddress = http://localhost:5088
 
-GET {{ledger12.API_HostAddress}}/weatherforecast/
+GET {{ledger12.API_HostAddress}}/api/weatherforecast/
 Accept: application/json
 
 ###
