@@ -1,11 +1,15 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+
+using ledger12.Domain;
 using Microsoft.EntityFrameworkCore;
 
 namespace ledger12.Infrastructure.Data;
 
 public class AppDbContext : IdentityDbContext<AppUser>
 {
+    public DbSet<Transaction> Transactions => Set<Transaction>();
+
     public AppDbContext(DbContextOptions<AppDbContext> options)
         : base(options)
     {
@@ -14,8 +18,29 @@ public class AppDbContext : IdentityDbContext<AppUser>
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
-        // Customize the ASP.NET Identity model and override the defaults if needed.
-        // For example, you can rename the ASP.NET Identity table names and more.
-        // Add your customizations after calling base.OnModelCreating(builder);
+
+        builder.Entity<Transaction>(entity =>
+        {
+            entity.HasKey(t => t.Id);
+
+            entity.Property(t => t.Value)
+                  .HasColumnType("decimal(18,2)")
+                  .IsRequired();
+
+            entity.Property(t => t.Currency)
+                  .HasMaxLength(10)
+                  .IsRequired();
+
+            entity.Property(t => t.Category)
+                  .HasMaxLength(100)
+                  .IsRequired();
+
+            entity.Property(t => t.Author)
+                  .HasMaxLength(200)
+                  .IsRequired();
+
+            entity.Property(t => t.Date)
+                  .IsRequired();
+        });
     }
 }
