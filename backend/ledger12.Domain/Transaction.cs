@@ -33,4 +33,25 @@ public class Transaction
         Book = book;
         Date = date;
     }
+
+    public void Update(
+        decimal value,
+        string currency,
+        string category,
+        string author,
+        DateTimeOffset date,
+        string? book = null)
+    {
+        if (value == 0) throw new ArgumentException("Transaction value cannot be zero.", nameof(value));
+        ArgumentException.ThrowIfNullOrWhiteSpace(currency);
+        ArgumentException.ThrowIfNullOrWhiteSpace(category);
+        ArgumentException.ThrowIfNullOrWhiteSpace(author);
+
+        Value = value;
+        Currency = currency;
+        Category = category;
+        Author = author;
+        Book = book;
+        Date = date;
+    }
 }

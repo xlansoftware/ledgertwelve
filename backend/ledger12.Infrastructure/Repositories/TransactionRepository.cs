@@ -46,6 +46,58 @@ public class TransactionRepository : ITransactionRepository
         return new PagedResult<T>(items, totalCount, filter.Page, filter.PageSize);
     }
 
+    public async Task<Transaction?> GetByIdAsync(Guid id)
+    {
+        return await _context.Transactions.FindAsync(id);
+    }
+
+    public async Task<PagedResult<Transaction>> GetAllAsync(
+        int page = 1,
+        int pageSize = 20,
+        string? book = null,
+        string? author = null,
+        string? category = null,
+        string? currency = null)
+    {
+        var query = _context.Transactions.AsQueryable();
+
+        if (book is not null)
+            query = query.Where(t => t.Book == book);
+
+        if (author is not null)
+            query = query.Where(t => t.Author == author);
+
+        if (category is not null)
+            query = query.Where(t => t.Category == category);
+
+        if (currency is not null)
+            query = query.Where(t => t.Currency == currency);
+
+        query = query.OrderByDescending(t => t.Date);
+
+        var totalCount = await query.CountAsync();
+
+        var items = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return new PagedResult<Transaction>(items, totalCount, page, pageSize);
+    }
+
+    public async Task<Transaction> UpdateAsync(Transaction transaction)
+    {
+        _context.Transactions.Update(transaction);
+        await _context.SaveChangesAsync();
+        return transaction;
+    }
+
+    public async Task DeleteAsync(Transaction transaction)
+    {
+        _context.Transactions.Remove(transaction);
+        await _context.SaveChangesAsync();
+    }
+
     public async Task<Transaction> AddAsync(Transaction transaction)
     {
         _context.Transactions.Add(transaction);
