@@ -11,6 +11,10 @@ Content-Type: application/json
 
 ###
 
+POST {{ledger12.API_HostAddress}}/api/auth/logout
+
+###
+
 ### Whoami (uses cookie from login above automatically)
 GET {{ledger12.API_HostAddress}}/api/auth/whoami
 

@@ -25,6 +25,13 @@ public class AuthController : ControllerBase
         return Ok(new { user = username ?? "anonymous" });
     }
 
+    [HttpPost("logout")]
+    public async Task<ActionResult> Logout()
+    {
+        await _signInManager.SignOutAsync();
+        return Ok(new { message = "Logged out successfully." });
+    }
+
     [HttpPost("login")]
     public async Task<ActionResult> Login([FromBody] LoginRequest request)
     {
