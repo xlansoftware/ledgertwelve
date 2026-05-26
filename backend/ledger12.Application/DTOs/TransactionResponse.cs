@@ -1,9 +1,10 @@
 namespace ledger12.Application.DTOs;
 
-public record CreateTransactionDto(
+public record TransactionResponse(
+    Guid Id,
     decimal Value,
     string Currency,
     string Category,
-    string? Author = null,
-    DateTimeOffset? Date = null
+    string Author,
+    DateTimeOffset Date
 );

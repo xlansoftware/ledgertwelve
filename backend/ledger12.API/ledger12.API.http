@@ -30,3 +30,15 @@ Content-Type: application/json
 }
 
 ###
+
+### Create transaction (Author and Date omitted — defaults to logged-in user and now)
+POST {{ledger12.API_HostAddress}}/api/ledger/transaction
+Content-Type: application/json
+
+{
+  "value": 99.99,
+  "currency": "EUR",
+  "category": "Food"
+}
+
+###

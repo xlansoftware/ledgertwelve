@@ -5,5 +5,5 @@ namespace ledger12.Application.Interfaces;
 
 public interface ILedgerService
 {
-    Task<Transaction> CreateTransactionAsync(CreateTransactionDto dto);
+    Task<Transaction> CreateTransactionAsync(CreateTransactionDto dto, string? currentUser = null);
 }

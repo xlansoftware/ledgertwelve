@@ -13,14 +13,17 @@ public class LedgerService : ILedgerService
         _repository = repository;
     }
 
-    public async Task<Transaction> CreateTransactionAsync(CreateTransactionDto dto)
+    public async Task<Transaction> CreateTransactionAsync(CreateTransactionDto dto, string? currentUser = null)
     {
+        var author = dto.Author ?? currentUser ?? throw new ArgumentException("Author must be provided either in the request or via an authenticated user.");
+        var date = dto.Date ?? DateTimeOffset.UtcNow;
+
         var transaction = new Transaction(
             dto.Value,
             dto.Currency,
             dto.Category,
-            dto.Author,
-            dto.Date
+            author,
+            date
         );
 
         return await _repository.AddAsync(transaction);

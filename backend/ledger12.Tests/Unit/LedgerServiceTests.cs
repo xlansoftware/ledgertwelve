@@ -47,6 +47,95 @@ public class LedgerServiceTests
     }
 
     [Fact]
+    public async Task CreateTransactionAsync_DefaultsAuthorToCurrentUser_WhenAuthorNotProvided()
+    {
+        // Arrange
+        var dto = new CreateTransactionDto(
+            Value: 100m,
+            Currency: "USD",
+            Category: "Food",
+            Author: null
+        );
+
+        _repositoryMock
+            .Setup(r => r.AddAsync(It.IsAny<Transaction>()))
+            .ReturnsAsync((Transaction t) => t);
+
+        // Act
+        var result = await _service.CreateTransactionAsync(dto, currentUser: "logged-in-user");
+
+        // Assert
+        Assert.Equal("logged-in-user", result.Author);
+    }
+
+    [Fact]
+    public async Task CreateTransactionAsync_DefaultsDateToUtcNow_WhenDateNotProvided()
+    {
+        // Arrange
+        var before = DateTimeOffset.UtcNow;
+        var dto = new CreateTransactionDto(
+            Value: 100m,
+            Currency: "USD",
+            Category: "Food",
+            Author: "Alice",
+            Date: null
+        );
+
+        _repositoryMock
+            .Setup(r => r.AddAsync(It.IsAny<Transaction>()))
+            .ReturnsAsync((Transaction t) => t);
+
+        // Act
+        var result = await _service.CreateTransactionAsync(dto);
+        var after = DateTimeOffset.UtcNow;
+
+        // Assert
+        Assert.True(result.Date >= before && result.Date <= after,
+            "Date should default to approximately UtcNow");
+    }
+
+    [Fact]
+    public async Task CreateTransactionAsync_ThrowsArgumentException_WhenBothAuthorAndCurrentUserAreNull()
+    {
+        // Arrange
+        var dto = new CreateTransactionDto(
+            Value: 100m,
+            Currency: "USD",
+            Category: "Food",
+            Author: null
+        );
+
+        // Act & Assert
+        var ex = await Assert.ThrowsAsync<ArgumentException>(
+            () => _service.CreateTransactionAsync(dto, currentUser: null));
+
+        Assert.Contains("Author", ex.Message, StringComparison.OrdinalIgnoreCase);
+        _repositoryMock.Verify(r => r.AddAsync(It.IsAny<Transaction>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task CreateTransactionAsync_PrefersDtoAuthor_OverCurrentUser()
+    {
+        // Arrange
+        var dto = new CreateTransactionDto(
+            Value: 100m,
+            Currency: "USD",
+            Category: "Food",
+            Author: "explicit-author"
+        );
+
+        _repositoryMock
+            .Setup(r => r.AddAsync(It.IsAny<Transaction>()))
+            .ReturnsAsync((Transaction t) => t);
+
+        // Act
+        var result = await _service.CreateTransactionAsync(dto, currentUser: "logged-in-user");
+
+        // Assert
+        Assert.Equal("explicit-author", result.Author);
+    }
+
+    [Fact]
     public async Task CreateTransactionAsync_CallsAddAsyncOnce_WhenDtoIsValid()
     {
         // Arrange
