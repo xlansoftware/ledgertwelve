@@ -1,0 +1,130 @@
+# PRD: Aggregated Ledger Tables
+
+## Problem Statement
+
+The ledger app records individual transactions but has no way to efficiently answer dashboard queries like "what was my total spending per category this month" or "show me a daily spending chart for the last 30 days". As the transaction volume grows, grouping and summing on-the-fly becomes slow. The app needs pre-computed aggregates at daily, weekly, monthly, and yearly granularities to serve dashboard charts quickly.
+
+## Solution
+
+Introduce four aggregate tables — one per time granularity — that store the sum of transaction values and transaction count, grouped by `(Book, Author, Category, Currency)` for each period. These aggregates are updated inline when a new transaction is created, in the same database transaction, keeping them consistent with the transaction log.
+
+The frontend dashboard can then query the relevant aggregate table with a simple `WHERE PeriodStart BETWEEN @start AND @end` rather than scanning thousands of individual transactions.
+
+## User Stories
+
+1. As a dashboard viewer, I want to see a **daily spending chart** for a selected date range, so that I can track spending patterns day by day.
+2. As a dashboard viewer, I want to see a **weekly spending chart**, so that I can compare week-over-week trends.
+3. As a dashboard viewer, I want to see a **monthly spending chart**, so that I can review my monthly budget performance.
+4. As a dashboard viewer, I want to see a **yearly spending chart**, so that I can analyse long-term financial trends.
+5. As a dashboard viewer, I want spending broken down by **category** within each period, so that I know where my money is going.
+6. As a dashboard viewer, I want spending broken down by **author**, so that I can see how spending is distributed across users.
+7. As a dashboard viewer, I want spending broken down by **book**, so that I can separate personal vs. business or project-specific spending.
+8. As a dashboard viewer, I want spending broken down by **currency**, so that multi-currency totals are meaningful rather than summed across different units.
+9. As a transaction recorder, I want the aggregates to be **up-to-date immediately** after I create a transaction, so that the dashboard reflects reality without delays.
+10. As a developer, I want the aggregate update to happen **inside the same database transaction** as the transaction insert, so that I never have aggregates out of sync with transactions.
+11. As a future maintainer, I want the aggregate logic to be **testable in isolation** without needing a full database, so that I can add new features with confidence.
+
+## Implementation Decisions
+
+### Domain entities (ledger12.Domain)
+
+Four entities, one per granularity, all sharing the same shape:
+
+| Field | Type | Notes |
+|---|---|---|
+| `PeriodStart` | `DateOnly` | PK part 1; start of the period |
+| `Book` | `string?` | PK part 2; nullable |
+| `Author` | `string` | PK part 3 |
+| `Category` | `string` | PK part 4 |
+| `Currency` | `string` | PK part 5 |
+| `SumValue` | `decimal` | `decimal(18,2)` |
+| `TransactionCount` | `int` | |
+
+- `DailyAggregate` — PeriodStart represents the UTC date
+- `WeeklyAggregate` — PeriodStart represents the Monday of the ISO 8601 week
+- `MonthlyAggregate` — PeriodStart represents the 1st of the month
+- `YearlyAggregate` — PeriodStart represents the 1st of the year (`YYYY-01-01`)
+
+Entities are in `ledger12.Domain` as that's where `Transaction` lives.
+
+### Period computation (deep module)
+
+Pure utility — given a `DateTimeOffset` and a granularity, returns the `DateOnly PeriodStart`. Key design: this is a **deep module** because it encapsulates a lot of calendar logic (ISO 8601 week boundaries, UTC date derivation) behind a simple, testable, unchanging interface.
+
+Only one decision-encoding snippet needed: the ISO 8601 week algorithm:
+
+```csharp
+// Week start = Monday
+static DateOnly GetWeekStart(DateTimeOffset date)
+{
+    var utc = date.UtcDateTime.Date;
+    int diff = (7 + (int)utc.DayOfWeek - (int)DayOfWeek.Monday) % 7;
+    return DateOnly.FromDateTime(utc.AddDays(-diff));
+}
+```
+
+All other periods are trivial truncations of the UTC date.
+
+### Repository structure
+
+- **`IAggregateRepository<T>`** — single generic interface with one method:
+  ```csharp
+  interface IAggregateRepository<T> where T : class
+  {
+      Task UpsertAsync(DateOnly periodStart, string? book, string author,
+                       string category, string currency, decimal value,
+                       CancellationToken ct = default);
+  }
+  ```
+- **`AggregateRepository<T>`** — single generic implementation, registered 4 times in DI with concrete entity types.
+- **`TransactionRepository.AddAsync`** — modified to call all 4 aggregate repos after adding the transaction. All operations share the same `AppDbContext`, so a single `SaveChangesAsync` commits atomically.
+
+### EF Core configuration
+
+- The composite primary key `(PeriodStart, Book, Author, Category, Currency)` is configured via Fluent API for each entity.
+- `Book` has a nullable column configuration matching `Transaction.Book`.
+- Upsert uses `dbSet.Add()` + `SaveChangesAsync` — if the PK already exists, catch the SQL constraint violation and retry with an update. Alternatively, check existence first with a query.
+
+### API layer
+
+No changes to the API. The aggregate tables are updated as a side-effect of the existing `POST /api/ledger/transaction` endpoint. The read endpoints for the dashboard will be added in a separate PRD.
+
+## Testing Decisions
+
+### What makes a good test
+
+- Test external behaviour, not implementation details.
+- For the **PeriodHelper**: test with known UTC dates and assert the expected `PeriodStart` for each granularity. Include edge cases (year boundary for weekly, leap year for monthly, DST transitions — though UTC avoids DST issues).
+- For the **AggregateRepository**: test the upsert logic using an in-memory database. Assert that two transactions in the same bucket produce `SumValue = v1 + v2` and `TransactionCount = 2`.
+- For the **TransactionRepository**: test that `AddAsync` inserts the transaction and calls each aggregate upsert with the correct period start. Use mocks for the aggregate repos.
+
+### Modules to test
+
+| Module | Test approach | Prior art |
+|---|---|---|
+| **PeriodHelper** | Pure unit tests, no mocking | New (no prior art in codebase) |
+| **AggregateRepository\<T\>** | Integration tests with EF Core in-memory provider | `LedgerServiceTests` uses Moq; this would be closer to a real DB test |
+| **TransactionRepository** (modified) | Unit tests mocking `IAggregateRepository<T>` for all 4 types | `LedgerServiceTests` shows the mocking pattern |
+| **LedgerService** (unchanged) | Already covered by existing tests | `LedgerServiceTests` |
+
+### What NOT to test
+
+- The EF Core query generation or SQL translation — trust the provider.
+- The DI registration — one integration smoke test is sufficient.
+- The domain entities' property mapping — implicit from the Fluent API config.
+
+## Out of Scope
+
+- Dashboard read endpoints (query APIs and controller actions) — will be covered by a separate PRD.
+- Frontend charts and UI — separate PRD.
+- Editing or deleting transactions — the write path currently only supports creation. Edits/deletes would need to decrement aggregates, which is future work.
+- Timezone-aware periods — all period computation uses UTC. Per-user timezone support is explicitly deferred.
+- Eventual consistency / background job approach — inline update was chosen for simplicity.
+- Performance benchmarks — defer until the dashboard read path exists.
+
+## Further Notes
+
+- The aggregate tables are purely a read optimisation. The `Transaction` table remains the source of truth.
+- If the write path later supports edit/delete, the aggregate update logic must handle negative adjustments and recount. The `TransactionCount` column makes recount possible.
+- Currency is part of the group key so that multi-currency ledgers produce meaningful per-currency sums. A future aggregate read endpoint may also return per-total-per-period-in-base-currency, but that conversion logic is out of scope.
+- The four entities could have been a single table with a discriminator column, but separate tables were chosen for simpler queries and independent indexing.
