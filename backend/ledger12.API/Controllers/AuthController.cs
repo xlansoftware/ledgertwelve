@@ -18,6 +18,13 @@ public class AuthController : ControllerBase
         _userManager = userManager;
     }
 
+    [HttpGet("whoami")]
+    public ActionResult Whoami()
+    {
+        var username = HttpContext.User.Identity?.Name;
+        return Ok(new { user = username ?? "anonymous" });
+    }
+
     [HttpPost("login")]
     public async Task<ActionResult> Login([FromBody] LoginRequest request)
     {

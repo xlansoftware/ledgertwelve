@@ -11,6 +11,11 @@ Content-Type: application/json
 
 ###
 
+### Whoami (uses cookie from login above automatically)
+GET {{ledger12.API_HostAddress}}/api/auth/whoami
+
+###
+
 ### Login with invalid credentials
 POST {{ledger12.API_HostAddress}}/api/auth/login
 Content-Type: application/json
