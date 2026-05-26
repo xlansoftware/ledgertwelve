@@ -1,3 +1,4 @@
+using ledger12.Application.DTOs;
 using ledger12.Application.Interfaces;
 using ledger12.Domain;
 using ledger12.Infrastructure.Data;
@@ -12,6 +13,37 @@ public class TransactionRepository : ITransactionRepository
     public TransactionRepository(AppDbContext context)
     {
         _context = context;
+    }
+
+    public async Task<PagedResult<T>> GetAggregatesAsync<T>(Granularity granularity, AggregateFilter filter)
+        where T : class, IAggregateEntity
+    {
+        var query = _context.Set<T>().AsQueryable();
+
+        query = query.Where(a => a.PeriodStart >= filter.From && a.PeriodStart <= filter.To);
+
+        if (filter.Book is not null)
+            query = query.Where(a => a.Book == filter.Book);
+
+        if (filter.Author is not null)
+            query = query.Where(a => a.Author == filter.Author);
+
+        if (filter.Category is not null)
+            query = query.Where(a => a.Category == filter.Category);
+
+        if (filter.Currency is not null)
+            query = query.Where(a => a.Currency == filter.Currency);
+
+        query = query.OrderBy(a => a.PeriodStart);
+
+        var totalCount = await query.CountAsync();
+
+        var items = await query
+            .Skip((filter.Page - 1) * filter.PageSize)
+            .Take(filter.PageSize)
+            .ToListAsync();
+
+        return new PagedResult<T>(items, totalCount, filter.Page, filter.PageSize);
     }
 
     public async Task<Transaction> AddAsync(Transaction transaction)
