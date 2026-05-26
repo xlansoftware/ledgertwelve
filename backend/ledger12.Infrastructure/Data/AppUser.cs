@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity;
 
-namespace ledger12.API.Areas.Identity.Data;
+namespace ledger12.Infrastructure.Data;
 
 // Add profile data for application users by adding properties to the AppUser class
 public class AppUser : IdentityUser
