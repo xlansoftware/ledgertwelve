@@ -5,5 +5,6 @@ public record CreateTransactionDto(
     string Currency,
     string Category,
     string? Author = null,
-    DateTimeOffset? Date = null
+    DateTimeOffset? Date = null,
+    string? Book = null
 );

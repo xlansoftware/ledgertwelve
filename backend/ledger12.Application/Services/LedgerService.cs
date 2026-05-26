@@ -23,7 +23,8 @@ public class LedgerService : ILedgerService
             dto.Currency,
             dto.Category,
             author,
-            date
+            date,
+            dto.Book
         );
 
         return await _repository.AddAsync(transaction);

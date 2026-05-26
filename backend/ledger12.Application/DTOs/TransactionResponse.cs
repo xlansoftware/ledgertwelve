@@ -6,5 +6,6 @@ public record TransactionResponse(
     string Currency,
     string Category,
     string Author,
+    string? Book,
     DateTimeOffset Date
 );

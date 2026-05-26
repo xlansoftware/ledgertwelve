@@ -29,6 +29,7 @@ public class LedgerController : ControllerBase
             transaction.Currency,
             transaction.Category,
             transaction.Author,
+            transaction.Book,
             transaction.Date
         );
 
