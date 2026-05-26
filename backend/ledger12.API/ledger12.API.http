@@ -42,3 +42,8 @@ Content-Type: application/json
 }
 
 ###
+
+### Get dashboard — monthly granularity, current year
+GET {{ledger12.API_HostAddress}}/api/dashboard?granularity=monthly
+
+###
