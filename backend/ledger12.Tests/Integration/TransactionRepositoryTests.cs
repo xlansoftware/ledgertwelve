@@ -253,4 +253,82 @@ public class TransactionRepositoryTests : IDisposable
         Assert.Equal(3, daily.TransactionCount);
         Assert.Equal(60m, daily.SumValue);
     }
+
+    [Fact]
+    public async Task RebuildAggregatesAsync_DeletesOldAggregatesAndRebuildsFromTransactions()
+    {
+        // Arrange — seed transactions directly (bypassing AddAsync so no aggregates are created yet)
+        var date1 = new DateTimeOffset(2026, 5, 26, 12, 0, 0, TimeSpan.Zero);
+        var date2 = new DateTimeOffset(2026, 5, 27, 14, 0, 0, TimeSpan.Zero);
+
+        _context.Transactions.AddRange(
+            new Transaction(100m, "USD", "Food", "Alice", date1),
+            new Transaction(50m, "USD", "Food", "Alice", date1),
+            new Transaction(200m, "EUR", "Transport", "Bob", date2)
+        );
+        await _context.SaveChangesAsync();
+
+        // Act
+        await _repository.RebuildAggregatesAsync();
+
+        // Assert — DailyAggregates (2 groups: Alice/Food on May 26, Bob/Transport on May 27)
+        var dailyRows = await _context.DailyAggregates.OrderBy(a => a.PeriodStart).ThenBy(a => a.Category).ToListAsync();
+        Assert.Equal(2, dailyRows.Count);
+
+        // Alice/Food/USD on May 26 (2 transactions merged into one aggregate)
+        var d1 = dailyRows[0];
+        Assert.Equal(new DateOnly(2026, 5, 26), d1.PeriodStart);
+        Assert.Equal("Alice", d1.Author);
+        Assert.Equal("Food", d1.Category);
+        Assert.Equal("USD", d1.Currency);
+        Assert.Equal(150m, d1.SumValue);
+        Assert.Equal(2, d1.TransactionCount);
+
+        // Bob/Transport/EUR on May 27
+        var d2 = dailyRows[1];
+        Assert.Equal(new DateOnly(2026, 5, 27), d2.PeriodStart);
+        Assert.Equal("Bob", d2.Author);
+        Assert.Equal("Transport", d2.Category);
+        Assert.Equal("EUR", d2.Currency);
+        Assert.Equal(200m, d2.SumValue);
+        Assert.Equal(1, d2.TransactionCount);
+
+        // Assert — WeeklyAggregates (May 26-27 both fall in week starting May 25)
+        var weeklyRows = await _context.WeeklyAggregates.OrderBy(a => a.Category).ToListAsync();
+        Assert.Equal(2, weeklyRows.Count);
+        Assert.Equal(150m, weeklyRows.Single(a => a.Category == "Food").SumValue);
+        Assert.Equal(200m, weeklyRows.Single(a => a.Category == "Transport").SumValue);
+
+        // Assert — MonthlyAggregates
+        var monthlyRows = await _context.MonthlyAggregates.ToListAsync();
+        Assert.Equal(2, monthlyRows.Count);
+        Assert.Equal(150m, monthlyRows.Single(a => a.Category == "Food").SumValue);
+        Assert.Equal(200m, monthlyRows.Single(a => a.Category == "Transport").SumValue);
+
+        // Assert — YearlyAggregates
+        var yearlyRows = await _context.YearlyAggregates.ToListAsync();
+        Assert.Equal(2, yearlyRows.Count);
+        Assert.Equal(150m, yearlyRows.Single(a => a.Category == "Food").SumValue);
+        Assert.Equal(200m, yearlyRows.Single(a => a.Category == "Transport").SumValue);
+    }
+
+    [Fact]
+    public async Task RebuildAggregatesAsync_EmptyTransactionTable_ClearsAllAggregates()
+    {
+        // Arrange — seed stale aggregates
+        _context.DailyAggregates.Add(new DailyAggregate(
+            new DateOnly(2026, 5, 26), "", "Alice", "Food", "USD", 100m));
+        await _context.SaveChangesAsync();
+
+        Assert.NotEmpty(await _context.DailyAggregates.ToListAsync());
+
+        // Act
+        await _repository.RebuildAggregatesAsync();
+
+        // Assert — all aggregate tables are empty
+        Assert.Empty(await _context.DailyAggregates.ToListAsync());
+        Assert.Empty(await _context.WeeklyAggregates.ToListAsync());
+        Assert.Empty(await _context.MonthlyAggregates.ToListAsync());
+        Assert.Empty(await _context.YearlyAggregates.ToListAsync());
+    }
 }

@@ -125,6 +125,49 @@ public class TransactionRepository : ITransactionRepository
         return transaction;
     }
 
+    public async Task RebuildAggregatesAsync()
+    {
+        // Remove all existing aggregates
+        _context.DailyAggregates.RemoveRange(await _context.DailyAggregates.ToListAsync());
+        _context.WeeklyAggregates.RemoveRange(await _context.WeeklyAggregates.ToListAsync());
+        _context.MonthlyAggregates.RemoveRange(await _context.MonthlyAggregates.ToListAsync());
+        _context.YearlyAggregates.RemoveRange(await _context.YearlyAggregates.ToListAsync());
+
+        var transactions = await _context.Transactions.AsNoTracking().ToListAsync();
+
+        _context.DailyAggregates.AddRange(BuildAggregates<DailyAggregate>(transactions, Granularity.Daily));
+        _context.WeeklyAggregates.AddRange(BuildAggregates<WeeklyAggregate>(transactions, Granularity.Weekly));
+        _context.MonthlyAggregates.AddRange(BuildAggregates<MonthlyAggregate>(transactions, Granularity.Monthly));
+        _context.YearlyAggregates.AddRange(BuildAggregates<YearlyAggregate>(transactions, Granularity.Yearly));
+
+        await _context.SaveChangesAsync();
+    }
+
+    private static List<T> BuildAggregates<T>(List<Transaction> transactions, Granularity granularity)
+        where T : class, IAggregateEntity
+    {
+        return transactions
+            .GroupBy(t => new
+            {
+                PeriodStart = PeriodHelper.GetPeriodStart(t.Date, granularity),
+                Book = t.Book ?? string.Empty,
+                t.Author,
+                t.Category,
+                t.Currency
+            })
+            .Select(g => Activator.CreateInstance(
+                typeof(T),
+                g.Key.PeriodStart,
+                g.Key.Book,
+                g.Key.Author,
+                g.Key.Category,
+                g.Key.Currency,
+                g.Sum(t => t.Value),
+                g.Count()) as T
+            ?? throw new InvalidOperationException($"Failed to create instance of {typeof(T).Name}"))
+            .ToList();
+    }
+
     private static async Task UpsertAggregateAsync<T>(
         DbSet<T> dbSet,
         DateOnly periodStart,
@@ -151,7 +194,8 @@ public class TransactionRepository : ITransactionRepository
                 author,
                 category,
                 currency,
-                value) as T;
+                value,
+                1) as T;
             dbSet.Add(aggregate!);
         }
     }

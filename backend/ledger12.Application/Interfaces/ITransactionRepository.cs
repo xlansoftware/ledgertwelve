@@ -23,4 +23,6 @@ public interface ITransactionRepository
 
     Task<PagedResult<T>> GetAggregatesAsync<T>(Granularity granularity, AggregateFilter filter)
         where T : class, IAggregateEntity;
+
+    Task RebuildAggregatesAsync();
 }

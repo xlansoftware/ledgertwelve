@@ -18,7 +18,8 @@ public class DailyAggregate : IAggregateEntity
         string author,
         string category,
         string currency,
-        decimal value)
+        decimal value,
+        int transactionCount = 1)
     {
         PeriodStart = periodStart;
         Book = book;
@@ -26,7 +27,7 @@ public class DailyAggregate : IAggregateEntity
         Category = category;
         Currency = currency;
         SumValue = value;
-        TransactionCount = 1;
+        TransactionCount = transactionCount;
     }
 
     public void ApplyTransaction(decimal value)
