@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="ledger12.API/ledger12.API.csproj" />
+  <Project Path="ledger12.Application/ledger12.Application.csproj" />
+  <Project Path="ledger12.Domain/ledger12.Domain.csproj" />
+  <Project Path="ledger12.Infrastructure/ledger12.Infrastructure.csproj" />
+  <Project Path="ledger12.Tests/ledger12.Tests.csproj" />
+</Solution>
