@@ -1,6 +1,23 @@
 @ledger12.API_HostAddress = http://localhost:5088
 
-GET {{ledger12.API_HostAddress}}/api/weatherforecast/
-Accept: application/json
+### Login with valid credentials
+POST {{ledger12.API_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "user": "demo@example.com",
+  "password": "Example-1"
+}
+
+###
+
+### Login with invalid credentials
+POST {{ledger12.API_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "user": "admin",
+  "password": "wrongpassword"
+}
 
 ###
