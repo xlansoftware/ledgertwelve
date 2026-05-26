@@ -3,6 +3,7 @@
 **/obj/
 *.user
 appsettings.Development.json
+dotnet
 
 # Node
 node_modules/

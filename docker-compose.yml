@@ -1,0 +1,21 @@
+services:
+  nginx:
+    build: ./frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - webapi
+
+  webapi:
+    build:
+      context: ./backend
+      dockerfile: ledger12.API/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:5000
+      - ConnectionStrings__Default=Data Source=/data/ledger12.db
+    volumes:
+      - sqlitedata:/data
+
+volumes:
+  sqlitedata:

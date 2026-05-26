@@ -1,6 +1,8 @@
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+// builder.Services.AddDbContext<AppDbContext>(opt =>
+//     opt.UseSqlite(builder.Configuration.GetConnectionString("Default")));
 
 var app = builder.Build();
 
@@ -25,6 +27,12 @@ app.MapGet("/weatherforecast", () =>
         .ToArray();
     return forecast;
 });
+
+// using (var scope = app.Services.CreateScope())
+// {
+//     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+//     db.Database.Migrate();
+// }
 
 app.Run();
 
