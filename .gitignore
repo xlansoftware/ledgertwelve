@@ -12,3 +12,5 @@ frontend/dist/
 # Misc
 .DS_Store
 .env
+
+backend/ledger12.API/data/ledger12.*
