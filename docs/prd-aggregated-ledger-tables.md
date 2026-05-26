@@ -33,7 +33,7 @@ Four entities, one per granularity, all sharing the same shape:
 | Field | Type | Notes |
 |---|---|---|
 | `PeriodStart` | `DateOnly` | PK part 1; start of the period |
-| `Book` | `string?` | PK part 2; nullable |
+| `Book` | `string` | PK part 2; non-nullable |
 | `Author` | `string` | PK part 3 |
 | `Category` | `string` | PK part 4 |
 | `Currency` | `string` | PK part 5 |
@@ -67,22 +67,14 @@ All other periods are trivial truncations of the UTC date.
 
 ### Repository structure
 
-- **`IAggregateRepository<T>`** — single generic interface with one method:
-  ```csharp
-  interface IAggregateRepository<T> where T : class
-  {
-      Task UpsertAsync(DateOnly periodStart, string? book, string author,
-                       string category, string currency, decimal value,
-                       CancellationToken ct = default);
-  }
-  ```
-- **`AggregateRepository<T>`** — single generic implementation, registered 4 times in DI with concrete entity types.
-- **`TransactionRepository.AddAsync`** — modified to call all 4 aggregate repos after adding the transaction. All operations share the same `AppDbContext`, so a single `SaveChangesAsync` commits atomically.
+- **`ITransactionRepository`** — the existing interface gets a new method for reading aggregate data (to be used by the dashboard query endpoints in a follow-up PRD). The aggregate **write** logic lives inside `TransactionRepository.AddAsync`, which handles all four aggregate table upserts directly after inserting the transaction row. All operations share the same `AppDbContext`, so a single `SaveChangesAsync` commits atomically.
+- **No separate aggregate repository** is introduced. Since the aggregate tables are updated only as a side-effect of transaction creation, and they live in the same `AppDbContext`, the upsert logic is kept in the single write-path repository. This avoids an extra layer of indirection and keeps the transaction boundary explicit in one place.
+- The upsert logic for each aggregate entity is extracted into a private helper method on `TransactionRepository` (or a set of them), keeping `AddAsync` readable while remaining testable via the repository's public contract.
 
 ### EF Core configuration
 
 - The composite primary key `(PeriodStart, Book, Author, Category, Currency)` is configured via Fluent API for each entity.
-- `Book` has a nullable column configuration matching `Transaction.Book`.
+- `Book` has a nullable column configuration in `Transaction.Book`. Default to empty string if the `Transaction.Book` is null since EF do not allow null values in PK.
 - Upsert uses `dbSet.Add()` + `SaveChangesAsync` — if the PK already exists, catch the SQL constraint violation and retry with an update. Alternatively, check existence first with a query.
 
 ### API layer
@@ -95,16 +87,14 @@ No changes to the API. The aggregate tables are updated as a side-effect of the 
 
 - Test external behaviour, not implementation details.
 - For the **PeriodHelper**: test with known UTC dates and assert the expected `PeriodStart` for each granularity. Include edge cases (year boundary for weekly, leap year for monthly, DST transitions — though UTC avoids DST issues).
-- For the **AggregateRepository**: test the upsert logic using an in-memory database. Assert that two transactions in the same bucket produce `SumValue = v1 + v2` and `TransactionCount = 2`.
-- For the **TransactionRepository**: test that `AddAsync` inserts the transaction and calls each aggregate upsert with the correct period start. Use mocks for the aggregate repos.
+- For the **TransactionRepository**: test that `AddAsync` inserts the transaction and updates all four aggregate tables correctly. Use an EF Core in-memory provider so the upsert logic runs against a real store. Assert that two transactions in the same bucket produce `SumValue = v1 + v2` and `TransactionCount = 2`.
 
 ### Modules to test
 
 | Module | Test approach | Prior art |
 |---|---|---|
 | **PeriodHelper** | Pure unit tests, no mocking | New (no prior art in codebase) |
-| **AggregateRepository\<T\>** | Integration tests with EF Core in-memory provider | `LedgerServiceTests` uses Moq; this would be closer to a real DB test |
-| **TransactionRepository** (modified) | Unit tests mocking `IAggregateRepository<T>` for all 4 types | `LedgerServiceTests` shows the mocking pattern |
+| **TransactionRepository** (modified) | Integration tests with EF Core in-memory provider — add a transaction, then query the aggregate tables directly to verify the upserts | `LedgerServiceTests` shows the mocking pattern; here we lean on the in-memory provider for end-to-end correctness of the upsert logic |
 | **LedgerService** (unchanged) | Already covered by existing tests | `LedgerServiceTests` |
 
 ### What NOT to test
