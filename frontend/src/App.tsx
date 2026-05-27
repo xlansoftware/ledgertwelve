@@ -5,6 +5,8 @@ import heroImg from './assets/hero.png'
 import './App.css'
 import { getWeatherForecast } from './services/api'
 
+import { Button } from '@/components/ui/button'
+
 function App() {
   const [count, setCount] = useState(0)
   const [weather, setWeather] = useState("Call /api")
@@ -31,8 +33,9 @@ function App() {
           Count is {count}
         </button>
 
+        <Button>Shadcn ui button</Button>
         <h1 className="text-3xl font-bold underline">
-          Hello world!
+          Tailwind
         </h1>
 
         <button
