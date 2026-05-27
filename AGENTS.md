@@ -125,6 +125,11 @@ cd backend && dotnet ef database update \
 - Never store sensitive data (tokens, keys) in `localStorage` — use `httpOnly` cookies via the API.
 - Use Zustand to manage app state.
 
+- **Do NOT scan the backend project** to discover endpoints
+- All available endpoints are documented in `API.md` — treat it as the source of truth
+- If a needed endpoint is missing from `API.md`, ask the user rather than inferring
+- Use the base URL from `API.md`; read it from `VITE_API_BASE_URL` env var at runtime
+
 ---
 
 ## API design conventions
