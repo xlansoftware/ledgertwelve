@@ -5,6 +5,7 @@ export interface Transaction {
   category: string
   author: string
   book: string | null
+  notes: string | null
   date: string
 }
 

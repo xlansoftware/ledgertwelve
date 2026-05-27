@@ -107,6 +107,7 @@ public class LedgerController : ControllerBase
             transaction.Category,
             transaction.Author,
             transaction.Book,
+            transaction.Notes,
             transaction.Date
         );
     }

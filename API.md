@@ -116,6 +116,7 @@ Create a new transaction.
   "category": "Groceries",  // required
   "author":   "Alice",      // optional — defaults to current user
   "book":     "Personal",   // optional
+  "notes":    "Weekly grocery run",  // optional
   "date":     "2026-05-27T12:00:00+00:00"  // optional — defaults to now
 }
 ```
@@ -129,6 +130,7 @@ Create a new transaction.
   "category": "Groceries",
   "author":   "Alice",
   "book":     "Personal",
+  "notes":    "Weekly grocery run",
   "date":     "2026-05-27T12:00:00+00:00"
 }
 ```
@@ -147,6 +149,7 @@ Replace a transaction entirely.
   "category": "Transport",  // required
   "author":   "Bob",        // required
   "book":     "Business",   // optional
+  "notes":    "Weekly grocery run",  // optional
   "date":     "2026-05-27T12:00:00+00:00"  // required
 }
 ```

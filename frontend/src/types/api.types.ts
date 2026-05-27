@@ -57,6 +57,7 @@ export interface CreateTransactionRequest {
   category: string
   author?: string
   book?: string | null
+  notes?: string | null
   date?: string
 }
 
@@ -66,6 +67,7 @@ export interface UpdateTransactionRequest {
   category: string
   author: string
   book?: string | null
+  notes?: string | null
   date: string
 }
 

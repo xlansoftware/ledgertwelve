@@ -12,6 +12,7 @@ type Transaction = {
   category: string
   author: string
   book: string | null
+  notes: string | null
   date: string
 }
 
@@ -36,12 +37,12 @@ type Aggregate = {
 let nextTxId = 0
 
 const seedTransactions: Transaction[] = [
-  { id: 'a100', value: 42.50,  currency: 'USD', category: 'Groceries',  author: 'Alice', book: 'Personal', date: '2026-05-25T10:00:00+00:00' },
-  { id: 'a101', value: 15.00,  currency: 'USD', category: 'Transport',  author: 'Alice', book: 'Personal', date: '2026-05-25T14:30:00+00:00' },
-  { id: 'a102', value: 200.00, currency: 'EUR', category: 'Equipment',  author: 'Bob',   book: 'Business', date: '2026-05-26T08:15:00+00:00' },
-  { id: 'a103', value: 89.99,  currency: 'USD', category: 'Dining',     author: 'Alice', book: 'Personal', date: '2026-05-26T19:45:00+00:00' },
-  { id: 'a104', value: 1200.00,currency: 'USD', category: 'Rent',       author: 'Alice', book: 'Personal', date: '2026-05-27T09:00:00+00:00' },
-  { id: 'a105', value: 55.00,  currency: 'EUR', category: 'Transport',  author: 'Bob',   book: 'Business', date: '2026-05-27T11:00:00+00:00' },
+  { id: 'a100', value: 42.50,  currency: 'USD', category: 'Groceries',  author: 'Alice', book: 'Personal', notes: null, date: '2026-05-25T10:00:00+00:00' },
+  { id: 'a101', value: 15.00,  currency: 'USD', category: 'Transport',  author: 'Alice', book: 'Personal', notes: null, date: '2026-05-25T14:30:00+00:00' },
+  { id: 'a102', value: 200.00, currency: 'EUR', category: 'Equipment',  author: 'Bob',   book: 'Business', notes: null, date: '2026-05-26T08:15:00+00:00' },
+  { id: 'a103', value: 89.99,  currency: 'USD', category: 'Dining',     author: 'Alice', book: 'Personal', notes: null, date: '2026-05-26T19:45:00+00:00' },
+  { id: 'a104', value: 1200.00,currency: 'USD', category: 'Rent',       author: 'Alice', book: 'Personal', notes: null, date: '2026-05-27T09:00:00+00:00' },
+  { id: 'a105', value: 55.00,  currency: 'EUR', category: 'Transport',  author: 'Bob',   book: 'Business', notes: null, date: '2026-05-27T11:00:00+00:00' },
 ]
 
 const transactions: Transaction[] = [...seedTransactions]
@@ -208,6 +209,7 @@ export const handlers = [
       category?: string
       author?: string
       book?: string | null
+      notes?: string | null
       date?: string | null
     }
 
@@ -225,6 +227,7 @@ export const handlers = [
       category: body.category,
       author: body.author ?? loggedInUser ?? 'anonymous',
       book: body.book ?? null,
+      notes: body.notes ?? null,
       date: body.date ?? new Date().toISOString(),
     }
     transactions.unshift(tx)
@@ -243,6 +246,7 @@ export const handlers = [
       category?: string
       author?: string
       book?: string | null
+      notes?: string | null
       date?: string
     }
 
@@ -257,6 +261,7 @@ export const handlers = [
       category: body.category ?? transactions[idx].category,
       author: body.author ?? transactions[idx].author,
       book: body.book ?? transactions[idx].book,
+      notes: body.notes ?? transactions[idx].notes,
       date: body.date ?? transactions[idx].date,
     }
     return HttpResponse.json(transactions[idx])

@@ -47,6 +47,9 @@ public class AppDbContext : IdentityDbContext<AppUser>
             entity.Property(t => t.Book)
                   .HasMaxLength(100);
 
+            entity.Property(t => t.Notes)
+                  .HasMaxLength(1000);
+
             entity.Property(t => t.Date)
                   .IsRequired();
         });

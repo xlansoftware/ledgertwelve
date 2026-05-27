@@ -24,7 +24,8 @@ public class LedgerService : ILedgerService
             dto.Category,
             author,
             date,
-            dto.Book
+            dto.Book,
+            dto.Notes
         );
 
         return await _repository.AddAsync(transaction);
@@ -57,7 +58,8 @@ public class LedgerService : ILedgerService
             dto.Category,
             dto.Author,
             dto.Date,
-            dto.Book
+            dto.Book,
+            dto.Notes
         );
 
         return await _repository.UpdateAsync(transaction);

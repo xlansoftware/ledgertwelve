@@ -6,5 +6,6 @@ public record UpdateTransactionDto(
     string Category,
     string Author,
     DateTimeOffset Date,
-    string? Book = null
+    string? Book = null,
+    string? Notes = null
 );
