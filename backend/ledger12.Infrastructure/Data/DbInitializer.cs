@@ -11,6 +11,7 @@ public static class DbInitializer
     public static async Task SeedAsync(IServiceProvider serviceProvider)
     {
         await SeedUserAsync(serviceProvider);
+        await SeedCategoriesAsync(serviceProvider);
         await SeedTransactionsAsync(serviceProvider);
     }
 
@@ -37,6 +38,43 @@ public static class DbInitializer
             var errors = string.Join(", ", result.Errors.Select(e => e.Description));
             throw new InvalidOperationException($"Failed to seed demo user: {errors}");
         }
+    }
+
+    private static async Task SeedCategoriesAsync(IServiceProvider serviceProvider)
+    {
+        var context = serviceProvider.GetRequiredService<AppDbContext>();
+
+        if (await context.Categories.AnyAsync())
+            return;
+
+        var categories = new List<Category>
+        {
+            new("Groceries",       "#fde68a",  1,  "shopping-cart"),
+            new("Rent / Mortgage", "#fca5a5",  21, "home"),
+            new("Utilities",       "#a5b4fc",  4,  "plug"),
+            new("Transportation",  "#bbf7d0",  6,  "car"),
+            new("Insurance",       "#fcd34d",  17, "shield"),
+            new("Dining Out",      "#FFCAD4",  5,  "utensils"),
+            new("Entertainment",   "#bae6fd",  8,  "film"),
+            new("Health / Medical","#FF595E",  10, "heart"),
+            new("Personal Care",   "#ddd6fe",  11, "smile"),
+            new("Subscriptions",   "#fde2e4",  20, "credit-card"),
+            new("Clothing",        "#e0f2fe",  12, "shirt"),
+            new("Gifts",           "#d9f99d",  14, "gift"),
+            new("Travel",          "#a7f3d0",  13, "plane"),
+            new("Education",       "#fef9c3",  15, "book"),
+            new("Savings",         "#f0abfc",  18, "piggy-bank"),
+            new("Miscellaneous",   "#FDFFB6",  9,  "dots-horizontal"),
+            new("Pets",            "#4d22b2",  2,  "heart"),
+            new("Taxes",           "#e22400",  19, "edit"),
+            new("Maintenance",     "#ad3e00",  3,  "home"),
+            new("Parents",         "#3A86FF",  16, "file"),
+            new("Sport",           "#F72585",  7,  "smile"),
+            new("Kids",            "#FF6B6B",  22, "piggy-bank"),
+        };
+
+        context.Categories.AddRange(categories);
+        await context.SaveChangesAsync();
     }
 
     private static async Task SeedTransactionsAsync(IServiceProvider serviceProvider)

@@ -214,3 +214,66 @@ Aggregated view of transactions bucketed by time period.
 - `{ "error": "PageSize must be 1 or greater." }`
 - `{ "error": "PageSize must not exceed 1000." }`
 - `{ "error": "The 'from' date must not be after the 'to' date." }`
+
+## Categories
+
+Requires `[Authorize]`.
+
+### `GET /api/categories`
+
+Returns the full list of categories sorted by `displayOrder` (ascending, nulls last), then by `name` alphabetically.
+
+**Response `200`:**
+```json
+[
+  {
+    "id": "guid",
+    "name": "Groceries",
+    "color": "#22c55e",
+    "displayOrder": 1,
+    "icon": null
+  }
+]
+```
+
+---
+
+### `POST /api/categories`
+
+**Request body:**
+```json
+{
+  "name": "Groceries",
+  "color": "#22c55e",
+  "displayOrder": 1,
+  "icon": null
+}
+```
+
+`name` is required. All other fields are optional.
+
+**Response `201`:** Created category (same shape as GET item) + `Location` header.
+
+**Errors:**
+- `400` — validation failure (e.g. missing name)
+- `409` — duplicate category name
+
+---
+
+### `PUT /api/categories/{id}`
+
+Full replace.
+
+**Request body:** Same shape as POST. All fields optional except `name`.
+
+**Response `200`:** Updated category.
+
+**Errors:** `400`, `404`, `409`
+
+---
+
+### `DELETE /api/categories/{id}`
+
+**Response `204`:** No body.
+
+**Error `404`.**

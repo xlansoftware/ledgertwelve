@@ -13,6 +13,7 @@ public class AppDbContext : IdentityDbContext<AppUser>
     public DbSet<WeeklyAggregate> WeeklyAggregates => Set<WeeklyAggregate>();
     public DbSet<MonthlyAggregate> MonthlyAggregates => Set<MonthlyAggregate>();
     public DbSet<YearlyAggregate> YearlyAggregates => Set<YearlyAggregate>();
+    public DbSet<Category> Categories => Set<Category>();
 
     public AppDbContext(DbContextOptions<AppDbContext> options)
         : base(options)
@@ -54,6 +55,26 @@ public class AppDbContext : IdentityDbContext<AppUser>
         ConfigureAggregateEntity<WeeklyAggregate>(builder, "WeeklyAggregates");
         ConfigureAggregateEntity<MonthlyAggregate>(builder, "MonthlyAggregates");
         ConfigureAggregateEntity<YearlyAggregate>(builder, "YearlyAggregates");
+
+        builder.Entity<Category>(entity =>
+        {
+            entity.HasKey(c => c.Id);
+
+            entity.Property(c => c.Name)
+                  .HasMaxLength(100)
+                  .IsRequired();
+
+            entity.Property(c => c.Color)
+                  .HasMaxLength(7);
+
+            entity.Property(c => c.DisplayOrder);
+
+            entity.Property(c => c.Icon)
+                  .HasMaxLength(100);
+
+            entity.HasIndex(c => c.Name)
+                  .IsUnique();
+        });
     }
 
     private static void ConfigureAggregateEntity<T>(ModelBuilder builder, string tableName)
