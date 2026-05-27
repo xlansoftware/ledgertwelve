@@ -1,4 +1,6 @@
 import type {
+  CategoryListResponse,
+  CreateCategoryRequest,
   CreateTransactionRequest,
   DashboardFilters,
   DashboardResponse,
@@ -7,6 +9,7 @@ import type {
   LogoutResponse,
   TransactionFilters,
   TransactionListResponse,
+  UpdateCategoryRequest,
   UpdateTransactionRequest,
   WhoamiResponse,
 } from '@/types/api.types'
@@ -131,6 +134,42 @@ export function updateTransaction(
 
 export function deleteTransaction(id: string): Promise<void> {
   return request<void>(`/ledger/transactions/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+  })
+}
+
+// ---------------------------------------------------------------------------
+// Categories
+// ---------------------------------------------------------------------------
+
+export function getCategories(): Promise<CategoryListResponse> {
+  return request<CategoryListResponse>('/categories')
+}
+
+export function createCategory(
+  data: CreateCategoryRequest,
+): Promise<CategoryListResponse[number]> {
+  return request<CategoryListResponse[number]>('/categories', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+export function updateCategory(
+  id: string,
+  data: UpdateCategoryRequest,
+): Promise<CategoryListResponse[number]> {
+  return request<CategoryListResponse[number]>(
+    `/categories/${encodeURIComponent(id)}`,
+    {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    },
+  )
+}
+
+export function deleteCategory(id: string): Promise<void> {
+  return request<void>(`/categories/${encodeURIComponent(id)}`, {
     method: 'DELETE',
   })
 }

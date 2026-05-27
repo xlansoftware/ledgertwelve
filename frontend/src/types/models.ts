@@ -8,6 +8,14 @@ export interface Transaction {
   date: string
 }
 
+export interface Category {
+  id: string
+  name: string
+  color: string | null
+  displayOrder: number | null
+  icon: string | null
+}
+
 export interface DashboardAggregate {
   periodStart: string
   book: string

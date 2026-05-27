@@ -15,6 +15,14 @@ type Transaction = {
   date: string
 }
 
+type Category = {
+  id: string
+  name: string
+  color: string | null
+  displayOrder: number | null
+  icon: string | null
+}
+
 type Aggregate = {
   periodStart: string
   book: string
@@ -37,6 +45,18 @@ const seedTransactions: Transaction[] = [
 ]
 
 const transactions: Transaction[] = [...seedTransactions]
+
+let nextCategoryId = 0
+
+const seedCategories: Category[] = [
+  { id: 'c1', name: 'Groceries',  color: '#22c55e', displayOrder: 1, icon: null },
+  { id: 'c2', name: 'Transport',  color: '#3b82f6', displayOrder: 2, icon: null },
+  { id: 'c3', name: 'Dining',     color: '#f59e0b', displayOrder: 3, icon: null },
+  { id: 'c4', name: 'Rent',       color: '#ef4444', displayOrder: 4, icon: null },
+  { id: 'c5', name: 'Equipment',  color: '#8b5cf6', displayOrder: 5, icon: null },
+]
+
+const categories: Category[] = [...seedCategories]
 
 // let loggedInUser: string | null = 'Alice' // start logged-in for convenience
 let loggedInUser: string | null = null
@@ -248,6 +268,88 @@ export const handlers = [
       return HttpResponse.json({ error: `Transaction with id '${params.id}' not found.` }, { status: 404 })
     }
     transactions.splice(idx, 1)
+    return new HttpResponse(null, { status: 204 })
+  }),
+
+  // ------------- Categories -------------
+  http.get('/api/categories', async () => {
+    const sorted = [...categories].sort((a, b) => {
+      const orderA = a.displayOrder ?? Infinity
+      const orderB = b.displayOrder ?? Infinity
+      if (orderA !== orderB) return orderA - orderB
+      return a.name.localeCompare(b.name)
+    })
+    return HttpResponse.json(sorted)
+  }),
+
+  http.post('/api/categories', async ({ request }) => {
+    const body = (await request.json()) as {
+      name?: string
+      color?: string | null
+      displayOrder?: number | null
+      icon?: string | null
+    }
+
+    if (!body.name) {
+      return HttpResponse.json({ error: 'Name is required.' }, { status: 400 })
+    }
+
+    const exists = categories.some((c) => c.name.toLowerCase() === body.name!.toLowerCase())
+    if (exists) {
+      return HttpResponse.json({ error: 'Category already exists.' }, { status: 409 })
+    }
+
+    const cat: Category = {
+      id: `c-${++nextCategoryId}`,
+      name: body.name,
+      color: body.color ?? null,
+      displayOrder: body.displayOrder ?? null,
+      icon: body.icon ?? null,
+    }
+    categories.push(cat)
+    return HttpResponse.json(cat, { status: 201 })
+  }),
+
+  http.put('/api/categories/:id', async ({ params, request }) => {
+    const idx = categories.findIndex((c) => c.id === params.id)
+    if (idx === -1) {
+      return HttpResponse.json({ error: `Category with id '${params.id}' not found.` }, { status: 404 })
+    }
+
+    const body = (await request.json()) as {
+      name?: string
+      color?: string | null
+      displayOrder?: number | null
+      icon?: string | null
+    }
+
+    if (!body.name) {
+      return HttpResponse.json({ error: 'Name is required.' }, { status: 400 })
+    }
+
+    const duplicate = categories.findIndex(
+      (c) => c.name.toLowerCase() === body.name!.toLowerCase() && c.id !== params.id,
+    )
+    if (duplicate !== -1) {
+      return HttpResponse.json({ error: 'Category already exists.' }, { status: 409 })
+    }
+
+    categories[idx] = {
+      ...categories[idx],
+      name: body.name,
+      color: body.color ?? categories[idx].color,
+      displayOrder: body.displayOrder ?? categories[idx].displayOrder,
+      icon: body.icon ?? categories[idx].icon,
+    }
+    return HttpResponse.json(categories[idx])
+  }),
+
+  http.delete('/api/categories/:id', async ({ params }) => {
+    const idx = categories.findIndex((c) => c.id === params.id)
+    if (idx === -1) {
+      return HttpResponse.json({ error: `Category with id '${params.id}' not found.` }, { status: 404 })
+    }
+    categories.splice(idx, 1)
     return new HttpResponse(null, { status: 204 })
   }),
 
