@@ -216,15 +216,12 @@ export const handlers = [
     if (!body.value || body.value === 0) {
       return HttpResponse.json({ error: 'Transaction value cannot be zero.' }, { status: 400 })
     }
-    if (!body.currency || !body.category) {
-      return HttpResponse.json({ error: 'Currency and category are required.' }, { status: 400 })
-    }
 
     const tx: Transaction = {
       id: `m-${++nextTxId}`,
       value: body.value,
-      currency: body.currency,
-      category: body.category,
+      currency: body.currency || "",
+      category: body.category || "",
       author: body.author ?? loggedInUser ?? 'anonymous',
       book: body.book ?? null,
       notes: body.notes ?? null,

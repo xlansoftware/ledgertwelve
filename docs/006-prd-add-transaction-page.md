@@ -1,6 +1,6 @@
 # PRD: Add Transaction Page
 
-**Status:** Draft  
+**Status:** done
 **Target file:** `frontend/src/pages/AddTransactionPage.tsx`  
 **Date:** 2026-05-27
 
