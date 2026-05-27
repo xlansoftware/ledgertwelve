@@ -33,11 +33,13 @@ export default function AddTransactionPage() {
     undefined,
   )
   const [notes, setNotes] = useState("")
-  const [selectedCategoryId, setSelectedCategoryId] = useState<
+  const [actualSelectedCategoryId, setSelectedCategoryId] = useState<
     string | undefined
   >(undefined)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+
+  const selectedCategoryId = actualSelectedCategoryId ?? categories[0]?.id
 
   // -----------------------------------------------------------------------
   // Lifecycle
@@ -113,7 +115,6 @@ export default function AddTransactionPage() {
       setParsedAmount(null)
       setParsedCurrency(undefined)
       setNotes("")
-      setSelectedCategoryId(undefined)
     } finally {
       setIsSubmitting(false)
     }

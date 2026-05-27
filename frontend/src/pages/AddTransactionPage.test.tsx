@@ -211,24 +211,6 @@ describe("AddTransactionPage", () => {
     ).toBeInTheDocument();
   });
 
-  it("shows validation error when submitting with no category", async () => {
-    const user = userEvent.setup();
-    renderPage();
-
-    await waitFor(() => {
-      expect(screen.getByPlaceholderText(/amount/i)).toBeInTheDocument();
-    });
-
-    // Type amount with currency
-    await typeAmount(user, "22 USD");
-
-    await clickSubmit(user);
-
-    expect(
-      screen.getByText(/please select a category/i),
-    ).toBeInTheDocument();
-  });
-
   it("calls addTransaction with correct payload on valid submit", async () => {
     const user = userEvent.setup();
     renderPage();
@@ -283,10 +265,6 @@ describe("AddTransactionPage", () => {
     await waitFor(() => {
       expect(amountInput).toHaveValue("");
     });
-
-    // Category should be deselected
-    const transportBtn = screen.getByRole("button", { name: /transport/i });
-    expect(transportBtn).toHaveAttribute("aria-pressed", "false");
   });
 
   it("shows error message when API call fails", async () => {
