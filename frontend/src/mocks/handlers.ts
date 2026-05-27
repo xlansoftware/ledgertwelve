@@ -38,7 +38,8 @@ const seedTransactions: Transaction[] = [
 
 const transactions: Transaction[] = [...seedTransactions]
 
-let loggedInUser: string | null = 'Alice' // start logged-in for convenience
+// let loggedInUser: string | null = 'Alice' // start logged-in for convenience
+let loggedInUser: string | null = null
 
 // ---------------------------------------------------------------------------
 // Helpers
