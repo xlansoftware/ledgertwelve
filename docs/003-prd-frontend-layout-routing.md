@@ -1,6 +1,6 @@
 # PRD: Frontend Layout & Routing
 
-**Status:** Ready for implementation  
+**Status:** done
 **Date:** 2026-05-27
 
 ---
