@@ -121,8 +121,9 @@ cd backend && dotnet ef database update \
 - All API calls go through `services/api.ts` (the Axios base instance) — never call `fetch` directly in a component.
 - Keep components free of business logic. Logic belongs in custom hooks or `features/<domain>/`.
 - Use `const` by default — `let` only when reassignment is necessary.
-- CSS Modules or Tailwind only — no inline `style={{}}` beyond trivial cases.
+- Tailwind only — no inline `style={{}}` beyond trivial cases.
 - Never store sensitive data (tokens, keys) in `localStorage` — use `httpOnly` cookies via the API.
+- Use Zustand to manage app state.
 
 ---
 
