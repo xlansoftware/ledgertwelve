@@ -31,6 +31,10 @@ function App() {
           Count is {count}
         </button>
 
+        <h1 className="text-3xl font-bold underline">
+          Hello world!
+        </h1>
+
         <button
           type="button"
           className="counter"
