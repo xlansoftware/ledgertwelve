@@ -9,4 +9,5 @@ public interface IAggregateEntity
     string Currency { get; }
     decimal SumValue { get; }
     int TransactionCount { get; }
+    void ApplyTransaction(decimal value);
 }

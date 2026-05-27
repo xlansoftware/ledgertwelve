@@ -182,8 +182,7 @@ public class TransactionRepository : ITransactionRepository
 
         if (existing is not null)
         {
-            var method = typeof(T).GetMethod("ApplyTransaction", new[] { typeof(decimal) });
-            method!.Invoke(existing, [value]);
+            existing.ApplyTransaction(value);
         }
         else
         {

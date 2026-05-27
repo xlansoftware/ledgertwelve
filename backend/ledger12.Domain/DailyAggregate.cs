@@ -1,15 +1,7 @@
 namespace ledger12.Domain;
 
-public class DailyAggregate : IAggregateEntity
+public class DailyAggregate : AggregateBase
 {
-    public DateOnly PeriodStart { get; private set; }
-    public string Book { get; private set; } = null!;
-    public string Author { get; private set; } = null!;
-    public string Category { get; private set; } = null!;
-    public string Currency { get; private set; } = null!;
-    public decimal SumValue { get; private set; }
-    public int TransactionCount { get; private set; }
-
     private DailyAggregate() { } // EF Core
 
     public DailyAggregate(
@@ -20,19 +12,7 @@ public class DailyAggregate : IAggregateEntity
         string currency,
         decimal value,
         int transactionCount = 1)
+        : base(periodStart, book, author, category, currency, value, transactionCount)
     {
-        PeriodStart = periodStart;
-        Book = book;
-        Author = author;
-        Category = category;
-        Currency = currency;
-        SumValue = value;
-        TransactionCount = transactionCount;
-    }
-
-    public void ApplyTransaction(decimal value)
-    {
-        SumValue += value;
-        TransactionCount++;
     }
 }
