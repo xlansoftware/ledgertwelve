@@ -130,6 +130,12 @@ cd backend && dotnet ef database update \
 - If a needed endpoint is missing from `API.md`, ask the user rather than inferring
 - Use the base URL from `API.md`; read it from `VITE_API_BASE_URL` env var at runtime
 
+#### Mocking
+- Mock handlers live in `src/mocks/handlers.ts`
+- Every endpoint in `API.md` should have a corresponding handler
+- Do not add mock logic inside service/api files
+- MSW is only active in dev mode (`import.meta.env.DEV`)
+
 ---
 
 ## API design conventions
