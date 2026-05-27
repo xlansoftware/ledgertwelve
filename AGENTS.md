@@ -9,7 +9,7 @@ Read this file fully before making any changes.
 
 **ledger12** is a financial ledger application with:
 - **Backend** — ASP.NET Core Web API, Clean Architecture, Entity Framework Core
-- **Frontend** — React 18, Vite, TypeScript
+- **Frontend** — React 18, Vite, TypeScript, Vitest
 
 ```
 MyApp/
@@ -82,6 +82,9 @@ npm run dev --prefix frontend
 
 # Run backend tests
 cd backend && dotnet test
+
+# Run frontend tests
+cd fontend && npm run test
 
 # Add a new EF Core migration
 cd backend && dotnet ef migrations add <MigrationName> \
