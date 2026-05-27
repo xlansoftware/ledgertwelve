@@ -71,8 +71,8 @@ API → Infrastructure → Application → Domain
 ## Development commands
 
 ```bash
-# Start both frontend and backend (from root)
-npm run dev
+# Build the frontend
+cd frontend && npm run build
 
 # Backend only (from root)
 dotnet run --project backend/ledger12.API
