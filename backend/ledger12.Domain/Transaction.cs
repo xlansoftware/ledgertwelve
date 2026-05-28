@@ -3,7 +3,14 @@ namespace ledger12.Domain;
 public class Transaction
 {
     public Guid Id { get; private set; }
+    
+     // The value is always stored in book currency. 
+     // The UI handles if the currency differ and propose conversion
     public decimal Value { get; private set; }
+    
+    // The original currency. Since the value is in book currency
+    // this is a note about the original currency, the value was
+    // The actual conversion rate is not stored
     public string Currency { get; private set; } = null!;
     public string Category { get; private set; } = null!;
     public string? Book { get; private set; }
