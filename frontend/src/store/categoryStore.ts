@@ -11,8 +11,10 @@ interface CategoryState {
   categories: Category[]
   isLoading: boolean
   error: string | null
+  hasLoadedOnce: boolean
 
   fetchCategories: () => Promise<void>
+  ensureLoaded: () => Promise<void>
   createCategory: (data: CreateCategoryRequest) => Promise<void>
   updateCategory: (id: string, data: UpdateCategoryRequest) => Promise<void>
   deleteCategory: (id: string) => Promise<void>
@@ -32,6 +34,7 @@ export const useCategoryStore = create<CategoryState>((set, get) => ({
   categories: [],
   isLoading: false,
   error: null,
+  hasLoadedOnce: false,
 
   // -----------------------------------------------------------------------
   // fetchCategories
@@ -47,7 +50,7 @@ export const useCategoryStore = create<CategoryState>((set, get) => ({
       // Guard against stale responses from rapid calls
       if (seq !== fetchSeq) return
 
-      set({ categories: data, isLoading: false })
+      set({ categories: data, isLoading: false, hasLoadedOnce: true })
     } catch (err: unknown) {
       if (seq !== fetchSeq) return
 
@@ -55,8 +58,34 @@ export const useCategoryStore = create<CategoryState>((set, get) => ({
         err instanceof api.ApiError
           ? err.message
           : 'Failed to load categories.'
-      set({ error: message, isLoading: false })
+      set({ error: message, isLoading: false, hasLoadedOnce: true })
     }
+  },
+
+  // -----------------------------------------------------------------------
+  // ensureLoaded — fetch only if never loaded before
+  // -----------------------------------------------------------------------
+
+  ensureLoaded: async () => {
+    const state = get()
+
+    // Already fetched at least once — nothing to do
+    if (state.hasLoadedOnce) return
+
+    // A fetch is in flight — wait for it to settle
+    if (state.isLoading) {
+      return new Promise<void>((resolve) => {
+        const unsub = useCategoryStore.subscribe((s) => {
+          if (!s.isLoading) {
+            unsub()
+            resolve()
+          }
+        })
+      })
+    }
+
+    // Never fetched — trigger load
+    await get().fetchCategories()
   },
 
   // -----------------------------------------------------------------------

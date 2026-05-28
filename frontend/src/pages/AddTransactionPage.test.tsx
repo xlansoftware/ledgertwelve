@@ -110,6 +110,7 @@ beforeEach(() => {
     categories: [],
     isLoading: false,
     error: null,
+    hasLoadedOnce: false,
   });
 
   useTransactionStore.setState({

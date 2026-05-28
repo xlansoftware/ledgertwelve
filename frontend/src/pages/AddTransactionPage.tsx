@@ -19,6 +19,7 @@ export default function AddTransactionPage() {
     isLoading: categoriesLoading,
     error: categoriesError,
     fetchCategories,
+    ensureLoaded,
   } = useCategoryStore()
 
   const { addTransaction } = useTransactionStore()
@@ -48,8 +49,8 @@ export default function AddTransactionPage() {
   // -----------------------------------------------------------------------
 
   useEffect(() => {
-    fetchCategories()
-  }, [fetchCategories])
+    ensureLoaded()
+  }, [ensureLoaded])
 
   // -----------------------------------------------------------------------
   // Handlers
