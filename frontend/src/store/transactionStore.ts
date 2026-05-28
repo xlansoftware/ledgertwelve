@@ -20,7 +20,7 @@ interface TransactionState {
   isLoading: boolean
   error: string | null
 
-  fetchTransactions: () => Promise<void>
+  fetchTransactions: (opts?: { append?: boolean }) => Promise<void>
   setFilters: (filters: Partial<TransactionFilters>) => void
   setPage: (page: number) => void
   addTransaction: (data: CreateTransactionRequest) => Promise<void>
@@ -50,22 +50,33 @@ export const useTransactionStore = create<TransactionState>((set, get) => ({
   error: null,
 
   // -----------------------------------------------------------------------
-  // fetchTransactions
+  // fetchTransactions — optional append mode for pagination
   // -----------------------------------------------------------------------
 
-  fetchTransactions: async () => {
+  fetchTransactions: async (opts?: { append?: boolean }) => {
     const seq = ++fetchSeq
+    const append = opts?.append ?? false
+
+    // In append mode, increment page first; otherwise reset to page 1
+    if (append) {
+      set((state) => ({ page: state.page + 1 }))
+    } else {
+      set({ page: 1 })
+    }
+
     set({ isLoading: true, error: null })
 
     try {
       const { page, pageSize, filters } = get()
       const response = await api.getTransactions({ page, pageSize, ...filters })
 
-      // Guard against stale responses from rapid filter changes
+      // Guard against stale responses from rapid changes
       if (seq !== fetchSeq) return
 
       set({
-        transactions: response.items,
+        transactions: append
+          ? [...get().transactions, ...response.items]
+          : response.items,
         totalCount: response.totalCount,
         isLoading: false,
       })

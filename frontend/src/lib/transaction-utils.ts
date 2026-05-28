@@ -8,6 +8,32 @@ import type { Transaction } from '@/types/models'
 // Amount formatting
 // ---------------------------------------------------------------------------
 
+export function formatRelativeDateTime(dateStr: string): string {
+  const date = new Date(dateStr)
+
+  let hours = date.getHours()
+  const minutes = date.getMinutes().toString().padStart(2, '0')
+  const ampm = hours >= 12 ? 'PM' : 'AM'
+  hours = hours % 12 || 12
+  const timeStr = `${hours.toString().padStart(2, '0')}:${minutes} ${ampm}`
+
+  const dateOnly = new Date(date)
+  dateOnly.setHours(0, 0, 0, 0)
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const yesterday = new Date(today)
+  yesterday.setDate(yesterday.getDate() - 1)
+
+  if (dateOnly.getTime() === today.getTime()) {
+    return `Today ${timeStr}`
+  }
+  if (dateOnly.getTime() === yesterday.getTime()) {
+    return `Yesterday ${timeStr}`
+  }
+
+  return formatRelativeDate(dateStr) + ' ' + timeStr
+}
+
 export function formatAmount(value: number): string {
   return Intl.NumberFormat('en-US', {
     minimumFractionDigits: 2,
