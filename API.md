@@ -77,10 +77,12 @@ Paginated list of transactions, optionally filtered.
     {
       "id":       "guid",
       "value":    123.45,
+      "valueInBookCurrency": null,
       "currency": "USD",
       "category": "Groceries",
       "author":   "Alice",
       "book":     "Personal",
+      "notes":    null,
       "date":     "2026-05-27T12:00:00+00:00"
     }
   ],
@@ -112,6 +114,7 @@ Create a new transaction.
 ```json
 {
   "value":    123.45,       // required, non-zero decimal
+  "valueInBookCurrency": null,       // optional - defaults to null
   "currency": "USD",        // required
   "category": "Groceries",  // required
   "author":   "Alice",      // optional — defaults to current user
@@ -126,6 +129,7 @@ Create a new transaction.
 {
   "id":       "guid",
   "value":    123.45,
+  "valueInBookCurrency": null,
   "currency": "USD",
   "category": "Groceries",
   "author":   "Alice",
@@ -145,6 +149,7 @@ Replace a transaction entirely.
 ```json
 {
   "value":    99.99,        // required, non-zero decimal
+  "valueInBookCurrency": 99.99,        // optional
   "currency": "EUR",        // required
   "category": "Transport",  // required
   "author":   "Bob",        // required
