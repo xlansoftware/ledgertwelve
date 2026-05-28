@@ -12,9 +12,11 @@ interface BookState {
   books: Book[]
   currentBook: Book | null
   isLoading: boolean
+  isLoaded: boolean
   error: string | null
 
   fetchBooks: () => Promise<void>
+  ensureLoaded: () => Promise<void>
   createBook: (data: CreateBookRequest) => Promise<void>
   updateBook: (id: string, data: UpdateBookRequest) => Promise<void>
   deleteBook: (id: string) => Promise<void>
@@ -35,6 +37,7 @@ export const useBookStore = create<BookState>((set, get) => ({
   books: [],
   currentBook: null,
   isLoading: false,
+  isLoaded: false,
   error: null,
 
   // -----------------------------------------------------------------------
@@ -57,7 +60,7 @@ export const useBookStore = create<BookState>((set, get) => ({
         b.name?.toLowerCase() === (currentBook?.name ?? "Ledger").toLowerCase(),
       )
 
-      set({ books: data, isLoading: false, currentBook: book || currentBook })
+      set({ books: data, isLoading: false, isLoaded: true, currentBook: book || currentBook })
     } catch (err: unknown) {
       if (seq !== fetchSeq) return
 
@@ -67,6 +70,16 @@ export const useBookStore = create<BookState>((set, get) => ({
           : 'Failed to load books.'
       set({ error: message, isLoading: false })
     }
+  },
+
+  // -----------------------------------------------------------------------
+  // ensureLoaded — load books once, skip if already loaded
+  // -----------------------------------------------------------------------
+
+  ensureLoaded: async () => {
+    const state = get()
+    if (state.isLoaded || state.isLoading) return
+    await state.fetchBooks()
   },
 
   // -----------------------------------------------------------------------

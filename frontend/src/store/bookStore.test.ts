@@ -37,6 +37,7 @@ beforeEach(() => {
     ],
     currentBook: null,
     isLoading: false,
+    isLoaded: true,
     error: null,
   })
 

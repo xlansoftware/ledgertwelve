@@ -19,12 +19,13 @@ export default function AddTransactionPage() {
     isLoading: categoriesLoading,
     error: categoriesError,
     fetchCategories,
-    ensureLoaded,
+    ensureLoaded: ensureCategoriesLoaded,
   } = useCategoryStore()
 
   const { addTransaction } = useTransactionStore()
   const user = useUserStore((s) => s.user)
   const currentBook = useBookStore((s) => s.currentBook)
+  const ensureBooksLoaded = useBookStore((s) => s.ensureLoaded)
 
   // -----------------------------------------------------------------------
   // Local form state
@@ -49,8 +50,12 @@ export default function AddTransactionPage() {
   // -----------------------------------------------------------------------
 
   useEffect(() => {
-    ensureLoaded()
-  }, [ensureLoaded])
+    ensureCategoriesLoaded()
+  }, [ensureCategoriesLoaded])
+
+  useEffect(() => {
+    ensureBooksLoaded()
+  }, [ensureBooksLoaded])
 
   // -----------------------------------------------------------------------
   // Handlers
