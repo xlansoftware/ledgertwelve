@@ -6,7 +6,6 @@ public interface IAggregateEntity
     string Book { get; }
     string Author { get; }
     string Category { get; }
-    string Currency { get; }
     decimal SumValue { get; }
     int TransactionCount { get; }
     void ApplyTransaction(decimal value);

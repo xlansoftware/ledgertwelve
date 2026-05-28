@@ -6,7 +6,6 @@ public record DashboardQuery(
     string? Book,
     string? Author,
     string? Category,
-    string? Currency,
     int Page = 1,
     int PageSize = 20
 );

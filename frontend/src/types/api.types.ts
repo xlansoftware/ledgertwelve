@@ -46,14 +46,12 @@ export interface TransactionFilters {
   book?: string
   author?: string
   category?: string
-  currency?: string
 }
 
 export type TransactionListResponse = PaginatedResponse<Transaction>
 
 export interface CreateTransactionRequest {
   value: number
-  currency: string
   category: string
   author?: string
   book?: string | null
@@ -63,7 +61,6 @@ export interface CreateTransactionRequest {
 
 export interface UpdateTransactionRequest {
   value: number
-  currency: string
   category: string
   author: string
   book?: string | null
@@ -122,7 +119,6 @@ export interface DashboardFilters {
   book?: string
   author?: string
   category?: string
-  currency?: string
   page?: number
   pageSize?: number
 }

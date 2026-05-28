@@ -138,7 +138,6 @@ public static class DbInitializer
 
         var transaction = new Transaction(
             value: value,
-            currency: "EUR",
             category: category,
             author: author,
             date: date,

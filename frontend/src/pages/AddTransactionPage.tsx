@@ -33,7 +33,7 @@ export default function AddTransactionPage() {
 
   const [amountRaw, setAmountRaw] = useState("")
   const [parsedAmount, setParsedAmount] = useState<number | null>(null)
-  const [parsedCurrency, setParsedCurrency] = useState<string | undefined>(
+  const [/*parsedCurrency*/, setParsedCurrency] = useState<string | undefined>(
     undefined,
   )
   const [notes, setNotes] = useState("")
@@ -97,7 +97,6 @@ export default function AddTransactionPage() {
 
     const payload: CreateTransactionRequest = {
       value: parsedAmount,
-      currency: parsedCurrency || "",
       category: category.name, // <— category name, not ID
       author: user ?? undefined,
       notes: notes || undefined,

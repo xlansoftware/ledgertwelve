@@ -36,24 +36,24 @@ public class AggregateQueryTests : IDisposable
         for (int day = 0; day < 6; day++)
         {
             var date = baseDate.AddDays(day);
-            _context.DailyAggregates.Add(new DailyAggregate(date, "Personal", "Alice", "Food", "USD", 50m + day * 10));
-            _context.DailyAggregates.Add(new DailyAggregate(date, "Business", "Alice", "Transport", "USD", 100m + day * 20));
-            _context.DailyAggregates.Add(new DailyAggregate(date, "Personal", "Bob", "Food", "USD", 30m + day * 5));
+            _context.DailyAggregates.Add(new DailyAggregate(date, "Personal", "Alice", "Food", 50m + day * 10));
+            _context.DailyAggregates.Add(new DailyAggregate(date, "Business", "Alice", "Transport", 100m + day * 20));
+            _context.DailyAggregates.Add(new DailyAggregate(date, "Personal", "Bob", "Food", 30m + day * 5));
         }
 
         // Weekly aggregates for weeks starting May 25 and June 1
-        _context.WeeklyAggregates.Add(new WeeklyAggregate(new DateOnly(2026, 5, 25), "Personal", "Alice", "Food", "USD", 500m));
-        _context.WeeklyAggregates.Add(new WeeklyAggregate(new DateOnly(2026, 5, 25), "Business", "Alice", "Transport", "USD", 1000m));
-        _context.WeeklyAggregates.Add(new WeeklyAggregate(new DateOnly(2026, 6, 1), "Personal", "Alice", "Food", "USD", 300m));
+        _context.WeeklyAggregates.Add(new WeeklyAggregate(new DateOnly(2026, 5, 25), "Personal", "Alice", "Food", 500m));
+        _context.WeeklyAggregates.Add(new WeeklyAggregate(new DateOnly(2026, 5, 25), "Business", "Alice", "Transport", 1000m));
+        _context.WeeklyAggregates.Add(new WeeklyAggregate(new DateOnly(2026, 6, 1), "Personal", "Alice", "Food", 300m));
 
         // Monthly aggregates for May and June
-        _context.MonthlyAggregates.Add(new MonthlyAggregate(new DateOnly(2026, 5, 1), "Personal", "Alice", "Food", "USD", 2000m));
-        _context.MonthlyAggregates.Add(new MonthlyAggregate(new DateOnly(2026, 5, 1), "Business", "Alice", "Transport", "USD", 4000m));
-        _context.MonthlyAggregates.Add(new MonthlyAggregate(new DateOnly(2026, 6, 1), "Personal", "Alice", "Food", "USD", 500m));
+        _context.MonthlyAggregates.Add(new MonthlyAggregate(new DateOnly(2026, 5, 1), "Personal", "Alice", "Food", 2000m));
+        _context.MonthlyAggregates.Add(new MonthlyAggregate(new DateOnly(2026, 5, 1), "Business", "Alice", "Transport", 4000m));
+        _context.MonthlyAggregates.Add(new MonthlyAggregate(new DateOnly(2026, 6, 1), "Personal", "Alice", "Food", 500m));
 
         // Yearly aggregates
-        _context.YearlyAggregates.Add(new YearlyAggregate(new DateOnly(2025, 1, 1), "Personal", "Alice", "Food", "USD", 12000m));
-        _context.YearlyAggregates.Add(new YearlyAggregate(new DateOnly(2026, 1, 1), "Personal", "Alice", "Food", "USD", 6000m));
+        _context.YearlyAggregates.Add(new YearlyAggregate(new DateOnly(2025, 1, 1), "Personal", "Alice", "Food", 12000m));
+        _context.YearlyAggregates.Add(new YearlyAggregate(new DateOnly(2026, 1, 1), "Personal", "Alice", "Food", 6000m));
 
         _context.SaveChanges();
     }
@@ -64,7 +64,6 @@ public class AggregateQueryTests : IDisposable
         string? book = null,
         string? author = null,
         string? category = null,
-        string? currency = null,
         int page = 1,
         int pageSize = 20)
     {
@@ -72,7 +71,7 @@ public class AggregateQueryTests : IDisposable
         return new AggregateFilter(
             from ?? now.AddDays(-365),
             to ?? now,
-            book, author, category, currency, page, pageSize
+            book, author, category, page, pageSize
         );
     }
 
@@ -154,7 +153,7 @@ public class AggregateQueryTests : IDisposable
     public async Task GetAggregatesAsync_FiltersDailyByCurrency()
     {
         // Arrange — only USD exists in seed, so same as unfiltered
-        var filter = Filter(from: new DateOnly(2026, 5, 25), to: new DateOnly(2026, 5, 30), currency: "USD");
+        var filter = Filter(from: new DateOnly(2026, 5, 25), to: new DateOnly(2026, 5, 30));
 
         // Act
         var result = await _repository.GetAggregatesAsync<DailyAggregate>(Granularity.Daily, filter);

@@ -88,13 +88,12 @@ namespace ledger12.Infrastructure.Migrations
                     Book = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
                     Author = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
                     Category = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
-                    Currency = table.Column<string>(type: "TEXT", maxLength: 10, nullable: false),
                     SumValue = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     TransactionCount = table.Column<int>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_DailyAggregates", x => new { x.PeriodStart, x.Book, x.Author, x.Category, x.Currency });
+                    table.PrimaryKey("PK_DailyAggregates", x => new { x.PeriodStart, x.Book, x.Author, x.Category });
                 });
 
             migrationBuilder.CreateTable(
@@ -105,13 +104,12 @@ namespace ledger12.Infrastructure.Migrations
                     Book = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
                     Author = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
                     Category = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
-                    Currency = table.Column<string>(type: "TEXT", maxLength: 10, nullable: false),
                     SumValue = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     TransactionCount = table.Column<int>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_MonthlyAggregates", x => new { x.PeriodStart, x.Book, x.Author, x.Category, x.Currency });
+                    table.PrimaryKey("PK_MonthlyAggregates", x => new { x.PeriodStart, x.Book, x.Author, x.Category });
                 });
 
             migrationBuilder.CreateTable(
@@ -120,7 +118,6 @@ namespace ledger12.Infrastructure.Migrations
                 {
                     Id = table.Column<Guid>(type: "TEXT", nullable: false),
                     Value = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    Currency = table.Column<string>(type: "TEXT", maxLength: 10, nullable: false),
                     Category = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
                     Book = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
                     Notes = table.Column<string>(type: "TEXT", maxLength: 1000, nullable: true),
@@ -140,13 +137,12 @@ namespace ledger12.Infrastructure.Migrations
                     Book = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
                     Author = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
                     Category = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
-                    Currency = table.Column<string>(type: "TEXT", maxLength: 10, nullable: false),
                     SumValue = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     TransactionCount = table.Column<int>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_WeeklyAggregates", x => new { x.PeriodStart, x.Book, x.Author, x.Category, x.Currency });
+                    table.PrimaryKey("PK_WeeklyAggregates", x => new { x.PeriodStart, x.Book, x.Author, x.Category });
                 });
 
             migrationBuilder.CreateTable(
@@ -157,13 +153,12 @@ namespace ledger12.Infrastructure.Migrations
                     Book = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
                     Author = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
                     Category = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
-                    Currency = table.Column<string>(type: "TEXT", maxLength: 10, nullable: false),
                     SumValue = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     TransactionCount = table.Column<int>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_YearlyAggregates", x => new { x.PeriodStart, x.Book, x.Author, x.Category, x.Currency });
+                    table.PrimaryKey("PK_YearlyAggregates", x => new { x.PeriodStart, x.Book, x.Author, x.Category });
                 });
 
             migrationBuilder.CreateTable(

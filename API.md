@@ -68,7 +68,6 @@ Paginated list of transactions, optionally filtered.
 | book     | string | no       | —       | filter  |
 | author   | string | no       | —       | filter  |
 | category | string | no       | —       | filter  |
-| currency | string | no       | —       | filter  |
 
 **Response `200`:**
 ```json
@@ -77,7 +76,6 @@ Paginated list of transactions, optionally filtered.
     {
       "id":       "guid",
       "value":    123.45,
-      "currency": "USD",
       "category": "Groceries",
       "author":   "Alice",
       "book":     "Personal",
@@ -112,7 +110,6 @@ Create a new transaction.
 ```json
 {
   "value":    123.45,       // required, non-zero decimal
-  "currency": "USD",        // required
   "category": "Groceries",  // required
   "author":   "Alice",      // optional — defaults to current user
   "book":     "Personal",   // optional
@@ -126,7 +123,6 @@ Create a new transaction.
 {
   "id":       "guid",
   "value":    123.45,
-  "currency": "USD",
   "category": "Groceries",
   "author":   "Alice",
   "book":     "Personal",
@@ -145,7 +141,6 @@ Replace a transaction entirely.
 ```json
 {
   "value":    99.99,        // required, non-zero decimal
-  "currency": "EUR",        // required
   "category": "Transport",  // required
   "author":   "Bob",        // required
   "book":     "Business",   // optional
@@ -187,7 +182,6 @@ Aggregated view of transactions bucketed by time period.
 | book        | string       | no       | —       | filter |
 | author      | string       | no       | —       | filter |
 | category    | string       | no       | —       | filter |
-| currency    | string       | no       | —       | filter |
 | page        | int          | no       | 1       | min 1 |
 | pageSize    | int          | no       | 20      | 1–1000 |
 
@@ -200,7 +194,6 @@ Aggregated view of transactions bucketed by time period.
       "book":            "Personal",
       "author":          "Alice",
       "category":        "Groceries",
-      "currency":        "USD",
       "sumValue":        350.00,
       "transactionCount": 5
     }

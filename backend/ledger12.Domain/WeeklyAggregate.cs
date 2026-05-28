@@ -9,10 +9,9 @@ public class WeeklyAggregate : AggregateBase
         string book,
         string author,
         string category,
-        string currency,
         decimal value,
         int transactionCount = 1)
-        : base(periodStart, book, author, category, currency, value, transactionCount)
+        : base(periodStart, book, author, category, value, transactionCount)
     {
     }
 }

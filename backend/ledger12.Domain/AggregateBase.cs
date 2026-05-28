@@ -6,7 +6,6 @@ public abstract class AggregateBase : IAggregateEntity
     public string Book { get; private set; } = null!;
     public string Author { get; private set; } = null!;
     public string Category { get; private set; } = null!;
-    public string Currency { get; private set; } = null!;
     public decimal SumValue { get; private set; }
     public int TransactionCount { get; private set; }
 
@@ -18,7 +17,6 @@ public abstract class AggregateBase : IAggregateEntity
         string book,
         string author,
         string category,
-        string currency,
         decimal value,
         int transactionCount = 1)
     {
@@ -26,7 +24,6 @@ public abstract class AggregateBase : IAggregateEntity
         Book = book;
         Author = author;
         Category = category;
-        Currency = currency;
         SumValue = value;
         TransactionCount = transactionCount;
     }

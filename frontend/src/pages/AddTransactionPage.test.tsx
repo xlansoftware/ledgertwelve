@@ -24,7 +24,6 @@ interface StoredCategory {
 interface StoredTransaction {
   id: string;
   value: number;
-  currency: string;
   category: string;
   author: string;
   book: string | null;
@@ -80,7 +79,6 @@ const server = setupServer(
     const tx: StoredTransaction = {
       id: `m-${++nextTxId}`,
       value: body.value as number,
-      currency: body.currency as string,
       category: body.category as string,
       author: (body.author as string) ?? "TestUser",
       book: null,
@@ -236,7 +234,6 @@ describe("AddTransactionPage", () => {
 
     expect(lastCreatedPayload).toMatchObject({
       value: 33,
-      currency: "EUR",
       category: "Groceries",
       author: "Alice",
     });

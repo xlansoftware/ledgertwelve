@@ -31,7 +31,6 @@ public class TransactionRepositoryTests : IDisposable
         // Arrange
         var transaction = new Transaction(
             value: 100.50m,
-            currency: "USD",
             category: "Food",
             author: "Alice",
             date: new DateTimeOffset(2026, 5, 26, 12, 0, 0, TimeSpan.Zero)
@@ -48,7 +47,6 @@ public class TransactionRepositoryTests : IDisposable
         Assert.Equal(new DateOnly(2026, 5, 26), daily.PeriodStart);
         Assert.Equal("Alice", daily.Author);
         Assert.Equal("Food", daily.Category);
-        Assert.Equal("USD", daily.Currency);
         Assert.Equal("", daily.Book);
         Assert.Equal(100.50m, daily.SumValue);
         Assert.Equal(1, daily.TransactionCount);
@@ -78,8 +76,8 @@ public class TransactionRepositoryTests : IDisposable
         // Arrange
         var date = new DateTimeOffset(2026, 5, 26, 12, 0, 0, TimeSpan.Zero);
 
-        var tx1 = new Transaction(100m, "USD", "Food", "Alice", date);
-        var tx2 = new Transaction(50m, "USD", "Food", "Alice", date);
+        var tx1 = new Transaction(100m, "Food", "Alice", date);
+        var tx2 = new Transaction(50m, "Food", "Alice", date);
 
         // Act
         await _repository.AddAsync(tx1);
@@ -109,8 +107,8 @@ public class TransactionRepositoryTests : IDisposable
         // Arrange
         var date = new DateTimeOffset(2026, 5, 26, 12, 0, 0, TimeSpan.Zero);
 
-        var tx1 = new Transaction(100m, "USD", "Food", "Alice", date);
-        var tx2 = new Transaction(200m, "USD", "Transport", "Alice", date);
+        var tx1 = new Transaction(100m, "Food", "Alice", date);
+        var tx2 = new Transaction(200m, "Transport", "Alice", date);
 
         // Act
         await _repository.AddAsync(tx1);
@@ -133,8 +131,8 @@ public class TransactionRepositoryTests : IDisposable
         // Arrange
         var date = new DateTimeOffset(2026, 5, 26, 12, 0, 0, TimeSpan.Zero);
 
-        var tx1 = new Transaction(100m, "USD", "Food", "Alice", date);
-        var tx2 = new Transaction(50m, "USD", "Food", "Bob", date);
+        var tx1 = new Transaction(100m, "Food", "Alice", date);
+        var tx2 = new Transaction(50m, "Food", "Bob", date);
 
         // Act
         await _repository.AddAsync(tx1);
@@ -153,8 +151,8 @@ public class TransactionRepositoryTests : IDisposable
         // Arrange
         var date = new DateTimeOffset(2026, 5, 26, 12, 0, 0, TimeSpan.Zero);
 
-        var tx1 = new Transaction(100m, "USD", "Food", "Alice", date, book: "Personal");
-        var tx2 = new Transaction(50m, "USD", "Food", "Alice", date, book: "Business");
+        var tx1 = new Transaction(100m, "Food", "Alice", date, book: "Personal");
+        var tx2 = new Transaction(50m, "Food", "Alice", date, book: "Business");
 
         // Act
         await _repository.AddAsync(tx1);
@@ -173,7 +171,6 @@ public class TransactionRepositoryTests : IDisposable
         // Arrange
         var transaction = new Transaction(
             value: 100m,
-            currency: "USD",
             category: "Food",
             author: "Alice",
             date: new DateTimeOffset(2026, 5, 26, 12, 0, 0, TimeSpan.Zero),
@@ -189,32 +186,12 @@ public class TransactionRepositoryTests : IDisposable
     }
 
     [Fact]
-    public async Task AddAsync_DifferentCurrencies_CreatesSeparateAggregateRows()
-    {
-        // Arrange
-        var date = new DateTimeOffset(2026, 5, 26, 12, 0, 0, TimeSpan.Zero);
-
-        var tx1 = new Transaction(100m, "USD", "Food", "Alice", date);
-        var tx2 = new Transaction(80m, "EUR", "Food", "Alice", date);
-
-        // Act
-        await _repository.AddAsync(tx1);
-        await _repository.AddAsync(tx2);
-
-        // Assert
-        var dailyRows = await _context.DailyAggregates.OrderBy(a => a.Currency).ToListAsync();
-        Assert.Equal(2, dailyRows.Count);
-        Assert.Equal("EUR", dailyRows[0].Currency);
-        Assert.Equal("USD", dailyRows[1].Currency);
-    }
-
-    [Fact]
     public async Task AddAsync_DifferentDates_CreatesSeparateDailyAggregateRows()
     {
         // Arrange
-        var tx1 = new Transaction(100m, "USD", "Food", "Alice",
+        var tx1 = new Transaction(100m, "Food", "Alice",
             new DateTimeOffset(2026, 5, 26, 12, 0, 0, TimeSpan.Zero));
-        var tx2 = new Transaction(50m, "USD", "Food", "Alice",
+        var tx2 = new Transaction(50m, "Food", "Alice",
             new DateTimeOffset(2026, 5, 27, 12, 0, 0, TimeSpan.Zero));
 
         // Act
@@ -244,9 +221,9 @@ public class TransactionRepositoryTests : IDisposable
         var date = new DateTimeOffset(2026, 5, 26, 12, 0, 0, TimeSpan.Zero);
 
         // Act - add three transactions
-        await _repository.AddAsync(new Transaction(10m, "USD", "Food", "Alice", date));
-        await _repository.AddAsync(new Transaction(20m, "USD", "Food", "Alice", date));
-        await _repository.AddAsync(new Transaction(30m, "USD", "Food", "Alice", date));
+        await _repository.AddAsync(new Transaction(10m, "Food", "Alice", date));
+        await _repository.AddAsync(new Transaction(20m, "Food", "Alice", date));
+        await _repository.AddAsync(new Transaction(30m, "Food", "Alice", date));
 
         // Assert
         var daily = await _context.DailyAggregates.SingleAsync();
@@ -262,9 +239,9 @@ public class TransactionRepositoryTests : IDisposable
         var date2 = new DateTimeOffset(2026, 5, 27, 14, 0, 0, TimeSpan.Zero);
 
         _context.Transactions.AddRange(
-            new Transaction(100m, "USD", "Food", "Alice", date1),
-            new Transaction(50m, "USD", "Food", "Alice", date1),
-            new Transaction(200m, "EUR", "Transport", "Bob", date2)
+            new Transaction(100m, "Food", "Alice", date1),
+            new Transaction(50m,  "Food", "Alice", date1),
+            new Transaction(200m, "Transport", "Bob", date2)
         );
         await _context.SaveChangesAsync();
 
@@ -280,7 +257,6 @@ public class TransactionRepositoryTests : IDisposable
         Assert.Equal(new DateOnly(2026, 5, 26), d1.PeriodStart);
         Assert.Equal("Alice", d1.Author);
         Assert.Equal("Food", d1.Category);
-        Assert.Equal("USD", d1.Currency);
         Assert.Equal(150m, d1.SumValue);
         Assert.Equal(2, d1.TransactionCount);
 
@@ -289,7 +265,6 @@ public class TransactionRepositoryTests : IDisposable
         Assert.Equal(new DateOnly(2026, 5, 27), d2.PeriodStart);
         Assert.Equal("Bob", d2.Author);
         Assert.Equal("Transport", d2.Category);
-        Assert.Equal("EUR", d2.Currency);
         Assert.Equal(200m, d2.SumValue);
         Assert.Equal(1, d2.TransactionCount);
 
@@ -317,7 +292,7 @@ public class TransactionRepositoryTests : IDisposable
     {
         // Arrange — seed stale aggregates
         _context.DailyAggregates.Add(new DailyAggregate(
-            new DateOnly(2026, 5, 26), "", "Alice", "Food", "USD", 100m));
+            new DateOnly(2026, 5, 26), "", "Alice", "Food", 100m));
         await _context.SaveChangesAsync();
 
         Assert.NotEmpty(await _context.DailyAggregates.ToListAsync());

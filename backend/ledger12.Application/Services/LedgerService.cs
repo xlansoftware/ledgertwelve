@@ -20,7 +20,6 @@ public class LedgerService : ILedgerService
 
         var transaction = new Transaction(
             dto.Value,
-            dto.Currency,
             dto.Category,
             author,
             date,
@@ -54,7 +53,6 @@ public class LedgerService : ILedgerService
 
         transaction.Update(
             dto.Value,
-            dto.Currency,
             dto.Category,
             dto.Author,
             dto.Date,

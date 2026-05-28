@@ -26,7 +26,7 @@ public class DashboardService : IDashboardService
         if (from > to)
             throw new ArgumentException("The 'from' date must not be after the 'to' date.");
 
-        var filter = new AggregateFilter(from, to, query.Book, query.Author, query.Category, query.Currency, page, pageSize);
+        var filter = new AggregateFilter(from, to, query.Book, query.Author, query.Category, page, pageSize);
 
         PagedResult<IAggregateEntity> result = granularity switch
         {
@@ -63,7 +63,6 @@ public class DashboardService : IDashboardService
             entity.Book,
             entity.Author,
             entity.Category,
-            entity.Currency,
             entity.SumValue,
             entity.TransactionCount
         );

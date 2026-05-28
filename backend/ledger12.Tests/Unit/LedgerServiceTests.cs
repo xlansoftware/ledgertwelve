@@ -23,7 +23,6 @@ public class LedgerServiceTests
         // Arrange
         var dto = new CreateTransactionDto(
             Value: 100.50m,
-            Currency: "USD",
             Category: "Food",
             Author: "Alice",
             Date: new DateTimeOffset(2025, 6, 1, 12, 0, 0, TimeSpan.Zero)
@@ -39,7 +38,6 @@ public class LedgerServiceTests
         // Assert
         Assert.NotNull(result);
         Assert.Equal(dto.Value, result.Value);
-        Assert.Equal(dto.Currency, result.Currency);
         Assert.Equal(dto.Category, result.Category);
         Assert.Equal(dto.Author, result.Author);
         Assert.Equal(dto.Date, result.Date);
@@ -52,7 +50,6 @@ public class LedgerServiceTests
         // Arrange
         var dto = new CreateTransactionDto(
             Value: 100m,
-            Currency: "USD",
             Category: "Food",
             Author: null
         );
@@ -75,7 +72,6 @@ public class LedgerServiceTests
         var before = DateTimeOffset.UtcNow;
         var dto = new CreateTransactionDto(
             Value: 100m,
-            Currency: "USD",
             Category: "Food",
             Author: "Alice",
             Date: null
@@ -100,7 +96,6 @@ public class LedgerServiceTests
         // Arrange
         var dto = new CreateTransactionDto(
             Value: 100m,
-            Currency: "USD",
             Category: "Food",
             Author: null
         );
@@ -119,7 +114,6 @@ public class LedgerServiceTests
         // Arrange
         var dto = new CreateTransactionDto(
             Value: 100m,
-            Currency: "USD",
             Category: "Food",
             Author: "explicit-author"
         );
@@ -141,7 +135,6 @@ public class LedgerServiceTests
         // Arrange
         var dto = new CreateTransactionDto(
             Value: 50m,
-            Currency: "EUR",
             Category: "Transport",
             Author: "Bob",
             Date: DateTimeOffset.UtcNow
@@ -166,7 +159,6 @@ public class LedgerServiceTests
         // Arrange
         var dto = new CreateTransactionDto(
             Value: 0m,
-            Currency: "USD",
             Category: "Food",
             Author: "Alice",
             Date: DateTimeOffset.UtcNow
@@ -181,52 +173,11 @@ public class LedgerServiceTests
     }
 
     [Fact]
-    public async Task CreateTransactionAsync_ThrowsArgumentNullException_WhenCurrencyIsNull()
-    {
-        // Arrange
-        var dto = new CreateTransactionDto(
-            Value: 100m,
-            Currency: null!,
-            Category: "Food",
-            Author: "Alice",
-            Date: DateTimeOffset.UtcNow
-        );
-
-        // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(
-            () => _service.CreateTransactionAsync(dto));
-
-        _repositoryMock.Verify(r => r.AddAsync(It.IsAny<Transaction>()), Times.Never);
-    }
-
-    [Theory]
-    [InlineData("")]
-    [InlineData("   ")]
-    public async Task CreateTransactionAsync_ThrowsArgumentException_WhenCurrencyIsEmptyOrWhitespace(string currency)
-    {
-        // Arrange
-        var dto = new CreateTransactionDto(
-            Value: 100m,
-            Currency: currency,
-            Category: "Food",
-            Author: "Alice",
-            Date: DateTimeOffset.UtcNow
-        );
-
-        // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(
-            () => _service.CreateTransactionAsync(dto));
-
-        _repositoryMock.Verify(r => r.AddAsync(It.IsAny<Transaction>()), Times.Never);
-    }
-
-    [Fact]
     public async Task CreateTransactionAsync_PropagatesRepositoryException_WhenAddAsyncFails()
     {
         // Arrange
         var dto = new CreateTransactionDto(
             Value: 100m,
-            Currency: "USD",
             Category: "Food",
             Author: "Alice",
             Date: DateTimeOffset.UtcNow

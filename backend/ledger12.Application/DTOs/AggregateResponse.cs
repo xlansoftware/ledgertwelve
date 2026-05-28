@@ -5,7 +5,6 @@ public record AggregateResponse(
     string Book,
     string Author,
     string Category,
-    string Currency,
     decimal SumValue,
     int TransactionCount
 );

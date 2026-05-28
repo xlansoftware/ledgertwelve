@@ -21,7 +21,7 @@ public class DashboardServiceTests
     public async Task GetDashboardAsync_DefaultsDateRange_WhenFromAndToAreNotProvided()
     {
         // Arrange
-        var query = new DashboardQuery(From: null, To: null, Book: null, Author: null, Category: null, Currency: null, Page: 1, PageSize: 20);
+        var query = new DashboardQuery(From: null, To: null, Book: null, Author: null, Category: null, Page: 1, PageSize: 20);
 
         _repositoryMock
             .Setup(r => r.GetAggregatesAsync<DailyAggregate>(It.IsAny<Granularity>(), It.IsAny<AggregateFilter>()))
@@ -45,7 +45,7 @@ public class DashboardServiceTests
         // Arrange
         var from = new DateOnly(2026, 1, 1);
         var to = new DateOnly(2026, 3, 31);
-        var query = new DashboardQuery(from, to, null, null, null, null, 1, 20);
+        var query = new DashboardQuery(from, to, null, null, null, 1, 20);
 
         _repositoryMock
             .Setup(r => r.GetAggregatesAsync<DailyAggregate>(It.IsAny<Granularity>(), It.IsAny<AggregateFilter>()))
@@ -67,7 +67,7 @@ public class DashboardServiceTests
         // Arrange
         var from = new DateOnly(2026, 6, 1);
         var to = new DateOnly(2026, 5, 1);
-        var query = new DashboardQuery(from, to, null, null, null, null, 1, 20);
+        var query = new DashboardQuery(from, to, null, null, null, 1, 20);
 
         // Act & Assert
         var ex = await Assert.ThrowsAsync<ArgumentException>(
@@ -86,7 +86,7 @@ public class DashboardServiceTests
     public async Task GetDashboardAsync_SelectsCorrectAggregateType_ByGranularity(Granularity granularity, Type expectedType)
     {
         // Arrange
-        var query = new DashboardQuery(null, null, null, null, null, null, 1, 20);
+        var query = new DashboardQuery(null, null, null, null, null, 1, 20);
 
         // Setup via reflection to avoid compile-time type constraints
         var setupMethod = typeof(DashboardServiceTests)
@@ -122,10 +122,10 @@ public class DashboardServiceTests
     public async Task GetDashboardAsync_ReturnsMappedAggregateResponse()
     {
         // Arrange
-        var query = new DashboardQuery(null, null, null, null, null, null, 1, 20);
+        var query = new DashboardQuery(null, null, null, null, null, 1, 20);
         var aggregates = new List<DailyAggregate>
         {
-            new(new DateOnly(2026, 5, 26), "Personal", "Alice", "Food", "USD", 150.50m)
+            new(new DateOnly(2026, 5, 26), "Personal", "Alice", "Food", 150.50m)
         };
 
         _repositoryMock
@@ -142,7 +142,6 @@ public class DashboardServiceTests
         Assert.Equal("Personal", item.Book);
         Assert.Equal("Alice", item.Author);
         Assert.Equal("Food", item.Category);
-        Assert.Equal("USD", item.Currency);
         Assert.Equal(150.50m, item.SumValue);
         Assert.Equal(1, item.TransactionCount);
         Assert.Equal(1, result.TotalCount);
@@ -154,7 +153,7 @@ public class DashboardServiceTests
     public async Task GetDashboardAsync_ReturnsEmptyResult_WhenNoAggregatesMatch()
     {
         // Arrange
-        var query = new DashboardQuery(new DateOnly(2025, 1, 1), new DateOnly(2025, 1, 31), null, null, null, null, 1, 20);
+        var query = new DashboardQuery(new DateOnly(2025, 1, 1), new DateOnly(2025, 1, 31), null, null, null, 1, 20);
 
         _repositoryMock
             .Setup(r => r.GetAggregatesAsync<DailyAggregate>(Granularity.Daily, It.IsAny<AggregateFilter>()))
@@ -172,7 +171,7 @@ public class DashboardServiceTests
     public async Task GetDashboardAsync_PassesPaginationParamsToRepository()
     {
         // Arrange
-        var query = new DashboardQuery(null, null, null, null, null, null, Page: 3, PageSize: 10);
+        var query = new DashboardQuery(null, null, null, null, null, Page: 3, PageSize: 10);
 
         _repositoryMock
             .Setup(r => r.GetAggregatesAsync<DailyAggregate>(It.IsAny<Granularity>(), It.IsAny<AggregateFilter>()))
@@ -195,7 +194,7 @@ public class DashboardServiceTests
     public async Task GetDashboardAsync_PassesFilterParamsToRepository()
     {
         // Arrange
-        var query = new DashboardQuery(null, null, Book: "Personal", Author: "Alice", Category: "Food", Currency: "USD", Page: 1, PageSize: 20);
+        var query = new DashboardQuery(null, null, Book: "Personal", Author: "Alice", Category: "Food", Page: 1, PageSize: 20);
 
         _repositoryMock
             .Setup(r => r.GetAggregatesAsync<DailyAggregate>(It.IsAny<Granularity>(), It.IsAny<AggregateFilter>()))
@@ -210,8 +209,7 @@ public class DashboardServiceTests
             It.Is<AggregateFilter>(f =>
                 f.Book == "Personal" &&
                 f.Author == "Alice" &&
-                f.Category == "Food" &&
-                f.Currency == "USD")
+                f.Category == "Food")
         ), Times.Once);
     }
 
@@ -219,7 +217,7 @@ public class DashboardServiceTests
     public async Task GetDashboardAsync_ClampsPageToAtLeastOne()
     {
         // Arrange
-        var query = new DashboardQuery(null, null, null, null, null, null, Page: 0, PageSize: 20);
+        var query = new DashboardQuery(null, null, null, null, null, Page: 0, PageSize: 20);
 
         _repositoryMock
             .Setup(r => r.GetAggregatesAsync<DailyAggregate>(It.IsAny<Granularity>(), It.IsAny<AggregateFilter>()))
@@ -239,8 +237,8 @@ public class DashboardServiceTests
     public async Task GetDashboardAsync_ClampsPageSizeBetweenOneAndOneThousand()
     {
         // Arrange
-        var queryTooSmall = new DashboardQuery(null, null, null, null, null, null, Page: 1, PageSize: 0);
-        var queryTooLarge = new DashboardQuery(null, null, null, null, null, null, Page: 1, PageSize: 5000);
+        var queryTooSmall = new DashboardQuery(null, null, null, null, null, Page: 1, PageSize: 0);
+        var queryTooLarge = new DashboardQuery(null, null, null, null, null, Page: 1, PageSize: 5000);
 
         _repositoryMock
             .Setup(r => r.GetAggregatesAsync<DailyAggregate>(It.IsAny<Granularity>(), It.IsAny<AggregateFilter>()))

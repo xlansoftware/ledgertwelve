@@ -224,17 +224,13 @@ namespace ledger12.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("Currency")
-                        .HasMaxLength(10)
-                        .HasColumnType("TEXT");
-
                     b.Property<decimal>("SumValue")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("TransactionCount")
                         .HasColumnType("INTEGER");
 
-                    b.HasKey("PeriodStart", "Book", "Author", "Category", "Currency");
+                    b.HasKey("PeriodStart", "Book", "Author", "Category");
 
                     b.ToTable("DailyAggregates", (string)null);
                 });
@@ -256,17 +252,13 @@ namespace ledger12.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("Currency")
-                        .HasMaxLength(10)
-                        .HasColumnType("TEXT");
-
                     b.Property<decimal>("SumValue")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("TransactionCount")
                         .HasColumnType("INTEGER");
 
-                    b.HasKey("PeriodStart", "Book", "Author", "Category", "Currency");
+                    b.HasKey("PeriodStart", "Book", "Author", "Category");
 
                     b.ToTable("MonthlyAggregates", (string)null);
                 });
@@ -289,11 +281,6 @@ namespace ledger12.Infrastructure.Migrations
                     b.Property<string>("Category")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Currency")
-                        .IsRequired()
-                        .HasMaxLength(10)
                         .HasColumnType("TEXT");
 
                     b.Property<DateTimeOffset>("Date")
@@ -328,17 +315,13 @@ namespace ledger12.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("Currency")
-                        .HasMaxLength(10)
-                        .HasColumnType("TEXT");
-
                     b.Property<decimal>("SumValue")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("TransactionCount")
                         .HasColumnType("INTEGER");
 
-                    b.HasKey("PeriodStart", "Book", "Author", "Category", "Currency");
+                    b.HasKey("PeriodStart", "Book", "Author", "Category");
 
                     b.ToTable("WeeklyAggregates", (string)null);
                 });
@@ -360,17 +343,13 @@ namespace ledger12.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("Currency")
-                        .HasMaxLength(10)
-                        .HasColumnType("TEXT");
-
                     b.Property<decimal>("SumValue")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("TransactionCount")
                         .HasColumnType("INTEGER");
 
-                    b.HasKey("PeriodStart", "Book", "Author", "Category", "Currency");
+                    b.HasKey("PeriodStart", "Book", "Author", "Category");
 
                     b.ToTable("YearlyAggregates", (string)null);
                 });

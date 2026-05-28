@@ -33,10 +33,6 @@ public class AppDbContext : IdentityDbContext<AppUser>
                   .HasColumnType("decimal(18,2)")
                   .IsRequired();
 
-            entity.Property(t => t.Currency)
-                  .HasMaxLength(10)
-                  .IsRequired();
-
             entity.Property(t => t.Category)
                   .HasMaxLength(100)
                   .IsRequired();
@@ -111,8 +107,7 @@ public class AppDbContext : IdentityDbContext<AppUser>
             entity.ToTable(tableName);
 
             entity.HasKey(nameof(IAggregateEntity.PeriodStart), nameof(IAggregateEntity.Book),
-                nameof(IAggregateEntity.Author), nameof(IAggregateEntity.Category),
-                nameof(IAggregateEntity.Currency));
+                nameof(IAggregateEntity.Author), nameof(IAggregateEntity.Category));
 
             entity.Property(nameof(IAggregateEntity.PeriodStart))
                   .IsRequired();
@@ -127,10 +122,6 @@ public class AppDbContext : IdentityDbContext<AppUser>
 
             entity.Property(nameof(IAggregateEntity.Category))
                   .HasMaxLength(100)
-                  .IsRequired();
-
-            entity.Property(nameof(IAggregateEntity.Currency))
-                  .HasMaxLength(10)
                   .IsRequired();
 
             entity.Property(nameof(IAggregateEntity.SumValue))

@@ -103,7 +103,6 @@ public class LedgerController : ControllerBase
         return new TransactionResponse(
             transaction.Id,
             transaction.Value,
-            transaction.Currency,
             transaction.Category,
             transaction.Author,
             transaction.Book,

@@ -26,7 +26,6 @@ public class DashboardController : ControllerBase
         [FromQuery] string? book,
         [FromQuery] string? author,
         [FromQuery] string? category,
-        [FromQuery] string? currency,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20)
     {
@@ -50,7 +49,7 @@ public class DashboardController : ControllerBase
         if (from.HasValue && to.HasValue && from > to)
             return BadRequest(new { error = "The 'from' date must not be after the 'to' date." });
 
-        var query = new DashboardQuery(from, to, book, author, category, currency, page, pageSize);
+        var query = new DashboardQuery(from, to, book, author, category, page, pageSize);
 
         try
         {

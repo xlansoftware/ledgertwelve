@@ -6,7 +6,6 @@ public record AggregateFilter(
     string? Book,
     string? Author,
     string? Category,
-    string? Currency,
     int Page,
     int PageSize
 );

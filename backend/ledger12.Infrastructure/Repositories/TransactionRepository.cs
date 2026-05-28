@@ -31,9 +31,6 @@ public class TransactionRepository : ITransactionRepository
         if (filter.Category is not null)
             query = query.Where(a => a.Category == filter.Category);
 
-        if (filter.Currency is not null)
-            query = query.Where(a => a.Currency == filter.Currency);
-
         query = query.OrderBy(a => a.PeriodStart);
 
         var totalCount = await query.CountAsync();
@@ -70,9 +67,6 @@ public class TransactionRepository : ITransactionRepository
         if (category is not null)
             query = query.Where(t => t.Category == category);
 
-        if (currency is not null)
-            query = query.Where(t => t.Currency == currency);
-
         query = query.OrderByDescending(t => t.Date);
 
         var totalCount = await query.CountAsync();
@@ -107,19 +101,19 @@ public class TransactionRepository : ITransactionRepository
 
         await UpsertAggregateAsync<DailyAggregate>(
             _context.DailyAggregates, PeriodHelper.GetPeriodStart(date, Granularity.Daily),
-            book, transaction.Author, transaction.Category, transaction.Currency, transaction.Value);
+            book, transaction.Author, transaction.Category, transaction.Value);
 
         await UpsertAggregateAsync<WeeklyAggregate>(
             _context.WeeklyAggregates, PeriodHelper.GetPeriodStart(date, Granularity.Weekly),
-            book, transaction.Author, transaction.Category, transaction.Currency, transaction.Value);
+            book, transaction.Author, transaction.Category, transaction.Value);
 
         await UpsertAggregateAsync<MonthlyAggregate>(
             _context.MonthlyAggregates, PeriodHelper.GetPeriodStart(date, Granularity.Monthly),
-            book, transaction.Author, transaction.Category, transaction.Currency, transaction.Value);
+            book, transaction.Author, transaction.Category, transaction.Value);
 
         await UpsertAggregateAsync<YearlyAggregate>(
             _context.YearlyAggregates, PeriodHelper.GetPeriodStart(date, Granularity.Yearly),
-            book, transaction.Author, transaction.Category, transaction.Currency, transaction.Value);
+            book, transaction.Author, transaction.Category, transaction.Value);
 
         await _context.SaveChangesAsync();
         return transaction;
@@ -153,7 +147,6 @@ public class TransactionRepository : ITransactionRepository
                 Book = t.Book ?? string.Empty,
                 t.Author,
                 t.Category,
-                t.Currency
             })
             .Select(g => Activator.CreateInstance(
                 typeof(T),
@@ -161,7 +154,6 @@ public class TransactionRepository : ITransactionRepository
                 g.Key.Book,
                 g.Key.Author,
                 g.Key.Category,
-                g.Key.Currency,
                 g.Sum(t => t.Value),
                 g.Count()) as T
             ?? throw new InvalidOperationException($"Failed to create instance of {typeof(T).Name}"))
@@ -174,11 +166,10 @@ public class TransactionRepository : ITransactionRepository
         string book,
         string author,
         string category,
-        string currency,
         decimal value)
         where T : class, IAggregateEntity
     {
-        var existing = await dbSet.FindAsync(periodStart, book, author, category, currency);
+        var existing = await dbSet.FindAsync(periodStart, book, author, category);
 
         if (existing is not null)
         {
@@ -192,7 +183,6 @@ public class TransactionRepository : ITransactionRepository
                 book,
                 author,
                 category,
-                currency,
                 value,
                 1) as T;
             dbSet.Add(aggregate!);
