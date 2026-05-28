@@ -6,6 +6,7 @@
   "scripts": {
     "dev:backend": "dotnet run --project backend/ledger12.API",
     "test:backend": "dotnet test backend/ledger12.slnx",
+    "test:frontend": "cd frontend && npm run test",
     "dev": "concurrently -n API,UI -c \"cyan,magenta\" \"dotnet run --project backend/ledger12.API\" \"npm run dev --prefix frontend\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

@@ -10,9 +10,26 @@ public static class DbInitializer
 {
     public static async Task SeedAsync(IServiceProvider serviceProvider)
     {
+        await SeedBookAsync(serviceProvider);
         await SeedUserAsync(serviceProvider);
         await SeedCategoriesAsync(serviceProvider);
         await SeedTransactionsAsync(serviceProvider);
+    }
+
+    private static async Task SeedBookAsync(IServiceProvider serviceProvider)
+    {
+        var context = serviceProvider.GetRequiredService<AppDbContext>();
+
+        if (await context.Books.AnyAsync())
+            return;
+
+        var books = new List<Book>
+        {
+            new("Ledger", ""),
+        };
+
+        context.Books.AddRange(books);
+        await context.SaveChangesAsync();
     }
 
     private static async Task SeedUserAsync(IServiceProvider serviceProvider)
