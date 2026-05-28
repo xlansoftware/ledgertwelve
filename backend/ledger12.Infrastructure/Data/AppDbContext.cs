@@ -14,6 +14,7 @@ public class AppDbContext : IdentityDbContext<AppUser>
     public DbSet<MonthlyAggregate> MonthlyAggregates => Set<MonthlyAggregate>();
     public DbSet<YearlyAggregate> YearlyAggregates => Set<YearlyAggregate>();
     public DbSet<Category> Categories => Set<Category>();
+    public DbSet<Book> Books => Set<Book>();
 
     public AppDbContext(DbContextOptions<AppDbContext> options)
         : base(options)
@@ -76,6 +77,28 @@ public class AppDbContext : IdentityDbContext<AppUser>
                   .HasMaxLength(100);
 
             entity.HasIndex(c => c.Name)
+                  .IsUnique();
+        });
+
+        builder.Entity<Book>(entity =>
+        {
+            entity.HasKey(b => b.Id);
+
+            entity.Property(b => b.Name)
+                  .HasMaxLength(100)
+                  .IsRequired();
+
+            entity.Property(b => b.Currency)
+                  .HasMaxLength(10)
+                  .IsRequired();
+
+            entity.Property(b => b.Color)
+                  .HasMaxLength(7);
+
+            entity.Property(b => b.Status)
+                  .HasMaxLength(50);
+
+            entity.HasIndex(b => b.Name)
                   .IsUnique();
         });
     }

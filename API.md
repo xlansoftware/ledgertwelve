@@ -280,3 +280,73 @@ Full replace.
 **Response `204`:** No body.
 
 **Error `404`.**
+
+---
+
+## Books
+
+Requires `[Authorize]`.
+
+### `GET /api/books`
+
+Returns all books.
+
+**Response `200`:**
+```json
+[
+  {
+    "id":       "guid",
+    "name":     "Personal",
+    "currency": "USD",
+    "color":    "#22c55e",
+    "status":   "active"
+  }
+]
+```
+
+---
+
+### `POST /api/books`
+
+Create a new book.
+
+**Request body:**
+```json
+{
+  "name":     "Personal",   // required, 1–100 chars
+  "currency": "USD",        // required, 1–10 chars
+  "color":    "#22c55e",    // optional
+  "status":   "active"      // optional
+}
+```
+
+**Response `201`:** Created book (same shape as GET item) + `Location` header.
+
+**Errors:**
+- `400` — validation failure (missing name/currency, name too long, currency too long)
+- `409` — duplicate book name
+
+---
+
+### `PUT /api/books/{id:guid}`
+
+Full replace of an existing book.
+
+**Request body:** Same shape as POST. All fields optional except `name` and `currency`.
+
+**Response `200`:** Updated book (same shape as GET item).
+
+**Errors:**
+- `400` — validation failure
+- `404` — book not found
+- `409` — duplicate book name
+
+---
+
+### `DELETE /api/books/{id:guid}`
+
+Delete a book.
+
+**Response `204`:** No body.
+
+**Error `404`:** `{ "error": "Book with id '{id}' not found." }`
