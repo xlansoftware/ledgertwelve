@@ -1,5 +1,7 @@
 import type {
+  BookListResponse,
   CategoryListResponse,
+  CreateBookRequest,
   CreateCategoryRequest,
   CreateTransactionRequest,
   DashboardFilters,
@@ -9,11 +11,12 @@ import type {
   LogoutResponse,
   TransactionFilters,
   TransactionListResponse,
+  UpdateBookRequest,
   UpdateCategoryRequest,
   UpdateTransactionRequest,
   WhoamiResponse,
 } from '@/types/api.types'
-import type { Transaction } from '@/types/models'
+import type { Book, Transaction } from '@/types/models'
 
 // ---------------------------------------------------------------------------
 // Config
@@ -134,6 +137,39 @@ export function updateTransaction(
 
 export function deleteTransaction(id: string): Promise<void> {
   return request<void>(`/ledger/transactions/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+  })
+}
+
+// ---------------------------------------------------------------------------
+// Books
+// ---------------------------------------------------------------------------
+
+export function getBooks(): Promise<BookListResponse> {
+  return request<BookListResponse>('/books')
+}
+
+export function createBook(
+  data: CreateBookRequest,
+): Promise<Book> {
+  return request<Book>('/books', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+export function updateBook(
+  id: string,
+  data: UpdateBookRequest,
+): Promise<Book> {
+  return request<Book>(`/books/${encodeURIComponent(id)}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  })
+}
+
+export function deleteBook(id: string): Promise<void> {
+  return request<void>(`/books/${encodeURIComponent(id)}`, {
     method: 'DELETE',
   })
 }

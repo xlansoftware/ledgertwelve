@@ -17,6 +17,14 @@ export interface Category {
   icon: string | null
 }
 
+export interface Book {
+  id: string
+  name: string
+  currency: string
+  color: string | null
+  status: string
+}
+
 export interface DashboardAggregate {
   periodStart: string
   book: string

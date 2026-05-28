@@ -1,4 +1,4 @@
-import type { Transaction, DashboardAggregate, Category } from './models'
+import type { Transaction, Book, DashboardAggregate, Category } from './models'
 
 // ---------------------------------------------------------------------------
 // Generic wrappers
@@ -90,6 +90,26 @@ export interface UpdateCategoryRequest {
 }
 
 export type CategoryListResponse = Category[]
+
+// ---------------------------------------------------------------------------
+// Books
+// ---------------------------------------------------------------------------
+
+export interface CreateBookRequest {
+  name: string
+  currency: string
+  color?: string | null
+  status?: string
+}
+
+export interface UpdateBookRequest {
+  name: string
+  currency: string
+  color?: string | null
+  status?: string
+}
+
+export type BookListResponse = Book[]
 
 // ---------------------------------------------------------------------------
 // Dashboard

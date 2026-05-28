@@ -24,6 +24,14 @@ type Category = {
   icon: string | null
 }
 
+type Book = {
+  id: string
+  name: string
+  currency: string
+  color: string | null
+  status: string
+}
+
 type Aggregate = {
   periodStart: string
   book: string
@@ -58,6 +66,19 @@ const seedCategories: Category[] = [
 ]
 
 const categories: Category[] = [...seedCategories]
+
+// ---------------------------------------------------------------------------
+// Books in-memory store
+// ---------------------------------------------------------------------------
+
+let nextBookId = 0
+
+const seedBooks: Book[] = [
+  { id: 'b1', name: 'Personal', currency: 'USD', color: '#22c55e', status: 'active' },
+  { id: 'b2', name: 'Business', currency: 'EUR', color: '#3b82f6', status: 'active' },
+]
+
+const books: Book[] = [...seedBooks]
 
 // let loggedInUser: string | null = 'Alice' // start logged-in for convenience
 let loggedInUser: string | null = null
@@ -270,6 +291,82 @@ export const handlers = [
       return HttpResponse.json({ error: `Transaction with id '${params.id}' not found.` }, { status: 404 })
     }
     transactions.splice(idx, 1)
+    return new HttpResponse(null, { status: 204 })
+  }),
+
+  // ------------- Books -------------
+  http.get('/api/books', async () => {
+    return HttpResponse.json(books)
+  }),
+
+  http.post('/api/books', async ({ request }) => {
+    const body = (await request.json()) as {
+      name?: string
+      currency?: string
+      color?: string | null
+      status?: string
+    }
+
+    if (!body.name || !body.currency) {
+      return HttpResponse.json({ error: 'Name and currency are required.' }, { status: 400 })
+    }
+
+    const exists = books.some((b) => b.name.toLowerCase() === body.name!.toLowerCase())
+    if (exists) {
+      return HttpResponse.json({ error: 'A book with this name already exists.' }, { status: 409 })
+    }
+
+    const book: Book = {
+      id: `b-${++nextBookId}`,
+      name: body.name,
+      currency: body.currency,
+      color: body.color ?? null,
+      status: body.status ?? 'active',
+    }
+    books.push(book)
+    return HttpResponse.json(book, { status: 201 })
+  }),
+
+  http.put('/api/books/:id', async ({ params, request }) => {
+    const idx = books.findIndex((b) => b.id === params.id)
+    if (idx === -1) {
+      return HttpResponse.json({ error: `Book with id '${params.id}' not found.` }, { status: 404 })
+    }
+
+    const body = (await request.json()) as {
+      name?: string
+      currency?: string
+      color?: string | null
+      status?: string
+    }
+
+    if (!body.name || !body.currency) {
+      return HttpResponse.json({ error: 'Name and currency are required.' }, { status: 400 })
+    }
+
+    const duplicate = books.findIndex(
+      (b) => b.name.toLowerCase() === body.name!.toLowerCase() && b.id !== params.id,
+    )
+    if (duplicate !== -1) {
+      return HttpResponse.json({ error: 'A book with this name already exists.' }, { status: 409 })
+    }
+
+    books[idx] = {
+      ...books[idx],
+      name: body.name,
+      currency: body.currency,
+      color: body.color ?? books[idx].color,
+      status: body.status ?? books[idx].status,
+    }
+    return HttpResponse.json(books[idx])
+  }),
+
+  http.delete('/api/books/:id', async ({ params }) => {
+    const idx = books.findIndex((b) => b.id === params.id)
+    if (idx === -1) {
+      return HttpResponse.json({ error: `Book with id '${params.id}' not found.` }, { status: 404 })
+    }
+    books.splice(idx, 1)
     return new HttpResponse(null, { status: 204 })
   }),
 
