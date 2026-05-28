@@ -58,6 +58,7 @@ export interface CreateTransactionRequest {
   author?: string
   book?: string | null
   notes?: string | null
+  valueInBookCurrency?: number | null
   date?: string
 }
 
@@ -68,6 +69,7 @@ export interface UpdateTransactionRequest {
   author: string
   book?: string | null
   notes?: string | null
+  valueInBookCurrency?: number | null
   date: string
 }
 

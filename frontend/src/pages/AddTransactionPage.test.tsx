@@ -29,6 +29,7 @@ interface StoredTransaction {
   author: string;
   book: string | null;
   notes: string | null;
+  valueInBookCurrency: number | null;
   date: string;
 }
 
@@ -85,6 +86,7 @@ const server = setupServer(
       author: (body.author as string) ?? "TestUser",
       book: null,
       notes: null,
+      valueInBookCurrency: null,
       date: new Date().toISOString(),
     };
     return HttpResponse.json(tx, { status: 201 });
