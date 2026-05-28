@@ -204,3 +204,17 @@ cd backend && dotnet ef database update \
 ## When you are unsure
 
 If a task is ambiguous, ask one focused question before proceeding. Prefer doing less and confirming over doing more and breaking things. When in doubt about layer placement, default to the stricter interpretation (put it further inward).
+
+## Agent skills
+
+### Issue tracker
+
+Issues and PRDs live as markdown files under `.scratch/<feature-slug>/`. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five canonical roles use their default label strings. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context — one `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
