@@ -7,6 +7,7 @@ import { useCategoryStore } from "@/store/categoryStore"
 import { useTransactionStore } from "@/store/transactionStore"
 import { useUserStore } from "@/store/userStore"
 import type { CreateTransactionRequest } from "@/types/api.types"
+import { useBookStore } from "@/store/bookStore"
 
 export default function AddTransactionPage() {
   // -----------------------------------------------------------------------
@@ -22,6 +23,7 @@ export default function AddTransactionPage() {
 
   const { addTransaction } = useTransactionStore()
   const user = useUserStore((s) => s.user)
+  const currentBook = useBookStore((s) => s.currentBook)
 
   // -----------------------------------------------------------------------
   // Local form state
@@ -93,6 +95,7 @@ export default function AddTransactionPage() {
       category: category.name, // <— category name, not ID
       author: user ?? undefined,
       notes: notes || undefined,
+      book: currentBook?.name || "Ledger"
     }
 
     // 3. Submit

@@ -51,7 +51,13 @@ export const useBookStore = create<BookState>((set, get) => ({
       // Guard against stale responses from rapid calls
       if (seq !== fetchSeq) return
 
-      set({ books: data, isLoading: false })
+      // Update the current book
+      const currentBook = get().currentBook;
+      const book = data.find((b) => 
+        b.name?.toLowerCase() === (currentBook?.name ?? "Ledger").toLowerCase(),
+      )
+
+      set({ books: data, isLoading: false, currentBook: book || currentBook })
     } catch (err: unknown) {
       if (seq !== fetchSeq) return
 
