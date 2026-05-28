@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import type { CreateBookRequest, UpdateBookRequest } from '@/types/api.types'
 import type { Book } from '@/types/models'
 import * as api from '@/services/api'
+import { useTransactionStore } from './transactionStore'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -9,6 +10,7 @@ import * as api from '@/services/api'
 
 interface BookState {
   books: Book[]
+  currentBook: Book | null
   isLoading: boolean
   error: string | null
 
@@ -16,6 +18,7 @@ interface BookState {
   createBook: (data: CreateBookRequest) => Promise<void>
   updateBook: (id: string, data: UpdateBookRequest) => Promise<void>
   deleteBook: (id: string) => Promise<void>
+  openBook: (name: string | null) => Promise<void>
 }
 
 // ---------------------------------------------------------------------------
@@ -30,6 +33,7 @@ let fetchSeq = 0
 
 export const useBookStore = create<BookState>((set, get) => ({
   books: [],
+  currentBook: null,
   isLoading: false,
   error: null,
 
@@ -132,5 +136,19 @@ export const useBookStore = create<BookState>((set, get) => ({
 
     // Re-fetch to reconcile with server
     await get().fetchBooks()
+  },
+
+  // -----------------------------------------------------------------------
+  // openBook — select a book as the current context
+  // -----------------------------------------------------------------------
+
+  openBook: async (name: string | null) => {
+    const book = get().books.find((b) =>
+      b.name?.toLowerCase() === name?.toLowerCase(),
+    )
+    set({ currentBook: book ?? null })
+
+    // Push the book filter into the transaction store
+    useTransactionStore.getState().setFilters({ book: book?.name })
   },
 }))
