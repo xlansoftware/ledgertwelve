@@ -7,6 +7,5 @@ public record UpdateTransactionDto(
     string Author,
     DateTimeOffset Date,
     string? Book = null,
-    string? Notes = null,
-    decimal? ValueInBookCurrency = null
+    string? Notes = null
 );

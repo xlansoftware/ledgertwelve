@@ -306,9 +306,6 @@ namespace ledger12.Infrastructure.Data.Migrations
                     b.Property<decimal>("Value")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<decimal?>("ValueInBookCurrency")
-                        .HasColumnType("TEXT");
-
                     b.HasKey("Id");
 
                     b.ToTable("Transactions");

@@ -7,7 +7,6 @@ public class Transaction
     public string Currency { get; private set; } = null!;
     public string Category { get; private set; } = null!;
     public string? Book { get; private set; }
-    public decimal? ValueInBookCurrency { get; private set; }
     public string? Notes { get; private set; }
     public string Author { get; private set; } = null!;
     public DateTimeOffset Date { get; private set; }
@@ -21,8 +20,7 @@ public class Transaction
         string author,
         DateTimeOffset date,
         string? book = null,
-        string? notes = null,
-        decimal? valueInBookCurrency = null)
+        string? notes = null)
     {
         if (value == 0) throw new ArgumentException("Transaction value cannot be zero.", nameof(value));
         ArgumentException.ThrowIfNullOrWhiteSpace(currency);
@@ -36,7 +34,6 @@ public class Transaction
         Author = author;
         Book = book;
         Notes = notes;
-        ValueInBookCurrency = valueInBookCurrency;
         Date = date;
     }
 
@@ -47,8 +44,7 @@ public class Transaction
         string author,
         DateTimeOffset date,
         string? book = null,
-        string? notes = null,
-        decimal? valueInBookCurrency = null)
+        string? notes = null)
     {
         if (value == 0) throw new ArgumentException("Transaction value cannot be zero.", nameof(value));
         ArgumentException.ThrowIfNullOrWhiteSpace(currency);
@@ -61,7 +57,6 @@ public class Transaction
         Author = author;
         Book = book;
         Notes = notes;
-        ValueInBookCurrency = valueInBookCurrency;
         Date = date;
     }
 }
