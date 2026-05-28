@@ -7,7 +7,7 @@ using ledger12.Infrastructure.Data;
 
 #nullable disable
 
-namespace ledger12.Infrastructure.Data.Migrations
+namespace ledger12.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
     partial class AppDbContextModelSnapshot : ModelSnapshot

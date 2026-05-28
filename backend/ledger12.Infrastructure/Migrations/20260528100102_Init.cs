@@ -3,10 +3,10 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace ledger12.Infrastructure.Data.Migrations
+namespace ledger12.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class Init : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -48,6 +48,122 @@ namespace ledger12.Infrastructure.Data.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_AspNetUsers", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Books",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    Name = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
+                    Currency = table.Column<string>(type: "TEXT", maxLength: 10, nullable: false),
+                    Color = table.Column<string>(type: "TEXT", maxLength: 7, nullable: true),
+                    Status = table.Column<string>(type: "TEXT", maxLength: 50, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Books", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Categories",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    Name = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
+                    Color = table.Column<string>(type: "TEXT", maxLength: 7, nullable: true),
+                    DisplayOrder = table.Column<int>(type: "INTEGER", nullable: true),
+                    Icon = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Categories", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "DailyAggregates",
+                columns: table => new
+                {
+                    PeriodStart = table.Column<DateOnly>(type: "TEXT", nullable: false),
+                    Book = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
+                    Author = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
+                    Category = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
+                    Currency = table.Column<string>(type: "TEXT", maxLength: 10, nullable: false),
+                    SumValue = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    TransactionCount = table.Column<int>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_DailyAggregates", x => new { x.PeriodStart, x.Book, x.Author, x.Category, x.Currency });
+                });
+
+            migrationBuilder.CreateTable(
+                name: "MonthlyAggregates",
+                columns: table => new
+                {
+                    PeriodStart = table.Column<DateOnly>(type: "TEXT", nullable: false),
+                    Book = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
+                    Author = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
+                    Category = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
+                    Currency = table.Column<string>(type: "TEXT", maxLength: 10, nullable: false),
+                    SumValue = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    TransactionCount = table.Column<int>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_MonthlyAggregates", x => new { x.PeriodStart, x.Book, x.Author, x.Category, x.Currency });
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Transactions",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    Value = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Currency = table.Column<string>(type: "TEXT", maxLength: 10, nullable: false),
+                    Category = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
+                    Book = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
+                    Notes = table.Column<string>(type: "TEXT", maxLength: 1000, nullable: true),
+                    Author = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
+                    Date = table.Column<DateTimeOffset>(type: "TEXT", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Transactions", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "WeeklyAggregates",
+                columns: table => new
+                {
+                    PeriodStart = table.Column<DateOnly>(type: "TEXT", nullable: false),
+                    Book = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
+                    Author = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
+                    Category = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
+                    Currency = table.Column<string>(type: "TEXT", maxLength: 10, nullable: false),
+                    SumValue = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    TransactionCount = table.Column<int>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_WeeklyAggregates", x => new { x.PeriodStart, x.Book, x.Author, x.Category, x.Currency });
+                });
+
+            migrationBuilder.CreateTable(
+                name: "YearlyAggregates",
+                columns: table => new
+                {
+                    PeriodStart = table.Column<DateOnly>(type: "TEXT", nullable: false),
+                    Book = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
+                    Author = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
+                    Category = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
+                    Currency = table.Column<string>(type: "TEXT", maxLength: 10, nullable: false),
+                    SumValue = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    TransactionCount = table.Column<int>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_YearlyAggregates", x => new { x.PeriodStart, x.Book, x.Author, x.Category, x.Currency });
                 });
 
             migrationBuilder.CreateTable(
@@ -96,8 +212,8 @@ namespace ledger12.Infrastructure.Data.Migrations
                 name: "AspNetUserLogins",
                 columns: table => new
                 {
-                    LoginProvider = table.Column<string>(type: "TEXT", maxLength: 128, nullable: false),
-                    ProviderKey = table.Column<string>(type: "TEXT", maxLength: 128, nullable: false),
+                    LoginProvider = table.Column<string>(type: "TEXT", nullable: false),
+                    ProviderKey = table.Column<string>(type: "TEXT", nullable: false),
                     ProviderDisplayName = table.Column<string>(type: "TEXT", nullable: true),
                     UserId = table.Column<string>(type: "TEXT", nullable: false)
                 },
@@ -141,8 +257,8 @@ namespace ledger12.Infrastructure.Data.Migrations
                 columns: table => new
                 {
                     UserId = table.Column<string>(type: "TEXT", nullable: false),
-                    LoginProvider = table.Column<string>(type: "TEXT", maxLength: 128, nullable: false),
-                    Name = table.Column<string>(type: "TEXT", maxLength: 128, nullable: false),
+                    LoginProvider = table.Column<string>(type: "TEXT", nullable: false),
+                    Name = table.Column<string>(type: "TEXT", nullable: false),
                     Value = table.Column<string>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
@@ -192,6 +308,18 @@ namespace ledger12.Infrastructure.Data.Migrations
                 table: "AspNetUsers",
                 column: "NormalizedUserName",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Books_Name",
+                table: "Books",
+                column: "Name",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Categories_Name",
+                table: "Categories",
+                column: "Name",
+                unique: true);
         }
 
         /// <inheritdoc />
@@ -211,6 +339,27 @@ namespace ledger12.Infrastructure.Data.Migrations
 
             migrationBuilder.DropTable(
                 name: "AspNetUserTokens");
+
+            migrationBuilder.DropTable(
+                name: "Books");
+
+            migrationBuilder.DropTable(
+                name: "Categories");
+
+            migrationBuilder.DropTable(
+                name: "DailyAggregates");
+
+            migrationBuilder.DropTable(
+                name: "MonthlyAggregates");
+
+            migrationBuilder.DropTable(
+                name: "Transactions");
+
+            migrationBuilder.DropTable(
+                name: "WeeklyAggregates");
+
+            migrationBuilder.DropTable(
+                name: "YearlyAggregates");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");

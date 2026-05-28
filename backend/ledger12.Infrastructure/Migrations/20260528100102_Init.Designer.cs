@@ -8,11 +8,11 @@ using ledger12.Infrastructure.Data;
 
 #nullable disable
 
-namespace ledger12.Infrastructure.Data.Migrations
+namespace ledger12.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260528043447_AddBooksTable")]
-    partial class AddBooksTable
+    [Migration("20260528100102_Init")]
+    partial class Init
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
