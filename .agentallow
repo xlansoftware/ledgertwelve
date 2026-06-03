@@ -1,0 +1,38 @@
+# .agentallow — Process-based bypass rules
+# Lines starting with `#` are comments. Empty lines are ignored.
+#
+# This file defines which processes can BYPASS the hiding rules of AgentIgnore.
+# Each entry specifies a process name, cmdline pattern, or binary path whose
+# filesystem requests will see hidden files.
+#
+# ―― Process name / cmdline matching ――
+#   Default (e.g., `node`):
+#       Regex matched against the process comm name OR full cmdline.
+#       Ancestors are also checked (walk up the parent chain).
+#   Prefix `=` (e.g., `=npm`):
+#       Exact string match against comm OR cmdline.
+#       Ancestors are still checked.
+#   Suffix `!` after name (e.g., `node!`, `=npm!`):
+#       Match ONLY the exact process, NOT its ancestors.
+#
+# ―― Binary path matching (entry starts with `/`) ――
+#   Default (e.g., `/usr/bin/node`):
+#       Literal path match; matches process at that path OR any ancestor.
+#   Suffix `!` (e.g., `/usr/bin/node!`):
+#       Match ONLY the process at that exact path, no ancestor walk.
+#   Binary paths are always compared literally (not regex).
+#
+# ―― Examples ――
+#   node              # regex; matches `node`, `nodejs`, any cmdline
+#                     # containing `node`, and any child processes
+#   =npm              # exact; matches only processes whose comm or
+#                     # cmdline equals `npm` (and their children)
+#   ^npm run          # matches cmdline starting with `npm run` (and their children)
+#                     # 
+#   =bash!            # exact; matches only bash itself, not commands
+#                     # run inside it
+#   node!             # regex; matches processes whose comm/cmdline
+#                     # matches /node/, but does NOT walk up parents
+#   /usr/bin/node     # literal path, matches process or any child
+#   /usr/bin/java!    # literal path, matches only that exact process
+^npm

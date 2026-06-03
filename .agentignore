@@ -1,0 +1,23 @@
+# .agentignore — Files and patterns that are HIDDEN from the AI agent.
+# Lines starting with `#` are comments.
+# Syntax: standard gitignore pattern syntax (same as .gitignore).
+#
+# This file was initialized from your existing .gitignore.
+# You may add or remove patterns to control what the agent can see.
+#
+# .NET
+**/bin/
+**/obj/
+*.user
+appsettings.Development.json
+dotnet
+
+# Node
+node_modules/
+frontend/dist/
+
+# Misc
+.DS_Store
+.env
+
+backend/ledger12.API/data/ledger12.*
