@@ -4,6 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "ai": "agentignore",
+    "pi": "agentignore run pi",
     "dev:backend": "dotnet run --project backend/ledger12.API",
     "test:backend": "dotnet test backend/ledger12.slnx",
     "test:frontend": "cd frontend && npm run test",
@@ -15,6 +17,7 @@
   "license": "ISC",
   "type": "commonjs",
   "devDependencies": {
+    "@xlansoftware/agentignore": "^0.4.2",
     "concurrently": "^9.2.1"
   }
 }
