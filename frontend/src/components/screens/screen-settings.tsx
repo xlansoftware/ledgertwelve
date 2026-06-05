@@ -166,7 +166,7 @@ export default function Settings() {
                 <Label htmlFor="space-select">Current Book:</Label>
                 <Select
                   value={current?.id ?? ""}
-                  onValueChange={(value) => handleChangeSpace(value)}
+                  onValueChange={(value: string) => handleChangeSpace(value)}
                 >
                   <SelectTrigger className="w-[200px]" id="space-select">
                     <SelectValue placeholder="Select a space" />

@@ -64,7 +64,7 @@ export function ExchangeRateDialog({
     <Drawer
       direction="top"
       open={isOpen}
-      onOpenChange={(open) => !open && onCancel()}
+      onOpenChange={(open: boolean) => !open && onCancel()}
     >
       <DrawerContent>
         <DrawerHeader>

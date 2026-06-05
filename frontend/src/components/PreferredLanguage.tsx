@@ -61,7 +61,7 @@ export function PreferredLanguage({ id, disabled }: PreferredLanguageProps) {
                 <CommandItem
                   key={language.code}
                   value={language.code}
-                  onSelect={async (currentValue) => {
+                  onSelect={async (currentValue: string) => {
                     await setSetting(
                       "Language",
                       currentValue === value ? "" : currentValue

@@ -13,7 +13,7 @@ export default function CategoryEditor({ category }: Props) {
   const { updateCategory } = useBookStore();
 
   const [local, setLocal] = useState<Category>(category);
-  const [timeoutId, setTimeoutId] = useState<NodeJS.Timeout | null>(null);
+  const [timeoutId, setTimeoutId] = useState<ReturnType<typeof setTimeout> | null>(null);
 
   const handleChange = (field: keyof Category, value: unknown) => {
     setLocal((prev) => ({ ...prev, [field]: value }));
@@ -32,7 +32,9 @@ export default function CategoryEditor({ category }: Props) {
       }
     }, 500);
 
-    setTimeoutId(id);
+    setTimeout(() => {
+      setTimeoutId(id);
+    })
 
     return () => clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps

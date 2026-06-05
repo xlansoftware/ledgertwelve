@@ -60,7 +60,7 @@ export default function CategoryReplaceDialog({
         </DialogHeader>
 
         <div className="space-y-2">
-          <Select onValueChange={(val) => setReplacementId(Number(val))}>
+          <Select onValueChange={(val: unknown) => setReplacementId(Number(val))}>
             <SelectTrigger>
               <SelectValue placeholder="Select replacement category" />
             </SelectTrigger>

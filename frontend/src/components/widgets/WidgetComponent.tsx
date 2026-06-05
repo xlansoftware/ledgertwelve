@@ -58,7 +58,7 @@ export const WidgetComponent: React.FC<{ params: WidgetParams }> = ({
               <XAxis dataKey={axisKey} />
               {params.showYAxis && <YAxis dataKey={dataKeys[0]} />}
               <Tooltip
-                formatter={(value: number, name: string) => [`${value}`, name]}
+                formatter={(value, name) => [`${value}`, name]}
               />
               {params.showLegend && <Legend />}
               {ChartElement}

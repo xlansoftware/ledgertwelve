@@ -54,7 +54,7 @@ export default function Header({ currentPath }: HeaderProps) {
           <Tabs
             value={getPathValue()}
             className="ml-auto"
-            onValueChange={(value) => navigate(value)}
+            onValueChange={(value: string) => navigate(value)}
           >
             <TabsList>
               <TabsTrigger aria-label="Add Screen" value="/">Add</TabsTrigger>

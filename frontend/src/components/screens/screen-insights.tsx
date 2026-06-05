@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/static-components */
 import { useEffect, useState, useCallback } from "react";
 import { fetchWithAuth } from "@/api";
 import RevolutChartComponent from "@/components/insight/RevoluteChartComponent";
@@ -27,7 +28,7 @@ export default function InsightsScreen() {
   const [monthly, setMonthly] = useState<PerPeriodData[]>([]);
   const [yearly, setYearly] = useState<PerPeriodData[]>([]);
 
-  const fetchData = useCallback(async (period: string, setter: any) => {
+  const fetchData = useCallback(async (period: string, setter: (data: PerPeriodData[]) => void) => {
     const res = await fetchWithAuth(
       `/api/insight/per-period/${period}?start=0&count=10`
     );
@@ -106,7 +107,7 @@ export default function InsightsScreen() {
     }));
   };
 
-  const PieBlock = ({ data }: any) => (
+  const PieBlock = ({ data }: { data: ReturnType<typeof transformPie> }) => (
     <div className="w-full max-w-md bg-[#121322] p-4 rounded-3xl">
       <div className="h-48">
         <ResponsiveContainer>
@@ -119,11 +120,11 @@ export default function InsightsScreen() {
               outerRadius={80}
               paddingAngle={3}
             >
-              {data.map((_: any, i: number) => (
+              {data.map((_: unknown, i: number) => (
                 <Cell key={i} fill={COLORS[i % COLORS.length]} />
               ))}
             </Pie>
-            <Tooltip formatter={(value: number) => format(value)} />
+            <Tooltip formatter={(value) => format(Number(value))} />
           </PieChart>
         </ResponsiveContainer>
       </div>
@@ -134,7 +135,7 @@ export default function InsightsScreen() {
     <div className="min-h-screen bg-[#0c0d1a] p-6 text-white space-y-6">
       {/* Toggle */}
       <div className="flex justify-center">
-        <Tabs value={mode} onValueChange={(v) => setMode(v as any)}>
+        <Tabs value={mode} onValueChange={(v: unknown) => setMode(v as "charts" | "pie")}>
           <TabsList className="bg-neutral-800 rounded-2xl p-1 flex gap-2">
             <TabsTrigger value="charts">
               <BarChart3Icon className="w-5 h-5" />

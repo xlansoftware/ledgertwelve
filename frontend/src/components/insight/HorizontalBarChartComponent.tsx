@@ -58,7 +58,7 @@ export default function HorizontalBarChartComponent({
           }}
         >
           <Tooltip
-            formatter={(value: number, name: string) => [`${value}`, name]}
+            formatter={(value, name) => [`${value}`, name]}
           />
 
           <CartesianGrid horizontal={false} />
@@ -78,7 +78,7 @@ export default function HorizontalBarChartComponent({
           />
           <Bar
             dataKey="value"
-            layout="vertical"
+            // layout="vertical"
             fill="var(--color-desktop)"
             isAnimationActive={false}
             radius={4}

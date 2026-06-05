@@ -103,7 +103,7 @@ export default function SpaceMergeDialog({
           <Label htmlFor="space-select">Target Book:</Label>
           <Select
             value={selectedSpace?.id ?? ""}
-            onValueChange={(value) => handleChangeSpace(value)}
+            onValueChange={(value: string) => handleChangeSpace(value)}
           >
             <SelectTrigger className="w-[200px]" id="space-select">
               <SelectValue placeholder="Select a book" />

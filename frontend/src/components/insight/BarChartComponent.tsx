@@ -34,7 +34,7 @@ export default function BarChartComponent({
       <ResponsiveContainer width="100%" height={300}>
         <BarChart data={data} className="pt-5">
           <Tooltip
-            formatter={(value: number, name: string) => [`${value}`, name]}
+            formatter={(value, name) => [`${value}`, name]}
           />
 
           <CartesianGrid vertical={false} />

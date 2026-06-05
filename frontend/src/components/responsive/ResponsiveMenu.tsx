@@ -12,7 +12,7 @@ import {
 import { Button } from "../ui/button";
 import { createContext, useContext, useState } from "react";
 import useIsMobile from "@/hooks/useIsMobile";
-import { DialogTitle } from "@radix-ui/react-dialog";
+import { DialogTitle } from "../ui/dialog";
 
 const ResponsiveMenuContext = createContext<{
   isOpen: boolean;

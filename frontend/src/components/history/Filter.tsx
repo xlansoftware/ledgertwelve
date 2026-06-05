@@ -150,7 +150,7 @@ export default function Filter({
                           ? new Date(localFilter.startDate)
                           : undefined
                       }
-                      onSelect={(date) =>
+                      onSelect={(date: Date) =>
                         setLocalFilter((prev) => ({
                           ...prev,
                           startDate: date?.toISOString(),
@@ -181,7 +181,7 @@ export default function Filter({
                           ? new Date(localFilter.endDate)
                           : undefined
                       }
-                      onSelect={(date) =>
+                      onSelect={(date: Date) =>
                         setLocalFilter((prev) => ({
                           ...prev,
                           endDate: date?.toISOString(),
