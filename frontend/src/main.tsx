@@ -1,18 +1,20 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import { BrowserRouter } from 'react-router-dom'
-import './index.css'
-import App from './App.tsx'
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import "./index.css";
+import "./app.css";
+import Home from "./app/page.tsx";
+import { ThemeProvider } from "./components/theme-context.tsx";
+import { ConfirmDialogProvider } from "./components/dialog/ConfirmDialogContext.tsx";
+import { SuccessOverlayProvider } from "./components/success/index.ts";
 
-if (import.meta.env.DEV) {
-  const { worker } = await import('./mocks/browser')
-  await worker.start()
-}
-
-createRoot(document.getElementById('root')!).render(
+createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
-  </StrictMode>,
-)
+    <ThemeProvider>
+      <ConfirmDialogProvider>
+        <SuccessOverlayProvider>
+          <Home />
+        </SuccessOverlayProvider>
+      </ConfirmDialogProvider>
+    </ThemeProvider>
+  </StrictMode>
+);
