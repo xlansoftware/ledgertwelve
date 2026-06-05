@@ -1,220 +1,179 @@
 # AGENTS.md
 
-Guidance for LLM agents working on the **ledger12** codebase.
-Read this file fully before making any changes.
+Repository-wide guidance for LLM agents working on **ledger12**.
+
+Read this file first.
 
 ---
 
-## Project overview
+## Repository structure
 
-**ledger12** is a financial ledger application with:
-- **Backend** — ASP.NET Core Web API, Clean Architecture, Entity Framework Core
-- **Frontend** — React 18, Vite, TypeScript, Vitest
-
-```
+```text
 MyApp/
-├── backend/          # .NET solution (ledger12.sln)
-│   ├── ledger12.API/
-│   ├── ledger12.Application/
-│   ├── ledger12.Domain/
-│   └── ledger12.Infrastructure/
-├── frontend/         # Vite + React + TS
-│   └── src/
 ├── AGENTS.md
-└── README.md
+├── frontend/
+│   ├── AGENTS.md
+│   └── API.md
+└── backend/
+    └── AGENTS.md
 ```
 
 ---
 
-## Architecture rules — never violate these
+## Instruction hierarchy
 
-The backend follows **Clean Architecture**. Dependencies only point inward:
+This file contains repository-wide rules.
 
-```
-API → Infrastructure → Application → Domain
-```
+Additional rules exist in subprojects:
 
-| Layer | May reference | Must NOT reference |
-|---|---|---|
-| `ledger12.Domain` | nothing | anything |
-| `ledger12.Application` | Domain | Infrastructure, API |
-| `ledger12.Infrastructure` | Application, Domain | API |
-| `ledger12.API` | Application, Infrastructure | — |
-| `ledger12.Tests` | Application, Domain | Infrastructure, API |
+* `frontend/AGENTS.md`
+* `backend/AGENTS.md`
 
-**If a task would require breaking these rules, stop and ask for clarification.**
+When working in a subproject, read the corresponding AGENTS.md before making changes.
 
----
+### Frontend work
 
-## Where to put new code
+If the task affects:
 
-### Backend — ask yourself:
+* React components
+* Vite configuration
+* TypeScript code
+* frontend tests
+* frontend services
+* frontend mocks
+* API contract design (`API.md`)
 
-- "Is this a business concept (entity, rule, status)?" → **Domain**
-- "Is this what the app can *do* (use case, validation, DTO)?" → **Application**
-- "Does this talk to a database, file, or external API?" → **Infrastructure**
-- "Is this HTTP-specific (route, controller, middleware)?" → **API**
+Read and follow:
 
-### Frontend — ask yourself:
-
-- "Is this reusable with no business logic?" → `components/ui/`
-- "Is this a page layout element (navbar, sidebar)?" → `components/layout/`
-- "Is this domain-specific (auth, products, transactions)?" → `features/<domain>/`
-- "Is this a route-level component?" → `pages/`
-- "Is this an HTTP call to the backend?" → `services/`
-- "Is this shared state?" → `store/`
-- "Is this a reusable hook?" → `hooks/`
-- "Is this a shared TypeScript type?" → `types/`
-
----
-
-## Development commands
-
-```bash
-# Build the frontend
-cd frontend && npm run build
-
-# Backend only (from root)
-dotnet run --project backend/ledger12.API
-
-# Frontend only (from root)
-npm run dev --prefix frontend
-
-# Run backend tests
-cd backend && dotnet test
-
-# Run frontend tests
-cd fontend && npm run test
-
-# Add a new EF Core migration
-cd backend && dotnet ef migrations add <MigrationName> \
-  --project ledger12.Infrastructure \
-  --startup-project ledger12.API
-
-# Apply migrations
-cd backend && dotnet ef database update \
-  --project ledger12.Infrastructure \
-  --startup-project ledger12.API
+```text
+frontend/AGENTS.md
 ```
 
----
+### Backend work
 
-## Coding conventions
+If the task affects:
 
-### General
-- Use **English** for all code, comments, and commit messages.
-- No commented-out code. Delete it.
-- No `TODO` comments left in committed code — either implement it or open a task.
+* ASP.NET Core
+* Application layer
+* Domain layer
+* Infrastructure layer
+* EF Core
+* database migrations
+* backend tests
 
-### Backend (C#)
-- Follow standard C# naming: `PascalCase` for types and members, `camelCase` for locals and parameters, `_camelCase` for private fields.
-- Use `record` types for DTOs (they are immutable by design).
-- Use `async`/`await` throughout — no `.Result` or `.Wait()`.
-- All controller actions must return typed `ActionResult<T>`, not `IActionResult` alone.
-- All public service methods must have a corresponding interface in `Application/Interfaces/`.
-- Validation lives in `Application/Validators/` using **FluentValidation** — never validate in controllers.
-- Never catch generic `Exception` in business logic. Let `ExceptionMiddleware` handle it.
-- Use `NotFoundException` for missing entities, `DomainException` for rule violations.
-- Connection strings and secrets go in `appsettings.Development.json` (git-ignored) or environment variables — never hardcoded.
+Read and follow:
 
-### Frontend (TypeScript / React)
-- **Strict TypeScript** — no `any`. If the type is unknown, use `unknown` and narrow it.
-- One component per file. File name matches the component name exactly.
-- Components are **function components** only — no class components.
-- All API calls go through `services/api.ts` (the Axios base instance) — never call `fetch` directly in a component.
-- Keep components free of business logic. Logic belongs in custom hooks or `features/<domain>/`.
-- Use `const` by default — `let` only when reassignment is necessary.
-- Tailwind only — no inline `style={{}}` beyond trivial cases.
-- Never store sensitive data (tokens, keys) in `localStorage` — use `httpOnly` cookies via the API.
-- Use Zustand to manage app state.
+```text
+backend/AGENTS.md
+```
 
-- **Do NOT scan the backend project** to discover endpoints
-- All available endpoints are documented in `API.md` — treat it as the source of truth
-- If a needed endpoint is missing from `API.md`, ask the user rather than inferring
-- Use the base URL from `API.md`; read it from `VITE_API_BASE_URL` env var at runtime
+### Cross-cutting work
 
-#### Mocking
-- Mock handlers live in `src/mocks/handlers.ts`
-- Every endpoint in `API.md` should have a corresponding handler
-- Do not add mock logic inside service/api files
-- MSW is only active in dev mode (`import.meta.env.DEV`)
+If a task affects both frontend and backend:
+
+1. Read both AGENTS files.
+2. Follow both sets of rules.
+3. Preserve contract compatibility between the projects.
 
 ---
 
-## API design conventions
+## API contract ownership
 
-- REST endpoints follow: `GET /api/accounts`, `POST /api/accounts`, `GET /api/accounts/{id}`, etc.
-- Use **nouns** for resources, never verbs (`/api/accounts/deposit` is wrong — use `POST /api/accounts/{id}/transactions`).
-- Return `201 Created` with a `Location` header for POST, `204 No Content` for DELETE/PUT with no body.
-- All error responses use this shape:
-  ```json
-  { "error": "Human-readable message" }
-  ```
-- Paginated list responses use:
-  ```json
-  {
-    "items": [...],
-    "totalCount": 100,
-    "page": 1,
-    "pageSize": 20
-  }
-  ```
+The API contract is documented in:
+
+```text
+frontend/API.md
+```
+
+This file is the authoritative contract shared by frontend and backend.
+
+### Frontend responsibilities
+
+Frontend agents may:
+
+* design new endpoints
+* evolve existing endpoints
+* update request/response schemas
+* update examples
+* update mock handlers
+
+When modifying the contract:
+
+* update `API.md`
+* update frontend types
+* update frontend services
+* update MSW handlers
+
+### Backend responsibilities
+
+Backend agents implement the contract documented in `frontend/API.md`.
+
+Backend agents must not silently change:
+
+* routes
+* payload shapes
+* status codes
+* response schemas
+
+If a contract change is necessary, update `API.md` and explain the reason.
 
 ---
 
-## Testing rules
+## General coding standards
 
-- Every new **service method** in `Application` needs at least one unit test.
-- Unit tests go in `ledger12.Tests/Unit/`, integration tests in `ledger12.Tests/Integration/`.
-- Test class name mirrors the class under test: `AccountService` → `AccountServiceTests`.
-- Test method name format: `MethodName_ExpectedBehaviour_WhenCondition`.
-  - Example: `DepositAsync_IncreasesBalance_WhenAmountIsPositive`
-- Use **Moq** for mocking. Never mock the class under test — only its dependencies.
-- Do not test EF Core internals. Use the in-memory provider or a test database for integration tests.
+### Quality
+
+* Prefer modifying existing code over creating duplicate implementations.
+* Reuse established patterns before introducing new abstractions.
+* Keep solutions simple and maintainable.
+* Remove dead code instead of leaving it commented out.
+
+### Documentation
+
+When changing behavior, update relevant documentation.
+
+Examples:
+
+* `API.md`
+* README files
+* architecture documentation
+* setup instructions
+
+Documentation and implementation must remain synchronized.
+
+### Testing
+
+Changes should include appropriate automated tests whenever practical.
+
+Bug fixes should include regression tests when feasible.
+
+### Security
+
+* Never commit secrets.
+* Never hardcode credentials.
+* Never expose sensitive configuration values.
+* Use environment variables for secrets and environment-specific settings.
 
 ---
 
-## Git conventions
+## Modification workflow
 
-- Branch naming: `feat/<short-description>`, `fix/<short-description>`, `chore/<short-description>`
-- Commit message format (Conventional Commits):
-  ```
-  feat(accounts): add deposit endpoint
-  fix(auth): handle expired token edge case
-  chore(deps): update EF Core to 8.0.5
-  ```
-- One logical change per commit — do not bundle unrelated changes.
-- Never commit directly to `main`.
+Before creating new code:
+
+1. Search for an existing implementation.
+2. Search for existing patterns.
+3. Extend existing functionality when appropriate.
+4. Avoid introducing parallel implementations.
+
+Prefer consistency over novelty.
 
 ---
 
 ## Things agents must never do
 
-- **Never delete migrations** — add a new migration instead.
-- **Never modify `AppDbContext` model without adding a migration.**
-- **Never change the solution's project references** without explicit instruction.
-- **Never add a NuGet or npm package** without stating what it's for and getting confirmation.
-- **Never expose secrets** — check that `.gitignore` covers `appsettings.Development.json` and `.env` before committing.
-- **Never return raw `Exception` messages** to the frontend — only controlled error shapes.
-- **Never write business logic in a controller** — controllers only call services and return results.
-- **Never write SQL strings directly** — use EF Core LINQ queries or parameterized raw SQL via `FromSqlRaw`.
-
----
-
-## When you are unsure
-
-If a task is ambiguous, ask one focused question before proceeding. Prefer doing less and confirming over doing more and breaking things. When in doubt about layer placement, default to the stricter interpretation (put it further inward).
-
-## Agent skills
-
-### Issue tracker
-
-Issues and PRDs live as markdown files under `.scratch/<feature-slug>/`. See `docs/agents/issue-tracker.md`.
-
-### Triage labels
-
-The five canonical roles use their default label strings. See `docs/agents/triage-labels.md`.
-
-### Domain docs
-
-Single-context — one `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
+* Never ignore the relevant subproject AGENTS.md.
+* Never allow implementation and documentation to drift apart.
+* Never introduce duplicate implementations of existing functionality.
+* Never commit secrets, credentials, or tokens.
+* Never add dependencies without explicit approval.
+* Never make unrelated changes as part of the same task.
