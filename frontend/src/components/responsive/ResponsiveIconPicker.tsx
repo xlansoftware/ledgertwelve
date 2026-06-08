@@ -58,8 +58,9 @@ export function ResponsiveIconPicker({
   if (!isMobile) {
     return (
       <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
+        <PopoverTrigger>
           <Button variant="ghost" className="w-14 h-10 p-0">
+            // eslint-disable-next-line react-hooks/static-components
             <Icon className="w-6 h-6" />
           </Button>
         </PopoverTrigger>

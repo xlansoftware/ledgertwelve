@@ -21,7 +21,7 @@ interface Option {
 
 interface ResponsiveSelectProps {
   value?: string;
-  onValueChange: (value: string) => void;
+  onValueChange: (value: string | null) => void;
   options: Option[];
   placeholder?: string;
   title?: string;

@@ -122,7 +122,7 @@ export default function EditDetailForm({
             <Label htmlFor="edit-category">Category</Label>
             <Select
               value={editValues.categoryId?.toString()}
-              onValueChange={(value: string) =>
+              onValueChange={(value: string | null) =>
                 setEditValues({ ...editValues, categoryId: Number(value) })
               }
             >

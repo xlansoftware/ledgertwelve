@@ -50,7 +50,8 @@ export default function SpaceMergeDialog({
   const [open, setOpen] = useState(true);
   const [loading, setLoading] = useState(false);
 
-  const handleChangeSpace = async (value: string) => {
+  const handleChangeSpace = async (value: string | null) => {
+    if (value === null) return;
     setTargetSpaceId(value);
   };
 
@@ -85,7 +86,7 @@ export default function SpaceMergeDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
+      {trigger && <DialogTrigger>{trigger}</DialogTrigger>}
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Merge {space.name}</DialogTitle>
@@ -103,7 +104,7 @@ export default function SpaceMergeDialog({
           <Label htmlFor="space-select">Target Book:</Label>
           <Select
             value={selectedSpace?.id ?? ""}
-            onValueChange={(value: string) => handleChangeSpace(value)}
+            onValueChange={(value) => handleChangeSpace(value)}
           >
             <SelectTrigger className="w-[200px]" id="space-select">
               <SelectValue placeholder="Select a book" />

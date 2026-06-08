@@ -63,7 +63,7 @@ export function ResponsiveColorPicker({
   if (!isMobile) {
     return (
       <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
+        <PopoverTrigger>
           <Button
             variant="ghost"
             className="w-10 h-10 p-0 border"

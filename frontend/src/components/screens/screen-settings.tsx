@@ -57,7 +57,8 @@ export default function Settings() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleChangeSpace = async (value: string) => {
+  const handleChangeSpace = async (value: string | null) => {
+    if (value === null) return;
     await setCurrentSpace(value);
     await openBook(value);
     toast(`Current book changed`);
@@ -166,7 +167,7 @@ export default function Settings() {
                 <Label htmlFor="space-select">Current Book:</Label>
                 <Select
                   value={current?.id ?? ""}
-                  onValueChange={(value: string) => handleChangeSpace(value)}
+                  onValueChange={(value: string | null) => handleChangeSpace(value)}
                 >
                   <SelectTrigger className="w-[200px]" id="space-select">
                     <SelectValue placeholder="Select a space" />

@@ -58,7 +58,7 @@ export default function ShareSpaceDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpendChange}>
-      {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
+      {trigger && <DialogTrigger>{trigger}</DialogTrigger>}
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Share Book</DialogTitle>

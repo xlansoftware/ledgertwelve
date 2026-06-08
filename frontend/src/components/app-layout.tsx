@@ -21,9 +21,6 @@ const Settings = lazy(() => import("@/components/screens/screen-settings"));
 const CategoriesScreen = lazy(
   () => import("@/components/screens/screen-categories")
 );
-const EditWidgetScreen = lazy(
-  () => import("@/components/screens/screen-edit-widget")
-);
 
 const ScreenLogin = lazy(() => import("@/components/screens/screen-login"));
 
@@ -41,7 +38,9 @@ export default function AppLayout() {
     : [<AddScreen />, <HistoryScreen />, <ScreenInsights />];
 
   useEffect(() => {
-    setCurrentPath(location.pathname);
+    setTimeout(() => {
+      setCurrentPath(location.pathname);
+    }, 1);
   }, [location]);
 
   const mainScreen = <ResponsiveScreens screens={screens} />;
@@ -70,7 +69,6 @@ export default function AppLayout() {
             <Route path="/settings" element={<Settings />} />
             <Route path="/categories" element={<CategoriesScreen />} />
             <Route path="/spaces" element={<SpacesScreen />} />
-            <Route path="/edit-widget" element={<EditWidgetScreen />} />
             <Route path="/start" element={<ScreenLogin />} />
             <Route path="/analysis" element={<ScreenAnalysis />} />
           </Routes>

@@ -67,7 +67,7 @@ export default function Filter({
     onApply(finalFilter);
   };
 
-  const handleDatePeriodChange = (value: string) => {
+  const handleDatePeriodChange = (value: unknown) => {
     setLocalFilter((prev) => ({
       ...prev,
       period: value as FilterRequest["period"],
@@ -131,7 +131,7 @@ export default function Filter({
             {localFilter.period === "custom" && (
               <div className="grid grid-cols-2 gap-2">
                 <Popover>
-                  <PopoverTrigger asChild>
+                  <PopoverTrigger>
                     <Button
                       variant={"outline"}
                       className="w-full justify-start text-left font-normal"
@@ -144,25 +144,25 @@ export default function Filter({
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0">
                     <Calendar
+                      required={false}
                       mode="single"
                       selected={
                         localFilter.startDate
                           ? new Date(localFilter.startDate)
                           : undefined
                       }
-                      onSelect={(date: Date) =>
+                      onSelect={(date: Date | undefined) =>
                         setLocalFilter((prev) => ({
                           ...prev,
                           startDate: date?.toISOString(),
                         }))
                       }
-                      initialFocus
                     />
                   </PopoverContent>
                 </Popover>
 
                 <Popover>
-                  <PopoverTrigger asChild>
+                  <PopoverTrigger>
                     <Button
                       variant={"outline"}
                       className="w-full justify-start text-left font-normal"
@@ -175,19 +175,19 @@ export default function Filter({
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0">
                     <Calendar
+                      required={false}
                       mode="single"
                       selected={
                         localFilter.endDate
                           ? new Date(localFilter.endDate)
                           : undefined
                       }
-                      onSelect={(date: Date) =>
+                      onSelect={(date: Date | undefined) =>
                         setLocalFilter((prev) => ({
                           ...prev,
                           endDate: date?.toISOString(),
                         }))
                       }
-                      initialFocus
                     />
                   </PopoverContent>
                 </Popover>

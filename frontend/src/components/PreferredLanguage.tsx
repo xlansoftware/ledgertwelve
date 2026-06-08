@@ -35,7 +35,7 @@ export function PreferredLanguage({ id, disabled }: PreferredLanguageProps) {
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
+      <PopoverTrigger>
         <Button
           id={id}
           variant="outline"

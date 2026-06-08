@@ -59,7 +59,7 @@ ResponsiveMenu.Trigger = function Trigger({ children }: { children: React.ReactN
   return isMobile ? (
     <DrawerTrigger asChild>{children}</DrawerTrigger>
   ) : (
-    <DropdownMenuTrigger asChild>{children}</DropdownMenuTrigger>
+    <DropdownMenuTrigger>{children}</DropdownMenuTrigger>
   );
 };
 

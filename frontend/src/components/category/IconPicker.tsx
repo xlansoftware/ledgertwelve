@@ -18,8 +18,9 @@ export function IconPicker({ value, onChange }: IconPickerProps) {
 
   return (
     <Popover>
-      <PopoverTrigger asChild>
+      <PopoverTrigger>
         <Button variant="ghost" className="w-20 h-10 p-0">
+          // eslint-disable-next-line react-hooks/static-components
           <Icon className="w-20 h-20" />
         </Button>
       </PopoverTrigger>
