@@ -37,6 +37,16 @@ const users: User[] = [
 
 // Session store: maps cookie value -> userId
 const sessions = new Map<string, string>()
+export { sessions }
+
+/**
+ * Pre-seed a session for testing. Called from test-setup.
+ */
+export function seedSession(userId: string): string {
+  const token = `sess_test_${Math.random().toString(36).slice(2)}`
+  sessions.set(token, userId)
+  return token
+}
 
 // Categories
 interface Category {
