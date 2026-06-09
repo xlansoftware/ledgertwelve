@@ -224,6 +224,7 @@ npm run test
 - Tailwind only — no inline `style={{}}` beyond trivial cases.
 - Never store sensitive data (tokens, keys) in `localStorage` — use `httpOnly` cookies via the API.
 - Use Zustand to manage app state.
+- Never use Axios. Use fetch!
 
 ### UI
 

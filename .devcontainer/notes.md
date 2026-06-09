@@ -7,5 +7,5 @@ npm install -g --ignore-scripts @earendil-works/pi-coding-agent
 ```
 
 ```bash
-docker exec -it -u vscode boring_bhaskara bash
+docker exec -it -u vscode festive_pare bash
 ```
