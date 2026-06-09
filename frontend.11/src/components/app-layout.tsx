@@ -12,7 +12,6 @@ import { useMediaQuery } from "@/hooks/use-media-query";
 import ScreenAnalysis from "./screens/screen-analysis";
 
 // Use React.lazy to dynamically import the screen components:
-const ScanScreen = lazy(() => import("@/components/screens/screen-scan"));
 const HistoryScreen = lazy(() => import("@/components/screens/screen-history"));
 const ScreenInsights = lazy(
   () => import("@/components/screens/screen-insights")
@@ -63,7 +62,6 @@ export default function AppLayout() {
         >
           <Routes>
             <Route path="/" element={mainScreen} />
-            <Route path="/scan" element={<ScanScreen />} />
             <Route path="/history" element={<HistoryScreen />} />
             <Route path="/insights" element={<ScreenInsights />} />
             <Route path="/settings" element={<Settings />} />
