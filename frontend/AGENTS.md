@@ -12,18 +12,18 @@ Read this file fully before making any changes.
 - **Frontend** — React 18, Vite, TypeScript, Vitest
 
 ```
-├── frontend/         # Vite + React + TS
-│   ├── README.md
-│   ├── API.md
-│   └── src/
-│       ├── pages/
-│       ├── services/
-│       ├── store/
-│       ├── hooks/
-│       ├── types/
-│       └── components
-|            ├── common/
-│            └── ui/  # shadcn components
+frontend/         # Vite + React + TS
+├── README.md
+├── API.md
+└── src/
+    ├── pages/
+    ├── services/
+    ├── store/
+    ├── hooks/
+    ├── types/
+    └── components
+         ├── common/
+         └── ui/  # shadcn components
 ```
 
 ---
