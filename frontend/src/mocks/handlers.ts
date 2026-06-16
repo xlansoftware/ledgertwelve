@@ -33,6 +33,12 @@ const users: User[] = [
     password: 'secret-password',
     createdAt: new Date('2026-01-01'),
   },
+  {
+    id: 'usr_2',
+    email: 'friend@example.com',
+    password: 'friend-password',
+    createdAt: new Date('2026-01-15'),
+  },
 ]
 
 // Session store: maps cookie value -> userId
