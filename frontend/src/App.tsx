@@ -1,13 +1,11 @@
-import { Outlet, Link } from "react-router-dom";
+import { Outlet } from "react-router-dom";
+import Header from "./components/layout/Header";
 
 function App() {
   return (
-    <div>
-      <nav>
-        <Link to="/">Home</Link>
-        <Link to="/about">About</Link>
-      </nav>
-      <main>
+    <div className="flex flex-col bg-background h-full">
+      <Header />
+      <main className="flex-1 container mx-auto py-4 h-full overflow-hidden">
         {/* This is where child routes (Home, About) will render */}
         <Outlet />
       </main>
