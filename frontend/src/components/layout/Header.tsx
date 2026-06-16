@@ -1,6 +1,8 @@
 import { cn } from "@/lib/utils";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger } from "../ui/tabs";
+import { useMediaQuery } from "@/hooks/use-media-query";
+import MobileHeader from "./MobileHeader";
 
 export default function Header() {
   const navigate = useNavigate();
@@ -8,7 +10,8 @@ export default function Header() {
   const currentPath = location.pathname;
   
   const tint = "#ff0000";
-  const isMobile = false;
+  const isMobile = useMediaQuery("(max-width: 768px)");
+  
   return (
     <header
       className={cn(
@@ -41,9 +44,9 @@ export default function Header() {
           </Tabs>
         )}
 
-        {/* {isMobile && (
-          <MobileNavigation tint={tint} currentPath={currentPath} />
-        )} */}
+        {isMobile && (
+          <MobileHeader />
+        )}
       </div>
     </header>
   );
