@@ -1,9 +1,10 @@
 // src/routes/index.tsx
 import { createBrowserRouter } from "react-router-dom";
 import App from "../App";
-import Home from "../pages/Home";
-import About from "../pages/About";
+import HomePage from "../pages/HomePage";
 import NotFound from "../pages/NotFound";
+import HistoryPage from "@/pages/HistoryPage";
+import SettingsPage from "@/pages/SettingsPage";
 
 const router = createBrowserRouter([
   {
@@ -14,11 +15,15 @@ const router = createBrowserRouter([
       {
         // This will be the default child route for the homepage
         index: true, 
-        element: <Home />,
+        element: <HomePage />,
       },
       {
-        path: "about",
-        element: <About />,
+        path: "history",
+        element: <HistoryPage />,
+      },
+      {
+        path: "settings",
+        element: <SettingsPage />,
       },
     ],
   },
