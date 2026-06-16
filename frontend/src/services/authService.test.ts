@@ -3,7 +3,9 @@
 // ---------------------------------------------------------------------------
 
 import { describe, expect, it } from "vitest"
+import { http, HttpResponse } from "msw"
 import { login, whoami } from "./authService"
+import { server } from "../test-setup"
 
 const validCredentials = { email: "john@example.com", password: "secret-password" }
 
@@ -32,6 +34,11 @@ describe("authService", () => {
 
   describe("whoami", () => {
     it("throws 401 when not authenticated", async () => {
+      server.use(
+        http.get("/api/v1/auth/whoami", () =>
+          HttpResponse.json({ error: "Unauthorized" }, { status: 401 }),
+        ),
+      )
       await expect(whoami()).rejects.toThrow(/Unauthorized/i)
     })
 

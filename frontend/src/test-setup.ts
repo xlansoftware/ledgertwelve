@@ -11,37 +11,41 @@ export const server = setupServer(...handlers)
 // Seed a persistent test session
 const TEST_TOKEN = seedSession("usr_1")
 
-// Wrap global fetch to inject the session cookie as a plain object header.
-// Node.js fetch (undici) needs a plain object, not a Headers instance,
-// to reliably propagate the Cookie header to MSW interception.
-const originalFetch = globalThis.fetch
-globalThis.fetch = function fetchWithCookie(input, init?) {
-  const urlStr =
-    typeof input === "string"
-      ? input
-      : input instanceof Request
-        ? input.url
-        : String(input)
+beforeAll(() => {
+  server.listen({ onUnhandledRequest: "warn" })
 
-  if (urlStr.includes("/api/v1/")) {
-    const plainHeaders: Record<string, string> = {}
-    // Copy existing headers from init
-    if (init?.headers) {
-      const h =
-        init.headers instanceof Headers
-          ? Object.fromEntries(init.headers.entries())
-          : (init.headers as Record<string, string>)
-      Object.assign(plainHeaders, h)
+  // MSW v2's FetchInterceptor replaces globalThis.fetch with its own
+  // fetchProxy during server.listen(). Now wrap that proxy so every
+  // API request includes the session cookie — undici won't propagate
+  // cookies from Set-Cookie responses in Node, so we inject them at
+  // the fetch level instead.
+  const mswFetch = globalThis.fetch
+  globalThis.fetch = function fetchWithCookie(input, init?) {
+    const urlStr =
+      typeof input === "string"
+        ? input
+        : input instanceof Request
+          ? input.url
+          : String(input)
+
+    if (urlStr.includes("/api/v1/")) {
+      const plainHeaders: Record<string, string> = {}
+      if (init?.headers) {
+        const h =
+          init.headers instanceof Headers
+            ? Object.fromEntries(init.headers.entries())
+            : (init.headers as Record<string, string>)
+        Object.assign(plainHeaders, h)
+      }
+      if (!plainHeaders["cookie"]) {
+        plainHeaders["cookie"] = `ledger12.session=${TEST_TOKEN}`
+      }
+      return mswFetch.call(globalThis, input, { ...init, headers: plainHeaders })
     }
-    if (!plainHeaders["cookie"]) {
-      plainHeaders["cookie"] = `ledger12.session=${TEST_TOKEN}`
-    }
-    return originalFetch(input, { ...init, headers: plainHeaders })
-  }
 
-  return originalFetch(input, init)
-} as typeof globalThis.fetch
+    return mswFetch.call(globalThis, input, init)
+  } as typeof globalThis.fetch
+})
 
-beforeAll(() => server.listen({ onUnhandledRequest: "warn" }))
 afterEach(() => server.resetHandlers())
 afterAll(() => server.close())
