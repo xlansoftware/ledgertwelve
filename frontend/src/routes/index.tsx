@@ -4,7 +4,7 @@ import App from "../App";
 import NotFoundPage from "../pages/NotFoundPage";
 import HistoryPage from "@/pages/HistoryPage";
 import SettingsPage from "@/pages/SettingsPage";
-import AddPage from "@/pages/AddPage";
+import AddPage from "@/pages/add/AddPage";
 
 const router = createBrowserRouter([
   {
