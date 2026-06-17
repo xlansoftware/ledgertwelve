@@ -206,6 +206,7 @@ function paginate<T>(items: T[], page: number, pageSize: number) {
 }
 
 // Extract current user (checks stored login state instead of cookies)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function getUserFromRequest(_request: Request): User | undefined {
   return currentUser
 }

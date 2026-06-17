@@ -72,7 +72,7 @@ export default function CategoryPicker({ selectedId, onSelect }: CategoryPickerP
               className="flex items-stretch p-0 overflow-hidden"
             >
               <div
-                className={cn("min-w-4 flex-shrink-0 flex items-center justify-center p-2", isSelected && "border-l border-t border-b border-primary rounded-l-md")}
+                className={cn("min-w-4 flex-shrink-0 flex items-center justify-center p-2", isSelected && "border-l border-t border-b border-primary")}
                 style={{
                   backgroundColor: color,
                   color: invertColor(color),
