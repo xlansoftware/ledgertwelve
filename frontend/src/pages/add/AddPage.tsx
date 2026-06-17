@@ -1,22 +1,35 @@
 import { Input } from "@/components/ui/input";
 import AmountInput from "./AmountInput";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import CategoryPicker from "./CategoryPicker";
 import type { CategoryDto, TransactionDto } from "@/types";
+import { useBooksStore, useTransactionsStore } from "@/store";
 
 export default function AddPage() {
   const [notes, setNotes] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<CategoryDto | null>(null);
+  const createTransaction = useTransactionsStore((s) => s.createTransaction);
+
+  const currentBook = useBooksStore((s) => s.currentBook);
+  const isLoading = useBooksStore((s) => s.isLoading);
+  const error = useBooksStore((s) => s.error);
+  const fetchBooks = useBooksStore((s) => s.fetchBooks);
+
+  useEffect(() => {
+    fetchBooks();
+  }, [fetchBooks]);
 
   const handleAdd = async (transaction: Partial<TransactionDto>) => {
     console.log(transaction);
     try {
-      // await addTransaction({
-      //   ...transaction,
-      //   categoryName: selectedCategory?.name,
-      //   notes,
-      // });
+      await createTransaction({
+        bookId: currentBook?.id || "default",
+        amount: transaction.amount!,
+        originalAmount: transaction.originalAmount,
+        originalCurrency: transaction.originalCurrency,
+        categoryName: selectedCategory?.name,
+      });
       // reset controls
       setNotes("");
 
@@ -30,6 +43,9 @@ export default function AddPage() {
 
   return (
     <div className="container flex flex-col gap-4 h-full justify-between">
+      {isLoading && <div>Loading ...</div>}
+      {error && <div>{error}</div>}
+      <div>{currentBook?.name}</div>
       <div
         className="flex flex-col items-center gap-4 p-[2px] w-full max-w-md mx-auto"
       >

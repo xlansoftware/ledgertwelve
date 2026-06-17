@@ -2,7 +2,7 @@
 import { createBrowserRouter } from "react-router-dom";
 import App from "../App";
 import NotFoundPage from "../pages/NotFoundPage";
-import HistoryPage from "@/pages/HistoryPage";
+import HistoryPage from "@/pages/history/HistoryPage";
 import SettingsPage from "@/pages/SettingsPage";
 import AddPage from "@/pages/add/AddPage";
 
