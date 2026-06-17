@@ -83,7 +83,7 @@ export const useBooksStore = create<BooksState & BooksActions>((set, get) => ({
     set({ isLoading: true, error: null })
     try {
       const data = await getBooks()
-      set({ books: data, isLoading: false })
+      set({ books: data, isLoading: false, currentBook: get().currentBook || data[0] })
       return data
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to load books"

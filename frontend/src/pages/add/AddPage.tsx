@@ -28,6 +28,7 @@ export default function AddPage() {
         amount: transaction.amount!,
         originalAmount: transaction.originalAmount,
         originalCurrency: transaction.originalCurrency,
+        exchangeRate: 1.0,
         categoryName: selectedCategory?.name,
       });
       // reset controls
