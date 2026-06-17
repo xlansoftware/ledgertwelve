@@ -30,8 +30,8 @@ describe("categoriesService", () => {
     it("includes expected default categories", async () => {
       const result = await getCategories()
       const names = result.map((c) => c.name)
-      expect(names).toContain("Food")
-      expect(names).toContain("Rent")
+      expect(names).toContain("Groceries")
+      expect(names).toContain("Rent / Mortgage")
     })
   })
 
@@ -88,7 +88,7 @@ describe("categoriesService", () => {
     })
 
     it("deletes a category with reassignment", async () => {
-      // Create a transaction referencing "Food" to trigger reassignment
+      // Create a transaction referencing "Groceries" to trigger reassignment
       const result = await deleteCategory("cat_1", {
         replacementCategoryName: "Groceries",
       })
@@ -105,7 +105,7 @@ describe("categoriesService", () => {
   describe("reassignCategories", () => {
     it("reassigns transactions from one category to another", async () => {
       const result = await reassignCategories({
-        fromCategoryName: "Food",
+        fromCategoryName: "Groceries",
         toCategoryName: "Dining",
       })
       expect(result).toMatchObject({

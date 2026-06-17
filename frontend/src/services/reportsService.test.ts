@@ -61,13 +61,13 @@ describe("reportsService", () => {
       })
     })
 
-    it("includes Food category in results", async () => {
+    it("includes Groceries category in results", async () => {
       const result = await getCategoryReport({
         from: "2026-01-01",
         to: "2026-12-31",
       })
       const categories = result.map((r) => r.categoryName)
-      expect(categories).toContain("Food")
+      expect(categories).toContain("Groceries")
     })
 
     it("returns empty array for range with no data", async () => {

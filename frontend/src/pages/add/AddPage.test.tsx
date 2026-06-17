@@ -21,12 +21,12 @@ describe("AddPage", () => {
     // The notes input is present from the start
     expect(screen.getByPlaceholderText("Notes ...")).toBeInTheDocument();
 
-    // Wait for the categories to load (the MSW handler returns Food and Rent)
+    // Wait for the categories to load (the MSW handler returns Groceries and Pets)
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "Category Food" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Category Groceries" })).toBeInTheDocument();
     });
 
-    expect(screen.getByRole("button", { name: "Category Rent" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Category Pets" })).toBeInTheDocument();
   });
 
   it("renders categories in sort order", async () => {
@@ -34,16 +34,16 @@ describe("AddPage", () => {
 
     // Wait for categories to load
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "Category Food" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Category Groceries" })).toBeInTheDocument();
     });
 
-    // Verify both categories are rendered
+    // Verify categories are rendered
     const categoryButtons = screen.getAllByRole("button").filter((btn) =>
       btn.getAttribute("aria-label")?.startsWith("Category "),
     );
 
-    // Food has order 1, Rent has order 2
-    expect(categoryButtons[0]).toHaveAttribute("aria-label", "Category Food");
-    expect(categoryButtons[1]).toHaveAttribute("aria-label", "Category Rent");
+    // Groceries has order 1, Pets has order 2
+    expect(categoryButtons[0]).toHaveAttribute("aria-label", "Category Groceries");
+    expect(categoryButtons[1]).toHaveAttribute("aria-label", "Category Pets");
   });
 });

@@ -61,7 +61,7 @@ describe("transactionsService", () => {
         id: "tx_1",
         bookId: "book_main",
         amount: -100,
-        categoryName: "Food",
+        categoryName: "Groceries",
       })
     })
 
@@ -77,13 +77,13 @@ describe("transactionsService", () => {
       const result = await createTransaction({
         bookId: "book_main",
         amount: -50,
-        categoryName: "Food",
+        categoryName: "Groceries",
         note: "Test",
       })
       expect(result).toMatchObject({
         bookId: "book_main",
         amount: -50,
-        categoryName: "Food",
+        categoryName: "Groceries",
         note: "Test",
       })
       expect(result.id).toMatch(/^tx_/)
