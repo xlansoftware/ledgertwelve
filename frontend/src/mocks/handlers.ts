@@ -41,17 +41,16 @@ const users: User[] = [
   },
 ]
 
-// Session store: maps cookie value -> userId
-const sessions = new Map<string, string>()
-export { sessions }
+// Current authenticated user (bypasses cookies in mock)
+let currentUser: User | undefined
+export { currentUser }
 
 /**
  * Pre-seed a session for testing. Called from test-setup.
  */
 export function seedSession(userId: string): string {
-  const token = `sess_test_${Math.random().toString(36).slice(2)}`
-  sessions.set(token, userId)
-  return token
+  currentUser = users.find(u => u.id === userId)
+  return userId
 }
 
 // Categories
@@ -206,15 +205,9 @@ function paginate<T>(items: T[], page: number, pageSize: number) {
   return { items: paged, totalCount, page, pageSize }
 }
 
-// Extract current user from session cookie
-function getUserFromRequest(request: Request): User | undefined {
-  const cookie = request.headers.get('cookie') || ''
-  const match = cookie.match(/ledger12\.session=([^;]+)/)
-  if (!match) return undefined
-  const token = match[1]
-  const userId = sessions.get(token)
-  if (!userId) return undefined
-  return users.find(u => u.id === userId)
+// Extract current user (checks stored login state instead of cookies)
+function getUserFromRequest(_request: Request): User | undefined {
+  return currentUser
 }
 
 function requireAuth(request: Request) {
@@ -297,17 +290,11 @@ export const handlers = [
     if (!user) {
       return HttpResponse.json({ error: 'Invalid credentials' }, { status: 401 })
     }
-    // Create session
-    const token = `sess_${Math.random().toString(36).slice(2)}`
-    sessions.set(token, user.id)
-    const response = HttpResponse.json({
+    // Store authenticated user (bypasses cookies in mock)
+    currentUser = user
+    return HttpResponse.json({
       data: { id: user.id, email: user.email },
     })
-    response.headers.set(
-      'Set-Cookie',
-      `ledger12.session=${token}; HttpOnly; Secure; SameSite=Lax; Path=/`,
-    )
-    return response
   }),
 
   http.get('/api/v1/auth/whoami', ({ request }) => {
