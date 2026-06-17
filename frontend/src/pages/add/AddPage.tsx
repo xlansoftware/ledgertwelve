@@ -1,6 +1,6 @@
 import { Input } from "@/components/ui/input";
 import AmountInput from "./AmountInput";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import CategoryPicker from "./CategoryPicker";
 import type { CategoryDto, TransactionDto } from "@/types";
@@ -12,13 +12,6 @@ export default function AddPage() {
   const createTransaction = useTransactionsStore((s) => s.createTransaction);
 
   const currentBook = useBooksStore((s) => s.currentBook);
-  const isLoading = useBooksStore((s) => s.isLoading);
-  const error = useBooksStore((s) => s.error);
-  const fetchBooks = useBooksStore((s) => s.fetchBooks);
-
-  useEffect(() => {
-    fetchBooks();
-  }, [fetchBooks]);
 
   const handleAdd = async (transaction: Partial<TransactionDto>) => {
     console.log(transaction);
@@ -44,8 +37,6 @@ export default function AddPage() {
 
   return (
     <div className="container flex flex-col gap-4 h-full justify-between">
-      {isLoading && <div>Loading ...</div>}
-      {error && <div>{error}</div>}
       <div>{currentBook?.name}</div>
       <div
         className="flex flex-col items-center gap-4 p-[2px] w-full max-w-md mx-auto"
