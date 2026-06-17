@@ -5,6 +5,7 @@ import NotFoundPage from "../pages/NotFoundPage";
 import HistoryPage from "@/pages/history/HistoryPage";
 import SettingsPage from "@/pages/SettingsPage";
 import AddPage from "@/pages/add/AddPage";
+import BookPage from "@/pages/books/BookPage";
 
 const router = createBrowserRouter([
   {
@@ -20,6 +21,10 @@ const router = createBrowserRouter([
       {
         path: "history",
         element: <HistoryPage />,
+      },
+      {
+        path: "books",
+        element: <BookPage />,
       },
       {
         path: "settings",
