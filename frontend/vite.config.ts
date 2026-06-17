@@ -22,4 +22,7 @@ export default defineConfig({
     setupFiles: ["./src/test-setup.ts"],
     include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
   },
+  build: {
+    chunkSizeWarningLimit: 10000
+  },
 })
