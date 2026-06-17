@@ -5,8 +5,15 @@ import { RouterProvider } from 'react-router-dom';
 import './index.css'
 import router from "./routes";
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <RouterProvider router={router} />
-  </StrictMode>,
-)
+import { worker } from './mocks/browser';
+import { login } from './services';
+worker.start().then(async () => {
+  await login({ email: 'john@example.com', password: 'secret-password' });
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      <RouterProvider router={router} />
+    </StrictMode>,
+  )
+
+});
+
