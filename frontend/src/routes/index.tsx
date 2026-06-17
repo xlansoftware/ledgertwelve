@@ -1,21 +1,21 @@
 // src/routes/index.tsx
 import { createBrowserRouter } from "react-router-dom";
 import App from "../App";
-import HomePage from "../pages/HomePage";
-import NotFound from "../pages/NotFound";
+import NotFoundPage from "../pages/NotFoundPage";
 import HistoryPage from "@/pages/HistoryPage";
 import SettingsPage from "@/pages/SettingsPage";
+import AddPage from "@/pages/AddPage";
 
 const router = createBrowserRouter([
   {
     path: "/",
-    // Using 'Component' is preferred with the Data Router API [citation:6]
+    // Using 'Component' is preferred with the Data Router API
     Component: App, 
     children: [
       {
         // This will be the default child route for the homepage
         index: true, 
-        element: <HomePage />,
+        element: <AddPage />,
       },
       {
         path: "history",
@@ -30,7 +30,7 @@ const router = createBrowserRouter([
   {
     // Catch-all route for a 404 page
     path: "*",
-    element: <NotFound />,
+    element: <NotFoundPage />,
   },
 ]);
 
