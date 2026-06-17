@@ -2,6 +2,8 @@
 // Vitest setup — MSW server for all service tests
 // ---------------------------------------------------------------------------
 
+import "@testing-library/jest-dom"
+
 import { setupServer } from "msw/node"
 import { handlers, seedSession } from "./mocks/handlers"
 import { afterAll, afterEach, beforeAll } from "vitest"

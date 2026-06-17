@@ -28,11 +28,12 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
-    "msw": "^2.14.6",
     "@babel/core": "^7.29.0",
     "@earendil-works/pi-coding-agent": "^0.79.6",
     "@eslint/js": "^10.0.1",
     "@rolldown/plugin-babel": "^0.2.3",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
     "@types/babel__core": "^7.20.5",
     "@types/node": "^24.12.3",
     "@types/react": "^19.2.14",
@@ -45,6 +46,7 @@
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.6.0",
     "jsdom": "^29.1.1",
+    "msw": "^2.14.6",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.59.2",
     "vite": "^8.0.12",

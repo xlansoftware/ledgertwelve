@@ -62,7 +62,7 @@ describe("categoriesService", () => {
 
     it("throws when name is missing", async () => {
       await expect(
-        createCategory({ name: "" } as any),
+        createCategory({ name: "" }),
       ).rejects.toThrow()
     })
   })
