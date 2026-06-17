@@ -5,9 +5,9 @@ import {
   CardHeader,
   CardTitle,
   CardDescription,
-  CardContent,
   CardFooter,
 } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -39,9 +39,9 @@ export default function BookPage() {
                 <Skeleton className="h-5 w-32" />
                 <Skeleton className="h-4 w-20 mt-1" />
               </CardHeader>
-              <CardContent>
+              <CardFooter>
                 <Skeleton className="h-9 w-20" />
-              </CardContent>
+              </CardFooter>
             </Card>
           ))}
         </div>
@@ -95,9 +95,7 @@ export default function BookPage() {
                 <CardTitle className="flex items-center gap-2">
                   {book.name}
                   {book.status === "closed" && (
-                    <span className="text-xs font-normal tracking-normal uppercase text-muted-foreground">
-                      Closed
-                    </span>
+                    <Badge variant="outline">Closed</Badge>
                   )}
                 </CardTitle>
                 <CardDescription>
