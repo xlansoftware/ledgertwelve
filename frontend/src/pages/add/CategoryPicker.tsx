@@ -23,6 +23,14 @@ export default function CategoryPicker({ selectedId, onSelect }: CategoryPickerP
     }
   }, [categories.length, fetchCategories]);
 
+  // Auto-select first category when none is selected
+  useEffect(() => {
+    if (categories.length > 0 && !selectedId) {
+      const sorted = [...categories].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+      onSelect(sorted[0]);
+    }
+  }, [categories, selectedId, onSelect]);
+
   // Loading state — show skeleton grid
   if (isLoading) {
     return (
