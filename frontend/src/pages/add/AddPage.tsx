@@ -5,6 +5,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import CategoryPicker from "./CategoryPicker";
 import type { CategoryDto, TransactionDto } from "@/types";
 import { useBooksStore, useTransactionsStore } from "@/store";
+import { toast } from "sonner"
+import { playSound } from "@/lib/playSound";
+import { useSuccessOverlay } from "@/components/common/success";
 
 export default function AddPage() {
   const [notes, setNotes] = useState("");
@@ -12,6 +15,8 @@ export default function AddPage() {
   const createTransaction = useTransactionsStore((s) => s.createTransaction);
 
   const currentBook = useBooksStore((s) => s.currentBook);
+
+  const { showSuccess } = useSuccessOverlay();
 
   const handleAdd = async (transaction: Partial<TransactionDto>) => {
     console.log(transaction);
@@ -27,11 +32,11 @@ export default function AddPage() {
       // reset controls
       setNotes("");
 
-      // playSound(); // don't wait for finish
-      // await showSuccess({ playSound: false });
+      playSound(); // don't wait for finish
+      await showSuccess({ playSound: false });
     } catch (error) {
       console.error("Error adding transaction:", error);
-      // toast.error("Error adding transaction");
+      toast.error("Error adding transaction");
     }
   };
 
