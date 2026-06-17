@@ -23,11 +23,12 @@ export default function AddPage() {
     try {
       await createTransaction({
         bookId: currentBook?.id || "default",
-        amount: transaction.amount!,
+        amount: transaction.originalAmount!,
         originalAmount: transaction.originalAmount,
         originalCurrency: transaction.originalCurrency,
         exchangeRate: 1.0,
         categoryName: selectedCategory?.name,
+        note: notes
       });
       // reset controls
       setNotes("");
