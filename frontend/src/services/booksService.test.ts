@@ -15,6 +15,7 @@ import {
   closeBook,
   reopenBook,
 } from "./booksService"
+import { createTransaction } from "./transactionsService"
 import { login } from "./authService"
 
 describe("booksService", () => {
@@ -88,8 +89,16 @@ describe("booksService", () => {
       await expect(deleteBook("book_main")).rejects.toThrow(/Cannot delete Main/i)
     })
 
-    it("throws when deleting a non-empty book", async () => {
-      await expect(deleteBook("book_vacation")).rejects.toThrow(
+    it("throws when deleting a book with transactions", async () => {
+      // Create a new book and add a transaction to it, then verify deletion is blocked
+      const book = await createBook({ name: "Book With Tx" })
+      await createTransaction({
+        bookId: book.id,
+        amount: -50,
+        categoryName: "Groceries",
+      })
+
+      await expect(deleteBook(book.id)).rejects.toThrow(
         /Cannot delete book/i,
       )
     })

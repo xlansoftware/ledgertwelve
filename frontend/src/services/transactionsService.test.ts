@@ -56,12 +56,20 @@ describe("transactionsService", () => {
 
   describe("getTransaction", () => {
     it("returns a single transaction by id", async () => {
-      const result = await getTransaction("tx_1")
-      expect(result).toMatchObject({
-        id: "tx_1",
+      // Create a known transaction then fetch it to avoid flakiness from random mock data
+      const created = await createTransaction({
         bookId: "book_main",
-        amount: -100,
+        amount: -99,
         categoryName: "Groceries",
+        note: "Test fetch",
+      })
+      const result = await getTransaction(created.id)
+      expect(result).toMatchObject({
+        id: created.id,
+        bookId: "book_main",
+        amount: -99,
+        categoryName: "Groceries",
+        note: "Test fetch",
       })
     })
 
@@ -120,8 +128,20 @@ describe("transactionsService", () => {
   })
 
   describe("updateTransaction", () => {
+    let txId: string
+
+    beforeAll(async () => {
+      const created = await createTransaction({
+        bookId: "book_main",
+        amount: -50,
+        categoryName: "Groceries",
+        note: "To be updated",
+      })
+      txId = created.id
+    })
+
     it("updates transaction fields", async () => {
-      const result = await updateTransaction("tx_1", {
+      const result = await updateTransaction(txId, {
         amount: -200,
         note: "Updated note",
       })
@@ -130,7 +150,7 @@ describe("transactionsService", () => {
     })
 
     it("updates category", async () => {
-      const result = await updateTransaction("tx_1", {
+      const result = await updateTransaction(txId, {
         categoryName: "Dining",
       })
       expect(result.categoryName).toBe("Dining")
@@ -145,7 +165,12 @@ describe("transactionsService", () => {
 
   describe("deleteTransaction", () => {
     it("deletes a transaction", async () => {
-      await expect(deleteTransaction("tx_2")).resolves.toBeUndefined()
+      const created = await createTransaction({
+        bookId: "book_main",
+        amount: -10,
+        categoryName: "Miscellaneous",
+      })
+      await expect(deleteTransaction(created.id)).resolves.toBeUndefined()
     })
 
     it("throws on non-existent transaction", async () => {
