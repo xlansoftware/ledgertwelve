@@ -13,7 +13,6 @@ export interface GetTransactionsParams {
   createdBy?: string
   page?: number
   pageSize?: number
-  sort?: string
 }
 
 export interface PaginatedTransactions {
@@ -35,7 +34,6 @@ export async function getTransactions(
       createdBy: params.createdBy,
       page: params.page,
       pageSize: params.pageSize,
-      sort: params.sort,
     },
   })
   return {

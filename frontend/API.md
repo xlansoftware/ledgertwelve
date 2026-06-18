@@ -632,7 +632,6 @@ category=
 createdBy=
 page=
 pageSize=
-sort=
 ```
 
 Example:
@@ -655,6 +654,8 @@ GET /transactions?bookId=book_1&from=2026-01-01&to=2026-12-31
   }
 }
 ```
+
+The transactions are always sorted by date descending.
 
 ---
 

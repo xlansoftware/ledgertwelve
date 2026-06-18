@@ -294,8 +294,8 @@ function generateMockTransactions(
     })
   }
 
-  // Sort by dateTime ascending
-  result.sort((a, b) => a.dateTime.getTime() - b.dateTime.getTime())
+  // Sort by dateTime descending
+  result.sort((a, b) => b.dateTime.getTime() - a.dateTime.getTime())
   return result
 }
 
