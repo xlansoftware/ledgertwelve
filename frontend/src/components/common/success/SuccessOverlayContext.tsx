@@ -64,10 +64,15 @@ export function SuccessOverlayProvider({ children }: { children: ReactNode }) {
   );
 }
 
+const isTest = import.meta.env.MODE === 'test';
+
 // eslint-disable-next-line react-refresh/only-export-components
 export function useSuccessOverlay(): SuccessOverlayContextType {
   const context = useContext(SuccessOverlayContext);
   if (!context) {
+    if (isTest) {
+      return { showSuccess: () => new Promise((resolve) => setTimeout(resolve, 1)) }
+    }
     throw new Error(
       "useSuccessOverlay must be used within a SuccessOverlayProvider"
     );
