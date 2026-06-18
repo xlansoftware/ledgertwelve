@@ -76,7 +76,6 @@ export default function AddPage() {
       });
       // reset controls
       setNotes("");
-      setSelectedCategory(null);
 
       playSound(); // don't wait for finish
       await showSuccess({ playSound: false });
