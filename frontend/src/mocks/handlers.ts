@@ -157,31 +157,155 @@ interface TransactionRequestBody {
   note?: string
 }
 
-const transactions: Transaction[] = [
-  {
-    id: 'tx_1',
-    bookId: 'book_main',
-    userId: 'usr_1',
-    dateTime: new Date('2026-05-01T12:00:00Z'),
-    amount: -100,
-    originalCurrency: 'USD',
-    originalAmount: -110,
-    exchangeRate: 0.91,
-    categoryName: 'Groceries',
-    note: 'Lunch',
-    createdAt: new Date('2026-05-01T12:00:00Z'),
-  },
-  {
-    id: 'tx_2',
-    bookId: 'book_vacation',
-    userId: 'usr_1',
-    dateTime: new Date('2026-06-01T10:00:00Z'),
-    amount: -50,
-    categoryName: 'Groceries',
-    note: 'Ice cream',
-    createdAt: new Date('2026-06-01T10:00:00Z'),
-  },
+// ---------------------------------------------------------------------------
+// Mock transaction generation
+// ---------------------------------------------------------------------------
+
+const RECURRING_ENTRIES: { name: string; amount: number }[] = [
+  { name: 'Rent / Mortgage', amount: -1200 },
+  { name: 'Utilities',       amount: -140 },
+  { name: 'Subscriptions',   amount: -25 },
+  { name: 'Insurance',       amount: -150 },
 ]
+
+const WEIGHTED_CATS = [
+  { name: 'Groceries',       min: -200, max: -15, w: 0.14 },
+  { name: 'Dining Out',      min: -75,  max: -8,  w: 0.10 },
+  { name: 'Transportation',  min: -60,  max: -5,  w: 0.09 },
+  { name: 'Entertainment',   min: -50,  max: -5,  w: 0.07 },
+  { name: 'Miscellaneous',   min: -100, max: -3,  w: 0.06 },
+  { name: 'Health / Medical',min: -200, max: -10, w: 0.04 },
+  { name: 'Personal Care',   min: -80,  max: -5,  w: 0.04 },
+  { name: 'Clothing',        min: -150, max: -15, w: 0.03 },
+  { name: 'Gifts',           min: -100, max: -10, w: 0.03 },
+  { name: 'Education',       min: -400, max: -15, w: 0.03 },
+  { name: 'Sport',           min: -80,  max: -5,  w: 0.03 },
+  { name: 'Pets',            min: -120, max: -10, w: 0.03 },
+  { name: 'Maintenance',     min: -500, max: -30, w: 0.02 },
+  { name: 'Parents',         min: -300, max: -20, w: 0.02 },
+  { name: 'Kids',            min: -200, max: -10, w: 0.02 },
+  { name: 'Travel',          min: -2000,max: -50, w: 0.02 },
+  { name: 'Savings',         min: 100,  max: 800, w: 0.02 },
+  { name: 'Freelance',       min: 200,  max: 2500,w: 0.01 },
+  { name: 'Salary',          min: 2800, max: 5000,w: 0.02 },
+  { name: 'Taxes',           min: -3000,max: -400, w: 0.01 },
+]
+
+const TOTAL_WEIGHT = WEIGHTED_CATS.reduce((s, c) => s + c.w, 0)
+const CUMULATIVE = (() => {
+  const arr: { name: string; min: number; max: number; threshold: number }[] = []
+  let acc = 0
+  for (const c of WEIGHTED_CATS) {
+    acc += c.w / TOTAL_WEIGHT
+    arr.push({ name: c.name, min: c.min, max: c.max, threshold: acc })
+  }
+  return arr
+})()
+
+function pickRandomCategory(): { name: string; min: number; max: number } {
+  const r = Math.random()
+  return CUMULATIVE.find(c => r <= c.threshold)!
+}
+
+const SAMPLE_NOTES = [
+  '', '', '', '', '', '', '',
+  'Weekly shopping', 'Monthly bill', 'Quick lunch', 'Coffee run',
+  'Gas station', 'Online order', 'Pharmacy', 'Doctor visit',
+  'Gym membership', 'Haircut', 'Book purchase', 'Streaming service',
+  'Public transport pass', 'Parking', 'Birthday gift', 'Donation',
+]
+
+function randomNote(): string | undefined {
+  const n = SAMPLE_NOTES[Math.floor(Math.random() * SAMPLE_NOTES.length)]
+  return n || undefined
+}
+
+/**
+ * Generate mock transactions distributed between `start` (newest) and `end` (oldest).
+ *
+ * @param start  Most recent date boundary (default: now)
+ * @param end    Oldest date boundary   (default: one year before now)
+ * @param count  Number of transactions to generate (default: 3000)
+ */
+function generateMockTransactions(
+  start: Date = new Date(),
+  end: Date = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000),
+  count: number = 3000,
+  bookId: string = 'book_main',
+): Transaction[] {
+  const result: Transaction[] = []
+  const timeRange = start.getTime() - end.getTime()
+  if (timeRange <= 0) return result
+
+  // Generate recurring monthly transactions first
+  const startMonth = new Date(end.getFullYear(), end.getMonth(), 1)
+  const endMonth = new Date(start.getFullYear(), start.getMonth(), 1)
+  const months: Date[] = []
+  for (let d = new Date(startMonth); d <= endMonth; d.setMonth(d.getMonth() + 1)) {
+    months.push(new Date(d))
+  }
+
+  for (const month of months) {
+    for (const entry of RECURRING_ENTRIES) {
+      const dayOfMonth = 1 + Math.floor(Math.random() * 28)
+      const date = new Date(month)
+      date.setDate(dayOfMonth)
+      date.setHours(8 + Math.floor(Math.random() * 12), Math.floor(Math.random() * 60))
+
+      if (date >= end && date <= start) {
+        result.push({
+          id: nextTransactionId(),
+          bookId,
+          userId: 'usr_1',
+          dateTime: date,
+          amount: entry.amount,
+          categoryName: entry.name,
+          createdAt: date,
+        })
+      }
+    }
+  }
+
+  // Fill remaining with random transactions
+  const remaining = count - result.length
+  for (let i = 0; i < remaining; i++) {
+    const offset = Math.random() * timeRange
+    const date = new Date(end.getTime() + offset)
+    const cat = pickRandomCategory()
+    const amount = Math.round((cat.min + Math.random() * (cat.max - cat.min)) * 100) / 100
+    const hasMultiCurrency = Math.random() < 0.08
+
+    result.push({
+      id: nextTransactionId(),
+      bookId,
+      userId: 'usr_1',
+      dateTime: date,
+      amount,
+      ...(hasMultiCurrency
+        ? {
+            originalCurrency: 'USD',
+            originalAmount: Math.round((amount / 0.91) * 100) / 100,
+            exchangeRate: 0.91,
+          }
+        : {}),
+      categoryName: cat.name,
+      note: randomNote(),
+      createdAt: date,
+    })
+  }
+
+  // Sort by dateTime ascending
+  result.sort((a, b) => a.dateTime.getTime() - b.dateTime.getTime())
+  return result
+}
+
+// Generate 1000 mock transactions in book_main spanning the last year
+const transactions: Transaction[] = generateMockTransactions(
+  new Date(),
+  new Date(Date.now() - 365 * 24 * 60 * 60 * 1000),
+  1000,
+  'book_main',
+)
 
 // Export jobs
 interface ExportJob {
