@@ -85,18 +85,15 @@ export default function AddPage() {
     }
   };
 
-  const handleConvertConfirm = useCallback(
-    (result: ConvertResult) => {
-      commitTransaction({
-        amount: result.amount,
-        originalAmount: result.originalAmount,
-        originalCurrency: result.originalCurrency,
-        exchangeRate: result.exchangeRate,
-      });
-      setPendingTx(null);
-    },
-    [notes, selectedCategory, currentBook],
-  );
+  const handleConvertConfirm = (result: ConvertResult) => {
+    commitTransaction({
+      amount: result.amount,
+      originalAmount: result.originalAmount,
+      originalCurrency: result.originalCurrency,
+      exchangeRate: result.exchangeRate,
+    });
+    setPendingTx(null);
+  };
 
   const handleConvertCancel = useCallback(() => {
     setPendingTx(null);
