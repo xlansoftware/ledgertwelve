@@ -41,10 +41,8 @@ function formatAmount(amount: number): string {
 
 function TransactionRow({
   transaction,
-  bookName,
 }: {
   transaction: TransactionDto;
-  bookName: string;
 }) {
   const isExpense = transaction.amount < 0;
 
@@ -82,12 +80,6 @@ function TransactionRow({
             <span>{formatDate(transaction.dateTime)}</span>
             <span className="text-[0.5rem]">·</span>
             <span>{formatTime(transaction.dateTime)}</span>
-            {bookName && (
-              <>
-                <span className="text-[0.5rem]">·</span>
-                <span className="truncate">{bookName}</span>
-              </>
-            )}
           </div>
           {transaction.note && (
             <p className="mt-0.5 truncate text-xs text-muted-foreground/70">
@@ -139,15 +131,11 @@ export default function HistoryPage() {
   const total = useTransactionsStore((s) => s.total);
   const fetchTransactions = useTransactionsStore((s) => s.fetchTransactions);
 
-  const books = useBooksStore((s) => s.books);
-  const fetchBooks = useBooksStore((s) => s.fetchBooks);
-
-  const bookMap = new Map(books.map((b) => [b.id, b.name]));
+  const currentBook = useBooksStore((s) => s.currentBook);
 
   useEffect(() => {
-    fetchTransactions();
-    fetchBooks();
-  }, [fetchTransactions, fetchBooks]);
+    fetchTransactions({ bookId: currentBook?.id });
+  }, [fetchTransactions, currentBook]);
 
   return (
     <div className="flex h-full flex-col">
@@ -187,7 +175,6 @@ export default function HistoryPage() {
             <TransactionRow
               key={tx.id}
               transaction={tx}
-              bookName={bookMap.get(tx.bookId) ?? ""}
             />
           ))}
         </ScrollArea>
