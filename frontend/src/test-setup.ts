@@ -8,6 +8,24 @@ import { setupServer } from "msw/node"
 import { handlers, seedSession } from "./mocks/handlers"
 import { afterAll, afterEach, beforeAll } from "vitest"
 
+// ---------------------------------------------------------------------------
+// Mock window.matchMedia for components that use useMediaQuery
+// ---------------------------------------------------------------------------
+
+Object.defineProperty(window, "matchMedia", {
+  writable: true,
+  value: (query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: () => {},
+    removeListener: () => {},
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    dispatchEvent: () => false,
+  }),
+})
+
 export const server = setupServer(...handlers)
 
 // Seed a persistent test session
