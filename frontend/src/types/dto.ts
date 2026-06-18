@@ -69,3 +69,9 @@ export interface CategoryReportRow {
   categoryName: string
   amount: number
 }
+
+export interface ExchangeRateDto {
+  from: string
+  to: string
+  rate: number
+}

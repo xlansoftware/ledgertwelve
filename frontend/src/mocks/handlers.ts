@@ -965,6 +965,58 @@ export const handlers = [
     return HttpResponse.json({ data })
   }),
 
+  // ---- Rates ----
+  http.get('/api/v1/rates/exchange', ({ request }) => {
+    const url = new URL(request.url)
+    const fromRaw = url.searchParams.get('from')
+    const toRaw = url.searchParams.get('to')
+
+    if (!fromRaw || !toRaw) {
+      return HttpResponse.json(
+        { error: 'from and to query parameters are required' },
+        { status: 400 },
+      )
+    }
+
+    const from = fromRaw.toUpperCase()
+    const to = toRaw.toUpperCase()
+
+    // Validate currency codes (3-letter alphabetic)
+    const currencyRegex = /^[A-Z]{3}$/
+    if (!currencyRegex.test(from)) {
+      return HttpResponse.json(
+        { error: `Invalid currency code: ${fromRaw}` },
+        { status: 400 },
+      )
+    }
+    if (!currencyRegex.test(to)) {
+      return HttpResponse.json(
+        { error: `Invalid currency code: ${toRaw}` },
+        { status: 400 },
+      )
+    }
+
+    // Static rate lookup table
+    const rates: Record<string, Record<string, number>> = {
+      USD: { EUR: 0.91 },
+      EUR: { USD: 1.10 },
+    }
+
+    // Same currency → rate 1
+    if (from === to) {
+      return HttpResponse.json({
+        data: { from, to, rate: 1 },
+      })
+    }
+
+    // Look up from→to, fallback to 1
+    const rate = rates[from]?.[to] ?? 1
+
+    return HttpResponse.json({
+      data: { from, to, rate },
+    })
+  }),
+
   // ---- Exports ----
   http.post('/api/v1/exports', async ({ request }) => {
     const auth = requireAuth(request)

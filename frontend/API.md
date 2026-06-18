@@ -502,6 +502,50 @@ Remove sharing.
 
 ---
 
+# GET /api/v1/rates/exchange
+
+### Purpose
+
+Look up an exchange rate between two currencies. Provides a default rate for the user to fill in when creating multi-currency transactions.
+
+### Query Parameters
+
+```text
+from=USD
+to=EUR
+```
+
+Both parameters are required.
+
+### Response
+
+```json
+{
+  "data": {
+    "from": "USD",
+    "to": "EUR",
+    "rate": 0.91
+  }
+}
+```
+
+### Errors
+
+```json
+// 400 — Missing parameters
+{ "error": "from and to query parameters are required" }
+
+// 400 — Invalid currency code
+{ "error": "Invalid currency code: XYZ" }
+```
+
+### Notes
+
+Unauthenticated.
+Currencies are case-insensitive ("usd", "Usd", "USD" all accepted).
+
+---
+
 # Book Closing
 
 This deserves a dedicated command endpoint because it performs a business workflow.
