@@ -89,3 +89,78 @@ export function invertColor(color: string): string {
 
   throw new Error(`Invalid color format: ${color}`);
 }
+
+export function formatCurrency(
+  amount: number,
+  fractionDigits: number = 2
+): string {
+  // Define the formatting options
+  const options: Intl.NumberFormatOptions = {
+    // style: "currency",
+    // currency: "USD",
+    minimumFractionDigits: Math.min(2, fractionDigits), // Set minimum decimal places
+    maximumFractionDigits: fractionDigits, // Set maximum decimal places
+  };
+
+  // Create a formatter and format the amount
+  return new Intl.NumberFormat("en-US", options).format(amount);
+}
+
+export function formatDate(dateUtc: Date): string {
+  const now = new Date();
+  const date = new Date(dateUtc); // This creates a local time from UTC timestamp
+
+  const isSameDay = (d1: Date, d2: Date) =>
+    d1.getFullYear() === d2.getFullYear() &&
+    d1.getMonth() === d2.getMonth() &&
+    d1.getDate() === d2.getDate();
+
+  const timeFormatter = new Intl.DateTimeFormat(undefined, {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  const weekdayFormatter = new Intl.DateTimeFormat(undefined, {
+    weekday: "long",
+  });
+
+  const monthDayFormatter = new Intl.DateTimeFormat(undefined, {
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  const fullDateFormatter = new Intl.DateTimeFormat(undefined, {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+
+  const startOfWeek = new Date(now);
+  startOfWeek.setDate(now.getDate() - ((now.getDay() + 6) % 7)); // last Monday
+
+  const isToday = isSameDay(now, date);
+  const isYesterday = isSameDay(yesterday, date);
+  const isThisWeek = date >= startOfWeek;
+  const isThisYear = now.getFullYear() === date.getFullYear();
+
+  const timeStr = timeFormatter.format(date);
+
+  if (isToday) {
+    return `Today ${timeStr}`;
+  } else if (isYesterday) {
+    return `Yesterday ${timeStr}`;
+  } else if (isThisWeek) {
+    return `${weekdayFormatter.format(date)} ${timeStr}`;
+  } else if (isThisYear) {
+    return monthDayFormatter.format(date);
+  } else {
+    return fullDateFormatter.format(date);
+  }
+}

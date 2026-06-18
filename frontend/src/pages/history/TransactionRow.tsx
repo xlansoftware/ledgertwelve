@@ -1,0 +1,108 @@
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { getIcon } from "@/lib/getIcon";
+import { formatCurrency, formatDate, invertColor } from "@/lib/utils";
+import { useCategoriesStore } from "@/store";
+import type { TransactionDto } from "@/types";
+import TransactionRowMenu from "./TransactionRowMenu";
+
+interface TransactionRowProps {
+  transaction: TransactionDto;
+}
+
+function transactionValue(transaction: TransactionDto) {
+  return formatCurrency(transaction.amount, 2);
+}
+
+function explainValue(value: number, exchangeRate?: number, currency?: string) {
+  if (!currency) return null;
+  if (!exchangeRate) return null;
+  return `${formatCurrency(value, 2)} x ${formatCurrency(exchangeRate, 4) ?? 1.0} ${currency}`;
+}
+
+function explainTransactionValue(transaction: TransactionDto) {
+  return explainValue(
+    transaction.amount || 0,
+    transaction.exchangeRate,
+    transaction.originalCurrency
+  );
+}
+
+export default function TransactionRow({
+  transaction,
+}: TransactionRowProps) {
+  const categories = useCategoriesStore((s) => s.categories);
+  const transactionCategory = categories.find((c) => c.name === transaction.categoryName);
+  const category = transactionCategory;
+  const title = transaction.note || category?.name || "No category";
+  const Icon = getIcon(transactionCategory?.icon);
+  return (
+    <Card
+      data-testid={`Item: ${title}, ${transactionValue(transaction)}`}
+      aria-label={`Item: ${title}, ${transactionValue(transaction)}`}
+      className="overflow-hidden border-t border-b border-l-0 border-r-0 rounded-none p-0">
+      <CardContent className="p-0">
+        <div className="flex flex-row">
+          <div
+            className="p-2 bg-muted flex items-center"
+            style={
+              transactionCategory?.color
+                ? {
+                  backgroundColor: transactionCategory?.color,
+                  color: invertColor(transactionCategory?.color),
+                }
+                : {}
+            }
+          >
+            {transactionCategory?.icon && (
+              <div className="flex-shrink-0">
+                <Icon />
+              </div>
+            )}
+          </div>
+          <div className="pl-2 pt-1 pb-1 flex-grow flex items-start justify-between overflow-hidden">
+            <div
+              className="flex items-start gap-2 cursor-pointer truncate"
+              onClick={() => { console.log("..."); }}
+            >
+              <div className="flex flex-row gap-2 items-center">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <div className="font-medium">{title}</div>
+                    <Badge variant="secondary">{0}</Badge>
+                  </div>
+                  <div className="flex flex-wrap gap-x-2 text-sm text-muted-foreground overflow-hidden">
+                    <div className="truncate overflow-hidden text-ellipsis whitespace-nowrap">
+                      {transaction.userId}
+                    </div>
+                    <div className="truncate overflow-hidden text-ellipsis whitespace-nowrap">
+                      {formatDate(new Date(transaction.dateTime))}
+                    </div>
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {category?.name}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col flex-shrink-0 items-end">
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <div className="text-right">
+                  <div className="font-bold">
+                    {transactionValue(transaction)}
+                  </div>
+                </div>
+
+                <TransactionRowMenu transaction={transaction} />
+              </div>
+              <div className="pr-2 text-sm text-muted-foreground">
+                {explainTransactionValue(transaction)}
+              </div>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
