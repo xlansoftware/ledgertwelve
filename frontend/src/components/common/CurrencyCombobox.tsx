@@ -2,13 +2,14 @@
 // CurrencyCombobox — combobox with common ISO currency codes + free-typing
 // ---------------------------------------------------------------------------
 
+import * as React from "react"
+
 import {
   Combobox,
   ComboboxInput,
   ComboboxContent,
   ComboboxList,
   ComboboxItem,
-  ComboboxEmpty,
 } from "@/components/ui/combobox"
 
 const COMMON_CURRENCIES = [
@@ -36,10 +37,26 @@ export function CurrencyCombobox({
   onChange,
   disabled = false,
 }: CurrencyComboboxProps) {
+  const [inputValue, setInputValue] = React.useState(value)
+
   return (
     <Combobox
       value={value}
-      onValueChange={(newValue) => onChange?.(newValue ?? "")}
+      onValueChange={(selected) => {
+        const next = selected as string ?? ""
+        setInputValue(next)
+        onChange?.(next)
+      }}
+      {...({
+        inputValue,
+        onInputValueChange: (next: string) => {
+          setInputValue(next)
+          onChange?.(next)
+        },
+      } as React.ComponentPropsWithoutRef<typeof Combobox> & {
+        inputValue?: string
+        onInputValueChange?: (value: string) => void
+      })}
     >
       <ComboboxInput
         disabled={disabled}
@@ -55,7 +72,6 @@ export function CurrencyCombobox({
               {code}
             </ComboboxItem>
           ))}
-          <ComboboxEmpty>No currency found</ComboboxEmpty>
         </ComboboxList>
       </ComboboxContent>
     </Combobox>
