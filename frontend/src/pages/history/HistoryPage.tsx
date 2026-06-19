@@ -7,6 +7,40 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Search } from "lucide-react";
 import TransactionRow from "./TransactionRow";
 import FilterDialog from "./FilterDialog";
+import type { TransactionDto } from "@/types";
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/** Extract the date portion (YYYY-MM-DD) from an ISO dateTime string. */
+function toDateKey(iso: string): string {
+  return iso.slice(0, 10);
+}
+
+/** Format a YYYY-MM-DD string into a human-readable header. */
+function formatDateHeader(dateKey: string): string {
+  const date = new Date(dateKey + "T00:00:00");
+  return new Intl.DateTimeFormat(undefined, {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  }).format(date);
+}
+
+/** Group transactions by their date. */
+function groupByDate(
+  txns: TransactionDto[],
+): Map<string, typeof txns> {
+  const groups = new Map<string, typeof txns>();
+  for (const tx of txns) {
+    const key = toDateKey(tx.dateTime);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push(tx);
+  }
+  return groups;
+}
 
 // ---------------------------------------------------------------------------
 // Skeleton while loading
@@ -125,13 +159,25 @@ export default function HistoryPage() {
           <TransactionSkeleton />
         </div>
       ) : (
-        <ScrollArea className="flex-1 px-2 py-2">
-          {transactions.map((tx) => (
-            <TransactionRow
-              key={tx.id}
-              transaction={tx}
-            />
-          ))}
+        <ScrollArea className="flex-1 px-0 py-0">
+          {(() => {
+            const groups = groupByDate(transactions);
+            const entries = Array.from(groups.entries());
+            return entries.map(([dateKey, txns], groupIndex) => (
+              <div key={dateKey}>
+                {/* Date delimiter header */}
+                {groupIndex > 0 && 
+                <div className="px-2 py-2">
+                  <h3 className="text-sm font-semibold text-muted-foreground">
+                    {formatDateHeader(dateKey)}
+                  </h3>
+                </div>}
+                {txns.map((tx) => (
+                  <TransactionRow key={tx.id} transaction={tx} />
+                ))}
+              </div>
+            ));
+          })()}
 
           {/* Load-more area */}
           {showLoadMore && (
