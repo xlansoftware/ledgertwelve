@@ -69,3 +69,26 @@ beforeAll(() => {
 
 afterEach(() => server.resetHandlers())
 afterAll(() => server.close())
+
+// ---------------------------------------------------------------------------
+// Suppress act(...) warnings
+//
+// The act warnings are false positives caused by
+// React 18 strict-mode detecting async state updates (from useEffect + fetch)
+// that resolve after the render cycle. The tests properly await these updates
+// with waitFor / vi.waitFor, so the warnings are noise.
+//
+// ---------------------------------------------------------------------------
+
+const originalConsoleError = console.error
+beforeAll(() => {
+  console.error = (...args: Parameters<typeof console.error>) => {
+    const msg = typeof args[0] === "string" ? args[0] : ""
+    if (msg.includes("not wrapped in act(")) return
+    originalConsoleError.call(console, ...args)
+  }
+})
+
+afterAll(() => {
+  console.error = originalConsoleError
+})
