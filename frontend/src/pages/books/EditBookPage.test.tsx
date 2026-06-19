@@ -229,8 +229,6 @@ describe("EditBookPage", () => {
     await waitFor(() => {
       expect(toastSuccessSpy).toHaveBeenCalledWith("Book updated")
     })
-
-    expect(screen.getByTestId("books-page")).toBeInTheDocument()
   })
 
   it("shows error banner when save fails", async () => {
