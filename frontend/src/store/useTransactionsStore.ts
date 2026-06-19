@@ -32,6 +32,14 @@ interface TransactionsState {
   total: number
   /** The params used for the last successful list fetch. */
   lastParams: GetTransactionsParams
+  /** Whether there are more pages to load. */
+  hasMore: boolean
+  /** Whether a "load more" request is in progress. */
+  isLoadingMore: boolean
+  /** Generation counter to guard against stale async responses. */
+  epoch: number
+  /** Human-readable error from a loadMore request (does not clear the list). */
+  loadMoreError: string | null
 }
 
 // ---------------------------------------------------------------------------
@@ -53,6 +61,8 @@ interface TransactionsActions {
   clearCurrentTransaction: () => void
   /** Clear any stored error. */
   clearError: () => void
+  /** Load the next page and append transactions to the current list. */
+  loadMore: () => Promise<void>
 }
 
 // ---------------------------------------------------------------------------
@@ -68,26 +78,35 @@ export const useTransactionsStore = create<TransactionsState & TransactionsActio
   page: 1,
   pageSize: 50,
   total: 0,
+  hasMore: false,
+  isLoadingMore: false,
+  epoch: 0,
+  loadMoreError: null,
   lastParams: {},
 
   // -- Actions --
 
   fetchTransactions: async (params?: GetTransactionsParams) => {
-    set({ isLoading: true, error: null })
+    set({ isLoading: true, error: null, isLoadingMore: false, loadMoreError: null })
     try {
       const result = await getTransactions(params)
+      const epoch = get().epoch + 1
       set({
         transactions: result.items,
         page: result.page,
         pageSize: result.pageSize,
         total: result.total,
+        hasMore: result.items.length < result.total,
         lastParams: params ?? {},
         isLoading: false,
+        isLoadingMore: false,
+        loadMoreError: null,
+        epoch,
       })
       return result.items
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to load transactions"
-      set({ error: message, isLoading: false })
+      set({ error: message, isLoading: false, isLoadingMore: false })
       throw err
     }
   },
@@ -175,6 +194,36 @@ export const useTransactionsStore = create<TransactionsState & TransactionsActio
         error: err instanceof Error ? err.message : "Failed to delete transaction",
       })
       throw err
+    }
+  },
+
+  loadMore: async () => {
+    const state = get()
+    if (!state.hasMore || state.isLoadingMore) return
+
+    set({ isLoadingMore: true, loadMoreError: null })
+
+    const captureEpoch = state.epoch
+    const nextPage = state.page + 1
+
+    try {
+      const result = await getTransactions({ ...state.lastParams, page: nextPage })
+
+      // Guard against stale response (book/filter changed while loading)
+      if (get().epoch !== captureEpoch) return
+
+      set({
+        transactions: [...state.transactions, ...result.items],
+        page: result.page,
+        total: result.total,
+        hasMore: state.transactions.length + result.items.length < result.total,
+        isLoadingMore: false,
+        loadMoreError: null,
+      })
+    } catch (err: unknown) {
+      // Don't overwrite global error — keep existing transactions visible
+      const message = err instanceof Error ? err.message : "Failed to load more transactions"
+      set({ isLoadingMore: false, loadMoreError: message })
     }
   },
 

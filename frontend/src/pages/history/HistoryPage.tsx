@@ -3,6 +3,8 @@ import { useTransactionsStore, useBooksStore } from "@/store";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 import TransactionRow from "./TransactionRow";
 
 // ---------------------------------------------------------------------------
@@ -37,13 +39,22 @@ export default function HistoryPage() {
   const isLoading = useTransactionsStore((s) => s.isLoading);
   const error = useTransactionsStore((s) => s.error);
   const total = useTransactionsStore((s) => s.total);
+  const hasMore = useTransactionsStore((s) => s.hasMore);
+  const isLoadingMore = useTransactionsStore((s) => s.isLoadingMore);
+  const loadMoreError = useTransactionsStore((s) => s.loadMoreError);
   const fetchTransactions = useTransactionsStore((s) => s.fetchTransactions);
+  const loadMore = useTransactionsStore((s) => s.loadMore);
 
   const currentBook = useBooksStore((s) => s.currentBook);
 
   useEffect(() => {
     fetchTransactions({ bookId: currentBook?.id });
   }, [fetchTransactions, currentBook]);
+
+  const showLoadMore =
+    !isLoading &&
+    !error &&
+    transactions.length > 0;
 
   return (
     <div className="flex h-full flex-col">
@@ -85,6 +96,43 @@ export default function HistoryPage() {
               transaction={tx}
             />
           ))}
+
+          {/* Load-more area */}
+          {showLoadMore && (
+            <div className="flex items-center justify-center py-6" data-testid="load-more-area">
+              {!hasMore ? (
+                <span className="text-sm text-muted-foreground">
+                  All {total} transaction{total !== 1 ? "s" : ""} loaded
+                </span>
+              ) : loadMoreError ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={loadMore}
+                  data-testid="load-more-retry"
+                >
+                  Failed to load. Retry?
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={isLoadingMore}
+                  onClick={loadMore}
+                  data-testid="load-more-button"
+                >
+                  {isLoadingMore ? (
+                    <>
+                      <Loader2 className="size-3.5 animate-spin" />
+                      Loading…
+                    </>
+                  ) : (
+                    "Show more…"
+                  )}
+                </Button>
+              )}
+            </div>
+          )}
         </ScrollArea>
       )}
     </div>
