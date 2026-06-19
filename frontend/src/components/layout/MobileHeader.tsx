@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 import { useLocation, useNavigate } from "react-router-dom";
 
-import { ClipboardList, Plus, Settings } from 'lucide-react';
+import { Book, ClipboardList, Plus, Settings } from 'lucide-react';
 
 export default function MobileHeader() {
   const navigate = useNavigate();
@@ -24,6 +24,16 @@ export default function MobileHeader() {
       }
     >
       <div className="grid grid-cols-4 h-full">
+        <button
+          aria-label="Books Screen"
+          onClick={() => navigate("/books")}
+          className={`flex flex-col items-center justify-center ${currentPath === "/books" ? "text-primary" : "text-muted-foreground"
+            }`}
+        >
+          <Book size={20} />
+          <span className="text-xs mt-1">Books</span>
+        </button>
+
         <button
           aria-label="Add Screen"
           onClick={() => navigate("/")}

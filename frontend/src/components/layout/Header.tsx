@@ -37,8 +37,8 @@ export default function Header() {
             onValueChange={(value: string) => navigate(value)}
           >
             <TabsList>
-              <TabsTrigger aria-label="Add Screen" value="/">Add</TabsTrigger>
               <TabsTrigger aria-label="Books Screen" value="/books">Books</TabsTrigger>
+              <TabsTrigger aria-label="Add Screen" value="/">Add</TabsTrigger>
               <TabsTrigger aria-label="History Screen" value="/history">History</TabsTrigger>
               <TabsTrigger aria-label="Settings Screen" value="/settings">Settings</TabsTrigger>
             </TabsList>
