@@ -469,6 +469,30 @@ if transactions exist.
 
 ---
 
+# GET /api/v1/books/{bookId}/stats
+
+### Purpose
+
+Returns read-only statistics for a book — transaction count and net sum.
+
+### Response
+
+```json
+{
+  "data": {
+    "transactionCount": 142,
+    "totalSum": -4523.50
+  }
+}
+```
+
+- `transactionCount` — number of non-closing transactions in the book.
+- `totalSum` — net sum of all non-closing transaction amounts.
+- Requires the book to be visible to the current user (owned or shared).
+- Returns `404` if the book is not found or not visible.
+
+---
+
 # Book Sharing
 
 ---

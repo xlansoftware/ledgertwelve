@@ -7,6 +7,7 @@ import SettingsPage from "@/pages/SettingsPage";
 import AddPage from "@/pages/add/AddPage";
 import BookPage from "@/pages/books/BookPage";
 import CreateBookPage from "@/pages/books/CreateBookPage";
+import EditBookPage from "@/pages/books/EditBookPage";
 import EditTransactionPage from "@/pages/edit-transaction/EditTransactionPage";
 
 const router = createBrowserRouter([
@@ -29,7 +30,12 @@ const router = createBrowserRouter([
         children: [
           { index: true, element: <BookPage /> },
           { path: "new", element: <CreateBookPage /> },
+          
         ],
+      },
+      { 
+        path: "edit-book/:bookId", 
+        element: <EditBookPage /> 
       },
       {
         path: "edit-transaction/:transactionId",

@@ -17,6 +17,7 @@ import {
 } from "./booksService"
 import { createTransaction } from "./transactionsService"
 import { login } from "./authService"
+import { getBookStats } from "./booksService"
 
 describe("booksService", () => {
   beforeAll(async () => {
@@ -41,6 +42,30 @@ describe("booksService", () => {
         status: expect.any(String),
         ownerId: expect.any(String),
       })
+    })
+  })
+
+  describe("getBookStats", () => {
+    it("returns transactionCount and totalSum for a valid book", async () => {
+      const stats = await getBookStats("book_main")
+      expect(stats).toMatchObject({
+        transactionCount: expect.any(Number),
+        totalSum: expect.any(Number),
+      })
+      expect(stats.transactionCount).toBeGreaterThan(0)
+    })
+
+    it("returns zero stats for a book with no transactions", async () => {
+      const { createBook } = await import("./booksService")
+      const book = await createBook({ name: "Empty Book" })
+      const stats = await getBookStats(book.id)
+      expect(stats).toEqual({ transactionCount: 0, totalSum: 0 })
+    })
+
+    it("throws on non-existent book", async () => {
+      await expect(getBookStats("book_invalid")).rejects.toThrow(
+        /Book not found/i,
+      )
     })
   })
 

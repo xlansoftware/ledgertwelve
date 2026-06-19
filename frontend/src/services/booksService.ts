@@ -2,6 +2,7 @@ import { request } from "./api"
 import type {
   ApiResponse,
   BookDto,
+  BookStatsDto,
   DeleteResponse,
   ShareResponse,
   CloseBookResponse,
@@ -122,6 +123,15 @@ export async function removeShare(bookId: string, userId: string): Promise<void>
     `/api/v1/books/${bookId}/shares/${userId}`,
     { method: "DELETE" },
   )
+}
+
+// ---------------------------------------------------------------------------
+// GET   /api/v1/books/{bookId}/stats
+// ---------------------------------------------------------------------------
+
+export async function getBookStats(bookId: string): Promise<BookStatsDto> {
+  const res = await request<ApiResponse<BookStatsDto>>(`/api/v1/books/${bookId}/stats`)
+  return res.data
 }
 
 // ---------------------------------------------------------------------------

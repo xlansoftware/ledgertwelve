@@ -109,14 +109,23 @@ export default function BookPage() {
               </CardHeader>
 
               <CardFooter>
-                <Button
-                  variant={isSelected ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => fetchBook(book.id)}
-                  disabled={isSelected}
-                >
-                  {isSelected ? "Current book" : "Select"}
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant={isSelected ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => fetchBook(book.id)}
+                    disabled={isSelected}
+                  >
+                    {isSelected ? "Current book" : "Select"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate(`/edit-book/${book.id}`)}
+                  >
+                    Edit
+                  </Button>
+                </div>
               </CardFooter>
             </Card>
           );

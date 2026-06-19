@@ -75,3 +75,8 @@ export interface ExchangeRateDto {
   to: string
   rate: number
 }
+
+export interface BookStatsDto {
+  transactionCount: number
+  totalSum: number
+}

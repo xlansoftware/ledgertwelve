@@ -752,6 +752,27 @@ export const handlers = [
     return HttpResponse.json({ data: { removed: true } })
   }),
 
+  // ---- Book Stats ----
+  http.get('/api/v1/books/:bookId/stats', ({ request, params }) => {
+    const auth = requireAuth(request)
+    if (auth.error) return auth.response
+    const user = auth.user!
+    const { bookId } = params
+    const book = books.find(
+      b => b.id === bookId && (b.ownerId === user.id || b.sharedWith.some(s => s.userId === user.id)),
+    )
+    if (!book) {
+      return HttpResponse.json({ error: 'Book not found' }, { status: 404 })
+    }
+    // Compute stats from non-closing transactions
+    const relevantTx = transactions.filter(tx => tx.bookId === book.id && !tx.isBookClosingEntry)
+    const transactionCount = relevantTx.length
+    const totalSum = relevantTx.reduce((sum, tx) => sum + tx.amount, 0)
+    return HttpResponse.json({
+      data: { transactionCount, totalSum },
+    })
+  }),
+
   // ---- Book Close / Reopen ----
   http.post('/api/v1/books/:bookId/close', async ({ request, params }) => {
     const auth = requireAuth(request)

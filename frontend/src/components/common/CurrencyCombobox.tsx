@@ -39,6 +39,11 @@ export function CurrencyCombobox({
 }: CurrencyComboboxProps) {
   const [inputValue, setInputValue] = React.useState(value)
 
+  // Sync inputValue when the parent updates value externally
+  React.useEffect(() => {
+    setInputValue(value)
+  }, [value])
+
   return (
     <Combobox
       value={value}
