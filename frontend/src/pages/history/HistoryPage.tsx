@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTransactionsStore, useBooksStore, useCategoriesStore, useUsersStore } from "@/store";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Card, CardContent } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Loader2, Search } from "lucide-react";
 import TransactionRow from "./TransactionRow";
@@ -40,29 +38,6 @@ function groupByDate(
     groups.get(key)!.push(tx);
   }
   return groups;
-}
-
-// ---------------------------------------------------------------------------
-// Skeleton while loading
-// ---------------------------------------------------------------------------
-
-function TransactionSkeleton() {
-  return (
-    <div className="space-y-1">
-      {Array.from({ length: 5 }).map((_, i) => (
-        <Card key={i} size="sm" className="border-b last:border-b-0 rounded-none border-x-0 shadow-none">
-          <CardContent className="flex items-center gap-3 px-4 py-3">
-            <Skeleton className="size-10 shrink-0 rounded-full" />
-            <div className="flex min-w-0 flex-1 flex-col gap-2">
-              <Skeleton className="h-4 w-1/3" />
-              <Skeleton className="h-3 w-2/3" />
-            </div>
-            <Skeleton className="h-4 w-16 shrink-0" />
-          </CardContent>
-        </Card>
-      ))}
-    </div>
-  );
 }
 
 // ---------------------------------------------------------------------------
