@@ -1,7 +1,7 @@
 import { MoreHorizontal, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ResponsiveMenu from "@/components/common/responsive/ResponsiveMenu";
-import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import ConfirmMenuItem from "./ConfirmMenuItem";
 import type { TransactionDto } from "@/types";
@@ -13,10 +13,10 @@ export default function TransactionRowMenu({
   transaction: TransactionDto;
 }) {
   const deleteTransaction = useTransactionsStore((s) => s.deleteTransaction);
-  const [/*edit,*/, setEdit] = useState(false);
+  const navigate = useNavigate();
 
   const handleEdit = () => {
-    requestAnimationFrame(() => setEdit(true));
+    navigate(`/edit-transaction/${transaction.id}`);
   };
 
   const handleDelete = async () => {
@@ -25,33 +25,24 @@ export default function TransactionRowMenu({
   };
 
   return (
-    <>
-      <ResponsiveMenu>
-        <ResponsiveMenu.Trigger>
-          <Button variant="ghost" size="icon">
-            <MoreHorizontal className="h-4 w-4" />
-            <span className="sr-only">Actions</span>
-          </Button>
-        </ResponsiveMenu.Trigger>
-        <ResponsiveMenu.Content>
-          <ResponsiveMenu.Item onClick={handleEdit}>
-            <Edit className="h-4 w-4 mr-2" />
-            Edit
-          </ResponsiveMenu.Item>
-          <ConfirmMenuItem
-            title="Delete item"
-            description="Are you sure you want to delete this item?"
-            onConfirmed={handleDelete}
-          />
-        </ResponsiveMenu.Content>
-      </ResponsiveMenu>
-
-      {/* {edit && (
-        <EditTransactionForm
-          transaction={transaction}
-          onClose={() => setEdit(false)}
+    <ResponsiveMenu>
+      <ResponsiveMenu.Trigger>
+        <Button variant="ghost" size="icon">
+          <MoreHorizontal className="h-4 w-4" />
+          <span className="sr-only">Actions</span>
+        </Button>
+      </ResponsiveMenu.Trigger>
+      <ResponsiveMenu.Content>
+        <ResponsiveMenu.Item onClick={handleEdit}>
+          <Edit className="h-4 w-4 mr-2" />
+          Edit
+        </ResponsiveMenu.Item>
+        <ConfirmMenuItem
+          title="Delete item"
+          description="Are you sure you want to delete this item?"
+          onConfirmed={handleDelete}
         />
-      )} */}
-    </>
+      </ResponsiveMenu.Content>
+    </ResponsiveMenu>
   );
 }

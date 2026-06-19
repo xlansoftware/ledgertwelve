@@ -6,6 +6,7 @@ import HistoryPage from "@/pages/history/HistoryPage";
 import SettingsPage from "@/pages/SettingsPage";
 import AddPage from "@/pages/add/AddPage";
 import BookPage from "@/pages/books/BookPage";
+import EditTransactionPage from "@/pages/edit-transaction/EditTransactionPage";
 
 const router = createBrowserRouter([
   {
@@ -25,6 +26,10 @@ const router = createBrowserRouter([
       {
         path: "books",
         element: <BookPage />,
+      },
+      {
+        path: "edit-transaction/:transactionId",
+        element: <EditTransactionPage />,
       },
       {
         path: "settings",

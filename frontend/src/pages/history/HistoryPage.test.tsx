@@ -4,6 +4,7 @@
 
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi, beforeEach } from "vitest";
+import { MemoryRouter } from "react-router-dom";
 import { http, HttpResponse } from "msw";
 import { server } from "@/test-setup";
 import HistoryPage from "./HistoryPage";
@@ -77,7 +78,7 @@ beforeEach(() => {
 describe("HistoryPage", () => {
   it("shows skeleton loader on initial load", async () => {
     setCurrentBook();
-    render(<HistoryPage />);
+    render(<MemoryRouter><HistoryPage /></MemoryRouter>);
 
     // Skeleton should be visible
     const skeleton = document.querySelector("[data-slot='skeleton']");
@@ -86,7 +87,7 @@ describe("HistoryPage", () => {
 
   it("shows transactions once loaded", async () => {
     setCurrentBook();
-    render(<HistoryPage />);
+    render(<MemoryRouter><HistoryPage /></MemoryRouter>);
 
     // Wait for transactions to appear
     await waitFor(() => {
@@ -103,7 +104,7 @@ describe("HistoryPage", () => {
 
   it("shows the transaction count in the header", async () => {
     setCurrentBook();
-    render(<HistoryPage />);
+    render(<MemoryRouter><HistoryPage /></MemoryRouter>);
 
     await waitFor(() => {
       expect(screen.getByText(/\d+ transaction/)).toBeInTheDocument();
@@ -112,7 +113,7 @@ describe("HistoryPage", () => {
 
   it('shows "Show more…" button when hasMore is true', async () => {
     setCurrentBook();
-    render(<HistoryPage />);
+    render(<MemoryRouter><HistoryPage /></MemoryRouter>);
 
     await waitFor(() => {
       expect(screen.getByTestId("load-more-button")).toBeInTheDocument();
@@ -123,7 +124,7 @@ describe("HistoryPage", () => {
 
   it("clicking Show more appends new transactions", async () => {
     setCurrentBook();
-    render(<HistoryPage />);
+    render(<MemoryRouter><HistoryPage /></MemoryRouter>);
 
     // Wait for initial load
     await waitFor(() => {
@@ -179,7 +180,7 @@ describe("HistoryPage", () => {
     );
 
     setCurrentBook();
-    render(<HistoryPage />);
+    render(<MemoryRouter><HistoryPage /></MemoryRouter>);
 
     await waitFor(() => {
       expect(screen.getByTestId("load-more-button")).toBeInTheDocument();
@@ -220,7 +221,7 @@ describe("HistoryPage", () => {
     );
 
     setCurrentBook();
-    render(<HistoryPage />);
+    render(<MemoryRouter><HistoryPage /></MemoryRouter>);
 
     await waitFor(() => {
       expect(screen.getByText(/All 3 transactions loaded/)).toBeInTheDocument();
@@ -263,7 +264,7 @@ describe("HistoryPage", () => {
     );
 
     setCurrentBook();
-    render(<HistoryPage />);
+    render(<MemoryRouter><HistoryPage /></MemoryRouter>);
 
     await waitFor(() => {
       expect(screen.getByTestId("load-more-button")).toBeInTheDocument();
@@ -302,7 +303,7 @@ describe("HistoryPage", () => {
 
   it("shows a Filter button with magnifying glass icon in the header", async () => {
     setCurrentBook();
-    render(<HistoryPage />);
+    render(<MemoryRouter><HistoryPage /></MemoryRouter>);
 
     await waitFor(() => {
       expect(screen.getByText("Filter")).toBeInTheDocument();
@@ -314,7 +315,7 @@ describe("HistoryPage", () => {
 
   it("shows transaction count in the header", async () => {
     setCurrentBook();
-    render(<HistoryPage />);
+    render(<MemoryRouter><HistoryPage /></MemoryRouter>);
 
     await waitFor(() => {
       expect(screen.getByTestId("transaction-count")).toBeInTheDocument();
@@ -325,7 +326,7 @@ describe("HistoryPage", () => {
 
   it("shows 'filtered' suffix when a filter is active", async () => {
     setCurrentBook();
-    render(<HistoryPage />);
+    render(<MemoryRouter><HistoryPage /></MemoryRouter>);
 
     // Wait for initial load
     await waitFor(() => {
@@ -346,7 +347,7 @@ describe("HistoryPage", () => {
 
   it("shows 'transactions' (without 'filtered') when no filter is active", async () => {
     setCurrentBook();
-    render(<HistoryPage />);
+    render(<MemoryRouter><HistoryPage /></MemoryRouter>);
 
     await waitFor(() => {
       expect(screen.getByTestId("transaction-count")).toBeInTheDocument();
@@ -359,7 +360,7 @@ describe("HistoryPage", () => {
 
   it("opens the filter dialog when clicking the Filter button", async () => {
     setCurrentBook();
-    render(<HistoryPage />);
+    render(<MemoryRouter><HistoryPage /></MemoryRouter>);
 
     await waitFor(() => {
       expect(screen.getByText("Filter")).toBeInTheDocument();
