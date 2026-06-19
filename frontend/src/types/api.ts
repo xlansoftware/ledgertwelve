@@ -46,3 +46,14 @@ export interface ShareResponse {
   userId: string
   permission: "view" | "edit"
 }
+
+export interface FilterRequest {
+  period?: 'all' | 'today' | 'thisWeek' | 'thisMonth' | 'thisYear' | 'custom';
+  startDate?: string;      // ISO 8601 string, e.g., "2025-05-29"
+  endDate?: string;        // ISO 8601 string
+  category?: string[];
+  note?: string;
+  user?: string[];
+  minValue?: number;
+  maxValue?: number;
+}

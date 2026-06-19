@@ -1,4 +1,5 @@
 import { clsx, type ClassValue } from "clsx"
+import { format, type Locale } from "date-fns";
 import { twMerge } from "tailwind-merge"
 
 export function cn(...inputs: ClassValue[]) {
@@ -163,4 +164,21 @@ export function formatDate(dateUtc: Date): string {
   } else {
     return fullDateFormatter.format(date);
   }
+}
+
+export function formatDateWithoutCurrentYear(
+  date: Date | string | undefined,
+  locale?: Locale
+): string {
+  if (!date) return "";
+  
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  const currentYear = new Date().getFullYear();
+  const dateYear = dateObj.getFullYear();
+  
+  return format(
+    dateObj, 
+    dateYear === currentYear ? "MMM d" : "MMM d, yyyy",
+    { locale }
+  );
 }
