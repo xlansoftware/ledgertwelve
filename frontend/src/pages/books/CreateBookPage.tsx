@@ -7,7 +7,6 @@ import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Field, FieldLabel, FieldContent, FieldError } from "@/components/ui/field"
-import { CurrencyCombobox } from "@/components/common/CurrencyCombobox"
 import { useBooksStore } from "@/store"
 import { toast } from "sonner"
 
@@ -77,9 +76,10 @@ export default function CreateBookPage() {
         <Field>
           <FieldLabel htmlFor="book-currency">Currency</FieldLabel>
           <FieldContent>
-            <CurrencyCombobox
+            <Input
+              id="book-currency"
               value={currency}
-              onChange={setCurrency}
+              onChange={(e) => setCurrency(e.target.value)}
             />
             <p className="text-sm text-muted-foreground mt-1">
               Optional. You can type any ISO currency code.

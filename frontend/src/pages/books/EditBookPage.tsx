@@ -10,7 +10,6 @@ import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { CurrencyCombobox } from "@/components/common/CurrencyCombobox"
 import { useBooksStore, useCategoriesStore } from "@/store"
 import { getBookStats } from "@/services"
 import type { BookStatsDto } from "@/types"
@@ -117,6 +116,7 @@ export default function EditBookPage() {
     if (!bookId) return
     clearError()
     formInitialized.current = false
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setStatsLoading(true)
 
     // Fetch book detail and stats in parallel
@@ -303,9 +303,10 @@ export default function EditBookPage() {
 
         <div className="space-y-1.5">
           <Label htmlFor="book-currency">Currency</Label>
-          <CurrencyCombobox
+          <Input
+            id="book-currency"
             value={currency}
-            onChange={setCurrency}
+            onChange={(e) => setCurrency(e.target.value)}
           />
           <p className="text-sm text-muted-foreground">
             Optional. You can type any ISO currency code.
