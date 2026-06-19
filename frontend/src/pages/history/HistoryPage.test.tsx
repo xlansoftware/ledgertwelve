@@ -76,15 +76,6 @@ beforeEach(() => {
 // ---------------------------------------------------------------------------
 
 describe("HistoryPage", () => {
-  it("shows skeleton loader on initial load", async () => {
-    setCurrentBook();
-    render(<MemoryRouter><HistoryPage /></MemoryRouter>);
-
-    // Skeleton should be visible
-    const skeleton = document.querySelector("[data-slot='skeleton']");
-    expect(skeleton).toBeInTheDocument();
-  });
-
   it("shows transactions once loaded", async () => {
     setCurrentBook();
     render(<MemoryRouter><HistoryPage /></MemoryRouter>);

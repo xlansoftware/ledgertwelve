@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 import { useLocation, useNavigate } from "react-router-dom";
 
-import { Book, ClipboardList, Plus, Settings } from 'lucide-react';
+import { BarChart2, Book, ClipboardList, Plus, Settings } from 'lucide-react';
 
 export default function MobileHeader() {
   const navigate = useNavigate();
@@ -23,7 +23,7 @@ export default function MobileHeader() {
           : {}
       }
     >
-      <div className="grid grid-cols-4 h-full">
+      <div className="grid grid-cols-5 h-full">
         <button
           aria-label="Books Screen"
           onClick={() => navigate("/books")}
@@ -56,17 +56,17 @@ export default function MobileHeader() {
           <span className="text-xs mt-1">History</span>
         </button>
 
-        {/* <button
+        <button
           aria-label="Insights Screen"
-          onClick={() => navigate("/insights")}
-          className={`flex flex-col items-center justify-center ${currentPath === "/insights"
+          onClick={() => navigate("/insight")}
+          className={`flex flex-col items-center justify-center ${currentPath === "/insight"
               ? "text-primary"
               : "text-muted-foreground"
             }`}
         >
           <BarChart2 size={20} />
-          <span className="text-xs mt-1">Insights</span>
-        </button> */}
+          <span className="text-xs mt-1">Insight</span>
+        </button>
 
         <button
           aria-label="Settings Screen"

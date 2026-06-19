@@ -154,69 +154,63 @@ export default function HistoryPage() {
       )}
 
       {/* Transaction list */}
-      {isLoading ? (
-        <div className="px-2 py-2">
-          <TransactionSkeleton />
-        </div>
-      ) : (
-        <ScrollArea className="flex-1 px-0 py-0">
-          {(() => {
-            const groups = groupByDate(transactions);
-            const entries = Array.from(groups.entries());
-            return entries.map(([dateKey, txns], groupIndex) => (
-              <div key={dateKey}>
-                {/* Date delimiter header */}
-                {groupIndex > 0 && 
-                <div className="px-2 py-2">
-                  <h3 className="text-sm font-semibold text-muted-foreground">
-                    {formatDateHeader(dateKey)}
-                  </h3>
-                </div>}
-                {txns.map((tx) => (
-                  <TransactionRow key={tx.id} transaction={tx} />
-                ))}
-              </div>
-            ));
-          })()}
-
-          {/* Load-more area */}
-          {showLoadMore && (
-            <div className="flex items-center justify-center py-6" data-testid="load-more-area">
-              {!hasMore ? (
-                <span className="text-sm text-muted-foreground">
-                  All {total} transaction{total !== 1 ? "s" : ""} loaded
-                </span>
-              ) : loadMoreError ? (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={loadMore}
-                  data-testid="load-more-retry"
-                >
-                  Failed to load. Retry?
-                </Button>
-              ) : (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={isLoadingMore}
-                  onClick={loadMore}
-                  data-testid="load-more-button"
-                >
-                  {isLoadingMore ? (
-                    <>
-                      <Loader2 className="size-3.5 animate-spin" />
-                      Loading…
-                    </>
-                  ) : (
-                    "Show more…"
-                  )}
-                </Button>
-              )}
+      <ScrollArea className="flex-1 px-0 py-0">
+        {(() => {
+          const groups = groupByDate(transactions);
+          const entries = Array.from(groups.entries());
+          return entries.map(([dateKey, txns], groupIndex) => (
+            <div key={dateKey}>
+              {/* Date delimiter header */}
+              {groupIndex > 0 && 
+              <div className="px-2 py-2">
+                <h3 className="text-sm font-semibold text-muted-foreground">
+                  {formatDateHeader(dateKey)}
+                </h3>
+              </div>}
+              {txns.map((tx) => (
+                <TransactionRow key={tx.id} transaction={tx} />
+              ))}
             </div>
-          )}
-        </ScrollArea>
-      )}
+          ));
+        })()}
+
+        {/* Load-more area */}
+        {showLoadMore && (
+          <div className="flex items-center justify-center py-6" data-testid="load-more-area">
+            {!hasMore ? (
+              <span className="text-sm text-muted-foreground">
+                All {total} transaction{total !== 1 ? "s" : ""} loaded
+              </span>
+            ) : loadMoreError ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={loadMore}
+                data-testid="load-more-retry"
+              >
+                Failed to load. Retry?
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={isLoadingMore}
+                onClick={loadMore}
+                data-testid="load-more-button"
+              >
+                {isLoadingMore ? (
+                  <>
+                    <Loader2 className="size-3.5 animate-spin" />
+                    Loading…
+                  </>
+                ) : (
+                  "Show more…"
+                )}
+              </Button>
+            )}
+          </div>
+        )}
+      </ScrollArea>
 
       {/* Filter dialog */}
       <FilterDialog

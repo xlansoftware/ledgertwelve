@@ -9,6 +9,7 @@ import BookPage from "@/pages/books/BookPage";
 import CreateBookPage from "@/pages/books/CreateBookPage";
 import EditBookPage from "@/pages/books/EditBookPage";
 import EditTransactionPage from "@/pages/edit-transaction/EditTransactionPage";
+import InisghtPage from "@/pages/insight/InisghtPage";
 
 const router = createBrowserRouter([
   {
@@ -45,6 +46,11 @@ const router = createBrowserRouter([
         path: "settings",
         element: <SettingsPage />,
       },
+      {
+        path: "insight",
+        element: <InisghtPage />,
+      },
+
     ],
   },
   {
