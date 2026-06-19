@@ -1,10 +1,11 @@
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getIcon } from "@/lib/getIcon";
+import { iconMap } from "@/lib/getIcon";
 import { cn, invertColor } from "@/lib/utils";
 import { useCategoriesStore } from "@/store";
 import type { CategoryDto } from "@/types";
+import { MoreHorizontal } from "lucide-react";
 
 type CategoryPickerProps = {
   selectedId?: string;
@@ -67,7 +68,7 @@ export default function CategoryPicker({ selectedId, onSelect }: CategoryPickerP
       {categories
         .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
         .map((category) => {
-          const Icon = getIcon(category.icon);
+          const IconCompnent = iconMap[category.icon] || MoreHorizontal;
           const isSelected = selectedId === category.id;
           const color = category.color ?? "#6b7280"; // default: gray-500
 
@@ -86,7 +87,7 @@ export default function CategoryPicker({ selectedId, onSelect }: CategoryPickerP
                   color: invertColor(color),
                 }}
               >
-                <Icon className="flex-shrink-0" />
+                <IconCompnent className="flex-shrink-0" />
               </div>
               <div className="flex items-center gap-2 px-0 py-2 text-left w-full overflow-hidden">
                 <span className="truncate whitespace-nowrap overflow-hidden text-ellipsis block">

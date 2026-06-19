@@ -99,10 +99,3 @@ export const iconMap: Record<string, LucideIcon> = {
   dumbbell: DumbbellIcon,
   volleyball: VolleyballIcon,
 };
-
-export const getIcon = (iconName?: string): LucideIcon => {
-  if (!iconName) return MoreHorizontal;
-
-  const icon = iconMap[iconName] || MoreHorizontal;
-  return icon;
-};

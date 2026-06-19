@@ -1,10 +1,11 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { getIcon } from "@/lib/getIcon";
+import { iconMap } from "@/lib/getIcon";
 import { formatCurrency, formatDate, invertColor } from "@/lib/utils";
 import { useCategoriesStore } from "@/store";
 import type { TransactionDto } from "@/types";
 import TransactionRowMenu from "./TransactionRowMenu";
+import { MoreHorizontal } from "lucide-react";
 
 interface TransactionRowProps {
   transaction: TransactionDto;
@@ -22,7 +23,7 @@ function explainValue(value: number, exchangeRate?: number, currency?: string) {
 
 function explainTransactionValue(transaction: TransactionDto) {
   return explainValue(
-    transaction.amount || 0,
+    transaction.originalAmount || 0,
     transaction.exchangeRate,
     transaction.originalCurrency
   );
@@ -35,7 +36,9 @@ export default function TransactionRow({
   const transactionCategory = categories.find((c) => c.name === transaction.categoryName);
   const category = transactionCategory;
   const title = transaction.note || category?.name || "No category";
-  const Icon = getIcon(transactionCategory?.icon);
+  // const Icon = getIcon(transactionCategory?.icon);
+  const IconComponent =
+    iconMap[transactionCategory?.icon ?? ""] ?? MoreHorizontal;
   return (
     <Card
       data-testid={`Item: ${title}, ${transactionValue(transaction)}`}
@@ -56,7 +59,7 @@ export default function TransactionRow({
           >
             {transactionCategory?.icon && (
               <div className="flex-shrink-0">
-                <Icon />
+                <IconComponent />
               </div>
             )}
           </div>

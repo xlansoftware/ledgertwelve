@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { iconMap, getIcon } from "@/lib/getIcon";
+import { iconMap } from "@/lib/getIcon";
 import { cn } from "@/lib/utils";
 import {
   Popover,
@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/popover";
 import { useState } from "react";
 import useIsMobile from "@/hooks/useIsMobile";
+import { MoreHorizontal } from "lucide-react";
 
 interface IconPickerProps {
   value?: string;
@@ -30,7 +31,7 @@ export function ResponsiveIconPicker({
 }: IconPickerProps) {
   const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
-  const Icon = getIcon(value);
+  const Icon = iconMap[value || ""] || MoreHorizontal;
 
   const iconGrid = (
     <ScrollArea className="h-full">
