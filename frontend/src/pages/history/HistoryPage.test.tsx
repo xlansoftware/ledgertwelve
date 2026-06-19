@@ -2,7 +2,7 @@
 // Component tests — HistoryPage (load-more paging)
 // ---------------------------------------------------------------------------
 
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { act, render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 import { http, HttpResponse } from "msw";
@@ -334,8 +334,10 @@ describe("HistoryPage", () => {
     });
 
     // Simulate setting a filter directly on the store
-    useTransactionsStore.setState({
-      currentFilter: { note: "test" } as FilterRequest,
+    act(() => {
+      useTransactionsStore.setState({
+        currentFilter: { note: "test" } as FilterRequest,
+      });
     });
 
     await waitFor(() => {
