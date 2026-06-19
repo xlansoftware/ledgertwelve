@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useBooksStore } from "@/store";
 import {
   Card,
@@ -12,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function BookPage() {
+  const navigate = useNavigate();
   const {
     books,
     currentBook,
@@ -66,9 +68,12 @@ export default function BookPage() {
     return (
       <div className="max-w-2xl mx-auto px-4">
         <h1 className="text-2xl font-bold mb-6">Books</h1>
-        <p className="text-muted-foreground text-sm">
+        <p className="text-muted-foreground text-sm mb-4">
           No books found. Create a book to get started.
         </p>
+        <Button variant="outline" onClick={() => navigate("/books/new")}>
+          New book
+        </Button>
       </div>
     );
   }
@@ -116,6 +121,12 @@ export default function BookPage() {
             </Card>
           );
         })}
+      </div>
+
+      <div className="mt-6">
+        <Button variant="outline" onClick={() => navigate("/books/new")}>
+          New book
+        </Button>
       </div>
 
       {error && (
