@@ -42,21 +42,16 @@ export function CurrencyCombobox({
   return (
     <Combobox
       value={value}
+      inputValue={inputValue}
       onValueChange={(selected) => {
         const next = selected as string ?? ""
         setInputValue(next)
         onChange?.(next)
       }}
-      {...({
-        inputValue,
-        onInputValueChange: (next: string) => {
-          setInputValue(next)
-          onChange?.(next)
-        },
-      } as React.ComponentPropsWithoutRef<typeof Combobox> & {
-        inputValue?: string
-        onInputValueChange?: (value: string) => void
-      })}
+      onInputValueChange={(next: string) => {
+        setInputValue(next)
+        onChange?.(next)
+      }}
     >
       <ComboboxInput
         disabled={disabled}
