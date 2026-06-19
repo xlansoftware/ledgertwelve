@@ -1,11 +1,12 @@
-import { useEffect } from "react";
-import { useTransactionsStore, useBooksStore } from "@/store";
+import { useEffect, useState } from "react";
+import { useTransactionsStore, useBooksStore, useCategoriesStore, useUsersStore } from "@/store";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { Loader2, Search } from "lucide-react";
 import TransactionRow from "./TransactionRow";
+import FilterDialog from "./FilterDialog";
 
 // ---------------------------------------------------------------------------
 // Skeleton while loading
@@ -42,27 +43,62 @@ export default function HistoryPage() {
   const hasMore = useTransactionsStore((s) => s.hasMore);
   const isLoadingMore = useTransactionsStore((s) => s.isLoadingMore);
   const loadMoreError = useTransactionsStore((s) => s.loadMoreError);
-  const fetchTransactions = useTransactionsStore((s) => s.fetchTransactions);
+  const currentFilter = useTransactionsStore((s) => s.currentFilter);
   const loadMore = useTransactionsStore((s) => s.loadMore);
+  const setFilter = useTransactionsStore((s) => s.setFilter);
+  const clearFilter = useTransactionsStore((s) => s.clearFilter);
 
   const currentBook = useBooksStore((s) => s.currentBook);
+  const categories = useCategoriesStore((s) => s.categories);
+  const fetchCategories = useCategoriesStore((s) => s.fetchCategories);
+  const users = useUsersStore((s) => s.users);
+  const fetchUsers = useUsersStore((s) => s.fetchUsers);
 
+  const [filterOpen, setFilterOpen] = useState(false);
+
+  const hasActiveFilter = Object.keys(currentFilter).length > 0;
+
+  // Fetch data on mount and when book changes
   useEffect(() => {
-    fetchTransactions({ bookId: currentBook?.id });
-  }, [fetchTransactions, currentBook]);
+    clearFilter(currentBook?.id);
+    fetchCategories();
+    fetchUsers();
+  }, [currentBook, clearFilter, fetchCategories, fetchUsers]);
+
+  // Extract user emails for the Filter component
+  const userEmails = users.map((u) => u.email);
 
   const showLoadMore =
     !isLoading &&
     !error &&
     transactions.length > 0;
 
+  const handleClearFilter = () => {
+    clearFilter(currentBook?.id);
+  };
+
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
       <div className="flex items-center justify-between border-b px-4 py-3">
-        <h1 className="text-lg font-semibold">History</h1>
-        <span className="text-sm text-muted-foreground">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setFilterOpen(true)}
+          className="gap-1.5"
+        >
+          <Search className="size-4" />
+          Filter
+        </Button>
+
+        <span
+          className="text-sm text-muted-foreground cursor-pointer"
+          onClick={hasActiveFilter ? handleClearFilter : undefined}
+          title={hasActiveFilter ? "Clear filter" : undefined}
+          data-testid="transaction-count"
+        >
           {total} transaction{total !== 1 ? "s" : ""}
+          {hasActiveFilter && ", filtered"}
         </span>
       </div>
 
@@ -135,6 +171,16 @@ export default function HistoryPage() {
           )}
         </ScrollArea>
       )}
+
+      {/* Filter dialog */}
+      <FilterDialog
+        open={filterOpen}
+        onOpenChange={setFilterOpen}
+        categories={categories}
+        users={userEmails}
+        filter={currentFilter}
+        onApply={setFilter}
+      />
     </div>
   );
 }

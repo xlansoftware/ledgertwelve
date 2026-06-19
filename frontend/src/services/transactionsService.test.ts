@@ -43,12 +43,12 @@ describe("transactionsService", () => {
     })
 
     it("filters by category", async () => {
-      const result = await getTransactions({ category: "Food" })
+      const result = await getTransactions({ category: ["Food"] })
       expect(result.items.every((tx) => tx.categoryName === "Food")).toBe(true)
     })
 
     it("returns empty items for non-matching filters", async () => {
-      const result = await getTransactions({ category: "NonExistent" })
+      const result = await getTransactions({ category: ["NonExistent"] })
       expect(result.items).toHaveLength(0)
       expect(result.total).toBe(0)
     })

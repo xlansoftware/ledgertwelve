@@ -1,5 +1,5 @@
 import { create } from "zustand"
-import type { TransactionDto } from "@/types"
+import type { FilterRequest, TransactionDto } from "@/types"
 import {
   getTransactions,
   getTransaction,
@@ -12,6 +12,85 @@ import type {
   CreateTransactionRequest,
   UpdateTransactionRequest,
 } from "@/services"
+import { useUsersStore } from "./useUsersStore"
+import { useCategoriesStore } from "./useCategoriesStore"
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Resolve a `FilterRequest` (which may include a named period like "thisMonth")
+ * into concrete `from` / `to` ISO date strings.
+ */
+function resolvePeriod(filter: FilterRequest): { from?: string; to?: string } {
+  if (filter.period === "custom") {
+    return { from: filter.startDate, to: filter.endDate }
+  }
+
+  if (!filter.period || filter.period === "all") {
+    return {}
+  }
+
+  const now = new Date()
+  const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate())
+  const start = startOfDay(now)
+  const end = new Date(start.getTime() + 24 * 60 * 60 * 1000)
+
+  switch (filter.period) {
+    case "today":
+      return { from: start.toISOString(), to: end.toISOString() }
+    case "thisWeek": {
+      const dayOfWeek = start.getDay()
+      const monday = new Date(start)
+      monday.setDate(start.getDate() - ((dayOfWeek + 6) % 7))
+      return { from: monday.toISOString(), to: end.toISOString() }
+    }
+    case "thisMonth": {
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+      return { from: monthStart.toISOString(), to: end.toISOString() }
+    }
+    case "thisYear": {
+      const yearStart = new Date(now.getFullYear(), 0, 1)
+      return { from: yearStart.toISOString(), to: end.toISOString() }
+    }
+    default:
+      return {}
+  }
+}
+
+/**
+ * Convert a `FilterRequest` (UI model) to `GetTransactionsParams` (API params).
+ * Resolves named periods to dates, maps category IDs to names,
+ * and maps user emails to IDs.
+ */
+function convertFilterToGetTransactionsParams(filter: FilterRequest): GetTransactionsParams {
+  const { from, to } = resolvePeriod(filter)
+
+  // Map category IDs → names
+  const categories = useCategoriesStore.getState().categories
+  const idToName = new Map(categories.map((c) => [c.id, c.name]))
+  const categoryNames = filter.category
+    ?.map((id) => idToName.get(id))
+    .filter((n): n is string => !!n)
+
+  // Map user emails → IDs
+  const users = useUsersStore.getState().users
+  const emailToId = new Map(users.map((u) => [u.email, u.id]))
+  const userIds = filter.user
+    ?.map((email) => emailToId.get(email) || email)
+    .filter((id): id is string => !!id)
+
+  return {
+    from,
+    to,
+    category: categoryNames?.length ? categoryNames : undefined,
+    createdBy: userIds?.length ? userIds : undefined,
+    note: filter.note || undefined,
+    minValue: filter.minValue,
+    maxValue: filter.maxValue,
+  }
+}
 
 // ---------------------------------------------------------------------------
 // State
@@ -40,6 +119,8 @@ interface TransactionsState {
   epoch: number
   /** Human-readable error from a loadMore request (does not clear the list). */
   loadMoreError: string | null
+  /** The currently active filter, or default empty filter. */
+  currentFilter: FilterRequest
 }
 
 // ---------------------------------------------------------------------------
@@ -63,6 +144,10 @@ interface TransactionsActions {
   clearError: () => void
   /** Load the next page and append transactions to the current list. */
   loadMore: () => Promise<void>
+  /** Apply a filter, resolve it to API params, reset to page 1, and fetch. */
+  setFilter: (filter: FilterRequest) => Promise<TransactionDto[]>
+  /** Clear the active filter and refetch. Optionally override the bookId. */
+  clearFilter: (bookIdOverride?: string) => Promise<TransactionDto[]>
 }
 
 // ---------------------------------------------------------------------------
@@ -83,6 +168,7 @@ export const useTransactionsStore = create<TransactionsState & TransactionsActio
   epoch: 0,
   loadMoreError: null,
   lastParams: {},
+  currentFilter: {},
 
   // -- Actions --
 
@@ -233,5 +319,20 @@ export const useTransactionsStore = create<TransactionsState & TransactionsActio
 
   clearError: () => {
     set({ error: null })
+  },
+
+  // -- Filter actions --
+
+  setFilter: (filter: FilterRequest) => {
+    set({ currentFilter: filter })
+    const apiParams = convertFilterToGetTransactionsParams(filter)
+    apiParams.page = 1
+    return get().fetchTransactions(apiParams)
+  },
+
+  clearFilter: (bookIdOverride?: string) => {
+    set({ currentFilter: {} })
+    const bookId = bookIdOverride || get().lastParams.bookId
+    return get().fetchTransactions({ bookId })
   },
 }))

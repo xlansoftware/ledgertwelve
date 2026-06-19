@@ -9,8 +9,11 @@ export interface GetTransactionsParams {
   bookId?: string
   from?: string
   to?: string
-  category?: string
-  createdBy?: string
+  category?: string[]
+  createdBy?: string[]
+  note?: string
+  minValue?: number
+  maxValue?: number
   page?: number
   pageSize?: number
 }
@@ -32,6 +35,9 @@ export async function getTransactions(
       to: params.to,
       category: params.category,
       createdBy: params.createdBy,
+      note: params.note,
+      minValue: params.minValue,
+      maxValue: params.maxValue,
       page: params.page,
       pageSize: params.pageSize,
     },

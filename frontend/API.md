@@ -83,6 +83,29 @@ No body.
 
 ---
 
+# Users
+
+---
+
+# GET /api/v1/users
+
+### Purpose
+
+Returns all users the current user has interacted with — the current user themself plus all collaborators from shared books.
+
+### Response
+
+```json
+{
+  "data": [
+    {"id": "usr_1", "email": "john@example.com"},
+    {"id": "usr_2", "email": "friend@example.com"}
+  ]
+}
+```
+
+---
+
 # Core DTOs
 
 ---
@@ -628,8 +651,11 @@ Search transactions.
 bookId=
 from=
 to=
-category=
-createdBy=
+category=          (repeated, OR match on category name)
+createdBy=         (repeated, OR match on user ID)
+note=              (case-insensitive substring search)
+minValue=          (inclusive minimum amount)
+maxValue=          (inclusive maximum amount)
 page=
 pageSize=
 ```
@@ -637,7 +663,7 @@ pageSize=
 Example:
 
 ```text
-GET /transactions?bookId=book_1&from=2026-01-01&to=2026-12-31
+GET /transactions?bookId=book_1&from=2026-01-01&to=2026-12-31&category=Food&category=Dining&note=lunch&minValue=-200&maxValue=500
 ```
 
 ### Response

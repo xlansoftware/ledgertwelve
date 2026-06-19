@@ -36,9 +36,30 @@ vi.mock("@/services/transactionsService", () => ({
   deleteTransaction: vi.fn(),
 }))
 
+vi.mock("@/store/useUsersStore", () => ({
+  useUsersStore: {
+    getState: vi.fn(() => ({
+      users: [
+        { id: "usr_1", email: "john@example.com" },
+        { id: "usr_2", email: "friend@example.com" },
+      ],
+    })),
+  },
+}))
+
+vi.mock("@/store/useCategoriesStore", () => ({
+  useCategoriesStore: {
+    getState: vi.fn(() => ({
+      categories: [
+        { id: "cat_1", name: "Groceries" },
+        { id: "cat_2", name: "Rent" },
+      ],
+    })),
+  },
+}))
+
 const mockGetTransactions = vi.mocked(transactionsService.getTransactions)
 const mockCreateTransaction = vi.mocked(transactionsService.createTransaction)
-const mockDeleteTransaction = vi.mocked(transactionsService.deleteTransaction)
 
 // ---------------------------------------------------------------------------
 // Reset store between tests
@@ -59,6 +80,7 @@ beforeEach(() => {
     epoch: 0,
     loadMoreError: null,
     lastParams: {},
+    currentFilter: {},
   })
 })
 
@@ -373,25 +395,160 @@ describe("useTransactionsStore", () => {
     })
   })
 
-  describe("deleteTransaction (optimistic)", () => {
-    it("removes transaction and decrements total", async () => {
+  describe("setFilter", () => {
+    it("saves the filter and fetches transactions with converted params", async () => {
       useTransactionsStore.setState({
-        transactions: [
-          makeTx({ id: "tx_1" }),
-          makeTx({ id: "tx_2" }),
-          makeTx({ id: "tx_3" }),
-        ],
-        total: 3,
+        lastParams: { bookId: "book_main" },
       })
 
-      mockDeleteTransaction.mockResolvedValueOnce(undefined)
+      mockGetTransactions.mockResolvedValueOnce({
+        items: [makeTx({ id: "filtered_1" })],
+        page: 1,
+        pageSize: 50,
+        total: 1,
+      })
 
-      await useTransactionsStore.getState().deleteTransaction("tx_2")
+      await useTransactionsStore.getState().setFilter({
+        period: "today",
+        note: "test note",
+        minValue: -100,
+        maxValue: 500,
+      })
 
-      const state = useTransactionsStore.getState()
-      expect(state.transactions).toHaveLength(2)
-      expect(state.transactions.map((t) => t.id)).toEqual(["tx_1", "tx_3"])
-      expect(state.total).toBe(2)
+      expect(useTransactionsStore.getState().currentFilter).toEqual({
+        period: "today",
+        note: "test note",
+        minValue: -100,
+        maxValue: 500,
+      })
+
+      // Should have called getTransactions with resolved params and page=1
+      const callParams = mockGetTransactions.mock.calls[0][0]!!
+      expect(callParams).toMatchObject({
+        note: "test note",
+        minValue: -100,
+        maxValue: 500,
+        page: 1,
+      })
+      // Period "today" should resolve to from/to dates
+      expect(callParams.from).toBeDefined()
+      expect(callParams.to).toBeDefined()
+    })
+
+    it("resolves period 'thisMonth' to from/to dates", async () => {
+      mockGetTransactions.mockResolvedValueOnce({
+        items: [],
+        page: 1,
+        pageSize: 50,
+        total: 0,
+      })
+
+      await useTransactionsStore.getState().setFilter({
+        period: "thisMonth",
+      })
+
+      const callParams = mockGetTransactions.mock.calls[0][0]!
+      expect(callParams.from).toBeDefined()
+      expect(callParams.to).toBeDefined()
+      // from should be the 1st of the current month
+      const fromDate = new Date(callParams.from!)
+      expect(fromDate.getDate()).toBe(1)
+    })
+
+    it("maps category IDs to names", async () => {
+      mockGetTransactions.mockResolvedValueOnce({
+        items: [],
+        page: 1,
+        pageSize: 50,
+        total: 0,
+      })
+
+      await useTransactionsStore.getState().setFilter({
+        category: ["cat_1", "cat_2"],
+      })
+
+      const callParams = mockGetTransactions.mock.calls[0][0]!
+      expect(callParams.category).toEqual(["Groceries", "Rent"])
+    })
+
+    it("maps user emails to IDs", async () => {
+      mockGetTransactions.mockResolvedValueOnce({
+        items: [],
+        page: 1,
+        pageSize: 50,
+        total: 0,
+      })
+
+      await useTransactionsStore.getState().setFilter({
+        user: ["john@example.com", "friend@example.com"],
+      })
+
+      const callParams = mockGetTransactions.mock.calls[0][0]!
+      expect(callParams.createdBy).toEqual(["usr_1", "usr_2"])
+    })
+
+    it("resets page to 1 on filter apply", async () => {
+      useTransactionsStore.setState({
+        page: 5,
+        lastParams: { bookId: "book_main", page: 5 },
+      })
+
+      mockGetTransactions.mockResolvedValueOnce({
+        items: [makeTx()],
+        page: 1,
+        pageSize: 50,
+        total: 1,
+      })
+
+      await useTransactionsStore.getState().setFilter({ note: "test" })
+
+      expect(mockGetTransactions).toHaveBeenCalledWith(
+        expect.objectContaining({ page: 1 }),
+      )
+    })
+  })
+
+  describe("clearFilter", () => {
+    it("resets currentFilter to empty and fetches without filter params", async () => {
+      useTransactionsStore.setState({
+        currentFilter: { note: "old search" },
+        lastParams: { bookId: "book_main" },
+      })
+
+      mockGetTransactions.mockResolvedValueOnce({
+        items: [makeTx({ id: "cleared_1" })],
+        page: 1,
+        pageSize: 50,
+        total: 1,
+      })
+
+      await useTransactionsStore.getState().clearFilter()
+
+      expect(useTransactionsStore.getState().currentFilter).toEqual({})
+      expect(mockGetTransactions).toHaveBeenCalledWith({
+        bookId: "book_main",
+      })
+    })
+
+    it("uses the override bookId when provided", async () => {
+      useTransactionsStore.setState({
+        currentFilter: { note: "old search" },
+        lastParams: { bookId: "book_main" },
+      })
+
+      mockGetTransactions.mockResolvedValueOnce({
+        items: [makeTx({ id: "switched_1" })],
+        page: 1,
+        pageSize: 50,
+        total: 1,
+      })
+
+      await useTransactionsStore.getState().clearFilter("book_vacation")
+
+      expect(useTransactionsStore.getState().currentFilter).toEqual({})
+      expect(mockGetTransactions).toHaveBeenCalledWith({
+        bookId: "book_vacation",
+      })
     })
   })
 })

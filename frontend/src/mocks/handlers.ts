@@ -840,8 +840,11 @@ export const handlers = [
     const bookId = url.searchParams.get('bookId')
     const from = url.searchParams.get('from')
     const to = url.searchParams.get('to')
-    const category = url.searchParams.get('category')
-    const createdBy = url.searchParams.get('createdBy')
+    const note = url.searchParams.get('note')
+    const minValue = url.searchParams.get('minValue')
+    const maxValue = url.searchParams.get('maxValue')
+    const categories = url.searchParams.getAll('category')
+    const createdBys = url.searchParams.getAll('createdBy')
     const page = parseInt(url.searchParams.get('page') || '1', 10)
     const pageSize = parseInt(url.searchParams.get('pageSize') || '50', 10)
 
@@ -861,8 +864,28 @@ export const handlers = [
       const toDate = new Date(to)
       filtered = filtered.filter(tx => tx.dateTime <= toDate)
     }
-    if (category) filtered = filtered.filter(tx => tx.categoryName === category)
-    if (createdBy) filtered = filtered.filter(tx => tx.userId === createdBy)
+    if (categories.length > 0) {
+      filtered = filtered.filter(tx => tx.categoryName && categories.includes(tx.categoryName))
+    }
+    if (createdBys.length > 0) {
+      filtered = filtered.filter(tx => createdBys.includes(tx.userId))
+    }
+    if (note) {
+      const lowerNote = note.toLowerCase()
+      filtered = filtered.filter(tx => tx.note && tx.note.toLowerCase().includes(lowerNote))
+    }
+    if (minValue !== null && minValue !== undefined) {
+      const min = parseFloat(minValue)
+      if (!isNaN(min)) {
+        filtered = filtered.filter(tx => tx.amount >= min)
+      }
+    }
+    if (maxValue !== null && maxValue !== undefined) {
+      const max = parseFloat(maxValue)
+      if (!isNaN(max)) {
+        filtered = filtered.filter(tx => tx.amount <= max)
+      }
+    }
 
     const { items, totalCount } = paginate(filtered, page, pageSize)
     return HttpResponse.json({
@@ -1087,6 +1110,31 @@ export const handlers = [
     }))
 
     return HttpResponse.json({ data })
+  }),
+
+  // ---- Users ----
+  http.get('/api/v1/users', ({ request }) => {
+    const auth = requireAuth(request)
+    if (auth.error) return auth.response
+    const user = auth.user!
+
+    // Return the current user plus all users that share books with them
+    const collaboratorIds = new Set<string>()
+    collaboratorIds.add(user.id)
+    books.forEach((b) => {
+      if (b.ownerId === user.id) {
+        b.sharedWith.forEach((s) => collaboratorIds.add(s.userId))
+      }
+      if (b.sharedWith.some((s) => s.userId === user.id)) {
+        collaboratorIds.add(b.ownerId)
+      }
+    })
+
+    const result = users
+      .filter((u) => collaboratorIds.has(u.id))
+      .map((u) => ({ id: u.id, email: u.email }))
+
+    return HttpResponse.json({ data: result })
   }),
 
   // ---- Rates ----
