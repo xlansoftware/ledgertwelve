@@ -26,21 +26,25 @@ export interface ChartDataRow {
 /**
  * Compute running accumulation from raw daily totals.
  *
- * Expenses (negative amounts) contribute upward to the accumulation (sign flipped):
- *   - amount -45  → contributes +45
- * Income (positive amounts) pulls the accumulation downward:
- *   - amount +120 → contributes -120
+ * Uses actual financial semantics:
+ *   cumulative += row.amount
+ * Expenses (negative) decrease the balance; income (positive) increases it.
+ *
+ * @param initialCumulative - Optional seed value for the starting cumulative balance.
+ *                            Defaults to 0 when omitted.
  */
-export function computeAccumulation(rows: { date: string; amount: number }[]): AccumulatedRow[] {
+export function computeAccumulation(
+  rows: { date: string; amount: number }[],
+  initialCumulative?: number,
+): AccumulatedRow[] {
   if (rows.length === 0) return []
 
   // Sort by date ascending
   const sorted = [...rows].sort((a, b) => a.date.localeCompare(b.date))
 
-  let cumulative = 0
+  let cumulative = initialCumulative ?? 0
   return sorted.map((row) => {
-    // Flip sign: expenses (-) become positive, income (+) becomes negative
-    cumulative += -row.amount
+    cumulative += row.amount
     return {
       date: row.date,
       daily: row.amount,

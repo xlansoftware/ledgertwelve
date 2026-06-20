@@ -14,47 +14,45 @@ describe("computeAccumulation", () => {
     expect(computeAccumulation([])).toEqual([])
   })
 
-  it("returns single row with cumulative equal to flipped daily", () => {
+  it("returns single row with cumulative equal to amount (no sign flip)", () => {
     const result = computeAccumulation([{ date: "2026-06-11", amount: -45 }])
     expect(result).toEqual([
-      { date: "2026-06-11", daily: -45, cumulative: 45 },
+      { date: "2026-06-11", daily: -45, cumulative: -45 },
     ])
   })
 
-  it("computes running sum for multiple rows", () => {
+  it("computes running sum for multiple rows (negative expenses decrease balance)", () => {
     const result = computeAccumulation([
       { date: "2026-06-11", amount: -45 },
       { date: "2026-06-12", amount: -30 },
       { date: "2026-06-13", amount: -20 },
     ])
     expect(result).toEqual([
-      { date: "2026-06-11", daily: -45, cumulative: 45 },
-      { date: "2026-06-12", daily: -30, cumulative: 75 },
-      { date: "2026-06-13", daily: -20, cumulative: 95 },
+      { date: "2026-06-11", daily: -45, cumulative: -45 },
+      { date: "2026-06-12", daily: -30, cumulative: -75 },
+      { date: "2026-06-13", daily: -20, cumulative: -95 },
     ])
   })
 
-  it("negative expenses contribute upward (sign flipped)", () => {
+  it("expenses (negative) decrease the balance", () => {
     const result = computeAccumulation([
       { date: "2026-06-11", amount: -100 },
       { date: "2026-06-12", amount: -50 },
     ])
-    // -(-100) = +100, -(-50) = +50
     expect(result).toEqual([
-      { date: "2026-06-11", daily: -100, cumulative: 100 },
-      { date: "2026-06-12", daily: -50, cumulative: 150 },
+      { date: "2026-06-11", daily: -100, cumulative: -100 },
+      { date: "2026-06-12", daily: -50, cumulative: -150 },
     ])
   })
 
-  it("positive income pulls accumulation downward", () => {
+  it("positive income increases the balance", () => {
     const result = computeAccumulation([
       { date: "2026-06-11", amount: 120 },
       { date: "2026-06-12", amount: 50 },
     ])
-    // -(120) = -120, -(50) = -50
     expect(result).toEqual([
-      { date: "2026-06-11", daily: 120, cumulative: -120 },
-      { date: "2026-06-12", daily: 50, cumulative: -170 },
+      { date: "2026-06-11", daily: 120, cumulative: 120 },
+      { date: "2026-06-12", daily: 50, cumulative: 170 },
     ])
   })
 
@@ -65,9 +63,9 @@ describe("computeAccumulation", () => {
       { date: "2026-06-12", amount: -30 },
     ])
     expect(result).toEqual([
-      { date: "2026-06-11", daily: -45, cumulative: 45 },
-      { date: "2026-06-12", daily: -30, cumulative: 75 },
-      { date: "2026-06-13", daily: -20, cumulative: 95 },
+      { date: "2026-06-11", daily: -45, cumulative: -45 },
+      { date: "2026-06-12", daily: -30, cumulative: -75 },
+      { date: "2026-06-13", daily: -20, cumulative: -95 },
     ])
   })
 
@@ -78,10 +76,31 @@ describe("computeAccumulation", () => {
       { date: "2026-06-13", amount: -30 },
     ])
     expect(result).toEqual([
-      { date: "2026-06-11", daily: -45, cumulative: 45 },
-      { date: "2026-06-12", daily: 120, cumulative: -75 },
-      { date: "2026-06-13", daily: -30, cumulative: -45 },
+      { date: "2026-06-11", daily: -45, cumulative: -45 },
+      { date: "2026-06-12", daily: 120, cumulative: 75 },
+      { date: "2026-06-13", daily: -30, cumulative: 45 },
     ])
+  })
+
+  it("seeds accumulation with initialCumulative when provided", () => {
+    const result = computeAccumulation(
+      [
+        { date: "2026-06-11", amount: -45 },
+        { date: "2026-06-12", amount: -30 },
+      ],
+      1000,
+    )
+    expect(result).toEqual([
+      { date: "2026-06-11", daily: -45, cumulative: 955 },
+      { date: "2026-06-12", daily: -30, cumulative: 925 },
+    ])
+  })
+
+  it("defaults to zero when initialCumulative is omitted (backward compatible)", () => {
+    const result = computeAccumulation([
+      { date: "2026-06-11", amount: -45 },
+    ])
+    expect(result[0].cumulative).toBe(-45)
   })
 })
 

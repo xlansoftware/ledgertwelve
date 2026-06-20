@@ -67,6 +67,20 @@ describe("booksService", () => {
         /Book not found/i,
       )
     })
+
+    it("returns different (smaller) totalSum when asOf is in the past", async () => {
+      // Full book stats
+      const fullStats = await getBookStats("book_main")
+      expect(fullStats.transactionCount).toBeGreaterThan(0)
+
+      // Stats as of a date far in the past (should only include early transactions)
+      const pastStats = await getBookStats("book_main", { asOf: "2026-01-15" })
+
+      // The asOf-filtered stats should have fewer or equal transactions
+      expect(pastStats.transactionCount).toBeLessThanOrEqual(fullStats.transactionCount)
+      // When asOf is early, the sum should be different (smaller magnitude)
+      expect(pastStats.totalSum).not.toBe(fullStats.totalSum)
+    })
   })
 
   describe("getBook", () => {

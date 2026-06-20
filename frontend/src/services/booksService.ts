@@ -129,8 +129,21 @@ export async function removeShare(bookId: string, userId: string): Promise<void>
 // GET   /api/v1/books/{bookId}/stats
 // ---------------------------------------------------------------------------
 
-export async function getBookStats(bookId: string): Promise<BookStatsDto> {
-  const res = await request<ApiResponse<BookStatsDto>>(`/api/v1/books/${bookId}/stats`)
+export interface GetBookStatsParams {
+  asOf?: string   // "YYYY-MM-DD" — compute stats as of end of day on this date
+}
+
+export async function getBookStats(
+  bookId: string,
+  params?: GetBookStatsParams,
+): Promise<BookStatsDto> {
+  const searchParams = new URLSearchParams()
+  if (params?.asOf) {
+    searchParams.set("asOf", params.asOf)
+  }
+  const query = searchParams.toString()
+  const url = `/api/v1/books/${bookId}/stats${query ? `?${query}` : ""}`
+  const res = await request<ApiResponse<BookStatsDto>>(url)
   return res.data
 }
 

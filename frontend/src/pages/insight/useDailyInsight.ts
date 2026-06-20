@@ -4,6 +4,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import { getCategoryReport, getDailyReport } from "@/services/reportsService"
+import { getBookStats } from "@/services/booksService"
 import type { DailyReportRow, CategoryReportRow } from "@/types"
 import {
   computeAccumulation,
@@ -40,6 +41,16 @@ function dayRange(dateStr: string): { from: string; to: string } {
     from: `${dateStr}T00:00:00`,
     to: `${dateStr}T23:59:59`,
   }
+}
+
+/**
+ * Returns "YYYY-MM-DD" for the last day of the month before `date`'s month.
+ * Uses JavaScript's Date day-0 trick: new Date(year, month, 0) returns
+ * the last day of the previous month.
+ */
+function lastDayOfPreviousMonth(date: Date): string {
+  const d = new Date(date.getFullYear(), date.getMonth(), 0)
+  return d.toISOString().slice(0, 10)
 }
 
 /**
@@ -135,6 +146,9 @@ export function useDailyInsight(todayStr?: string): UseDailyInsightReturn {
   const [isLoadingDaily, setIsLoadingDaily] = useState(true)
   const [dailyError, setDailyError] = useState<string | null>(null)
 
+  // ── Opening balance (as of last day of previous month) ──
+  const [openingBalance, setOpeningBalance] = useState<number | null>(null)
+
   // ── Selected day category breakdown ──
   const [selectedDay, setSelectedDay] = useState<string | null>(null) // null = today
   const [selectedDayRows, setSelectedDayRows] = useState<CategoryReportRow[]>([])
@@ -180,6 +194,20 @@ export function useDailyInsight(todayStr?: string): UseDailyInsightReturn {
       })
   }, [today, todayDate])
 
+  // ── Fetch opening balance as of last day of previous month ──
+  useEffect(() => {
+    const asOf = lastDayOfPreviousMonth(todayDate)
+
+    getBookStats("book_main", { asOf })
+      .then((stats) => {
+        setOpeningBalance(stats.totalSum)
+      })
+      .catch(() => {
+        // Graceful degradation: openingBalance stays null, accumulation falls back to zero
+        setOpeningBalance(null)
+      })
+  }, [todayDate])
+
   // ── Fetch selected day's categories ──
   useEffect(() => {
     if (selectedDay === null) {
@@ -224,10 +252,11 @@ export function useDailyInsight(todayStr?: string): UseDailyInsightReturn {
 
   // ── Accumulated data with projection ──
   const accumulatedData = useMemo<(AccumulatedRow | ProjectedRow)[]>(() => {
-    const accumulated = computeAccumulation(filledDailyTotals)
+    const seed = openingBalance ?? 0  // graceful degradation: fall back to zero
+    const accumulated = computeAccumulation(filledDailyTotals, seed)
     const projection = computeProjection(accumulated, trendMDays)
     return [...accumulated, ...projection]
-  }, [filledDailyTotals, trendMDays])
+  }, [filledDailyTotals, trendMDays, openingBalance])
 
   // ── Split selected day's data by sign ──
   const { expenses: selectedDayExpenses, income: selectedDayIncome } = useMemo(

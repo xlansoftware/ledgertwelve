@@ -475,6 +475,15 @@ if transactions exist.
 
 Returns read-only statistics for a book — transaction count and net sum.
 
+### Query Parameters
+
+```text
+asOf=2026-05-31   (optional ISO 8601 date string)
+```
+
+- If `asOf` is **omitted**, behavior is unchanged: returns stats for the entire book (all non-closing transactions).
+- If `asOf` is **provided**, `transactionCount` and `totalSum` are computed from non-closing transactions **on or before** that date only. Uses the inclusive date boundary (`<=`), so transactions occurring exactly on that date are included. This returns the net balance as of end of day on the specified date.
+
 ### Response
 
 ```json
@@ -487,7 +496,7 @@ Returns read-only statistics for a book — transaction count and net sum.
 ```
 
 - `transactionCount` — number of non-closing transactions in the book.
-- `totalSum` — net sum of all non-closing transaction amounts.
+- `totalSum` — net sum of all non-closing transaction amounts. When `asOf` is provided, this represents the net balance as of end of day on that date.
 - Requires the book to be visible to the current user (owned or shared).
 - Returns `404` if the book is not found or not visible.
 

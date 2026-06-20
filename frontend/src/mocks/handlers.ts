@@ -764,8 +764,18 @@ export const handlers = [
     if (!book) {
       return HttpResponse.json({ error: 'Book not found' }, { status: 404 })
     }
-    // Compute stats from non-closing transactions
-    const relevantTx = transactions.filter(tx => tx.bookId === book.id && !tx.isBookClosingEntry)
+
+    // Build base set of non-closing transactions
+    let relevantTx = transactions.filter(tx => tx.bookId === book.id && !tx.isBookClosingEntry)
+
+    // If asOf parameter is provided, filter to transactions on or before that date
+    const url = new URL(request.url)
+    const asOf = url.searchParams.get('asOf')
+    if (asOf) {
+      const asOfDate = new Date(asOf + 'T23:59:59.999Z')
+      relevantTx = relevantTx.filter(tx => tx.dateTime <= asOfDate)
+    }
+
     const transactionCount = relevantTx.length
     const totalSum = relevantTx.reduce((sum, tx) => sum + tx.amount, 0)
     return HttpResponse.json({

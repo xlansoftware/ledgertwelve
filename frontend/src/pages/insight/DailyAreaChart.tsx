@@ -43,7 +43,7 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
         {prefix}Daily: {formatCurrency(dataPoint.delta)}
       </span>
       <span className="font-medium">
-        {prefix}Total: {formatCurrency(dataPoint.historical ?? dataPoint.projected ?? 0)}
+        {prefix}Balance: {formatCurrency(dataPoint.historical ?? dataPoint.projected ?? 0)}
       </span>
     </div>
   )
@@ -113,7 +113,7 @@ export function DailyAreaChart({ data, isLoading, error }: DailyAreaChartProps) 
   return (
     <div className="w-full">
       <h3 className="mb-2 text-sm font-medium text-muted-foreground">
-        Accumulated Spending
+        Running Balance
       </h3>
       <div className="h-52 w-full">
         <ChartContainer config={chartConfig} className="h-full w-full">
