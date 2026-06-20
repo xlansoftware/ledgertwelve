@@ -1118,8 +1118,8 @@ export const handlers = [
     const mainBook = books.find(b => b.ownerId === user.id && b.name === 'Main')
     if (!mainBook) return HttpResponse.json({ error: 'Main book not found' }, { status: 500 })
 
-    const fromDate = new Date(from)
-    const toDate = new Date(to)
+    const fromDate = new Date(from + "T00:00:00.000Z")
+    const toDate = new Date(to + "T23:59:59.999Z")
 
     let txs = transactions.filter(tx => tx.bookId === mainBook.id && !tx.isBookClosingEntry)
     txs = txs.filter(tx => tx.dateTime >= fromDate && tx.dateTime <= toDate)

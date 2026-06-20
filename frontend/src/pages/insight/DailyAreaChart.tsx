@@ -113,7 +113,7 @@ export function DailyAreaChart({ data, isLoading, error }: DailyAreaChartProps) 
   return (
     <div className="w-full">
       <h3 className="mb-2 text-sm font-medium text-muted-foreground">
-        Accumulated Spending (Last 10 Days)
+        Accumulated Spending
       </h3>
       <div className="h-52 w-full">
         <ChartContainer config={chartConfig} className="h-full w-full">
