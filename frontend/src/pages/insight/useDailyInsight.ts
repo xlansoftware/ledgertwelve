@@ -12,23 +12,24 @@ import {
 import type { AccumulatedRow, ProjectedRow } from "./insightUtils"
 
 // ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
-const LAST_N_DAYS = 10
-const TREND_M_DAYS = 10
-
-// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
 /**
- * Get an ISO date string for a date offset from today.
+ * Get an ISO date string for a date offset from a given base date.
+ * Defaults to today if no base date is given.
  */
-function offsetDate(daysOffset: number): string {
-  const d = new Date()
+function offsetDate(daysOffset: number, base?: Date): string {
+  const d = base ? new Date(base) : new Date()
   d.setDate(d.getDate() + daysOffset)
   return d.toISOString().slice(0, 10)
+}
+
+/**
+ * Get an ISO date string for the first day of a given date's month.
+ */
+function firstOfMonth(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-01`
 }
 
 /**
@@ -116,7 +117,14 @@ export interface UseDailyInsightReturn {
   selectDay: (date: string | null) => void
 }
 
-export function useDailyInsight(): UseDailyInsightReturn {
+export function useDailyInsight(todayStr?: string): UseDailyInsightReturn {
+  // ── Compute month-relative dates and constants ──
+  const today = todayStr ?? offsetDate(0)
+  const todayDate = useMemo(() => new Date(today + "T00:00:00"), [today])
+  const lastNDays = todayDate.getDate() // days from 1st to today (inclusive)
+  const daysInMonth = new Date(todayDate.getFullYear(), todayDate.getMonth() + 1, 0).getDate()
+  const trendMDays = daysInMonth - lastNDays // days from tomorrow to end of month
+
   // ── Today's category breakdown ──
   const [todayRows, setTodayRows] = useState<CategoryReportRow[]>([])
   const [isLoadingToday, setIsLoadingToday] = useState(true)
@@ -135,7 +143,6 @@ export function useDailyInsight(): UseDailyInsightReturn {
 
   // ── Fetch today's categories ──
   useEffect(() => {
-    const today = offsetDate(0)
     const range = dayRange(today)
 
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -155,8 +162,8 @@ export function useDailyInsight(): UseDailyInsightReturn {
 
   // ── Fetch daily totals (area chart + list) ──
   useEffect(() => {
-    const to = offsetDate(0)
-    const from = offsetDate(-LAST_N_DAYS + 1)
+    const to = today
+    const from = firstOfMonth(todayDate)
 
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsLoadingDaily(true)
@@ -210,17 +217,17 @@ export function useDailyInsight(): UseDailyInsightReturn {
 
   // ── Filled daily totals (gaps filled) ──
   const filledDailyTotals = useMemo(() => {
-    const to = offsetDate(0)
-    const from = offsetDate(-LAST_N_DAYS + 1)
+    const to = today
+    const from = firstOfMonth(todayDate)
     return fillDailyGaps(dailyRows, from, to)
-  }, [dailyRows])
+  }, [dailyRows, todayDate, today])
 
   // ── Accumulated data with projection ──
   const accumulatedData = useMemo<(AccumulatedRow | ProjectedRow)[]>(() => {
     const accumulated = computeAccumulation(filledDailyTotals)
-    const projection = computeProjection(accumulated, TREND_M_DAYS)
+    const projection = computeProjection(accumulated, trendMDays)
     return [...accumulated, ...projection]
-  }, [filledDailyTotals])
+  }, [filledDailyTotals, trendMDays])
 
   // ── Split selected day's data by sign ──
   const { expenses: selectedDayExpenses, income: selectedDayIncome } = useMemo(

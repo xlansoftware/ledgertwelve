@@ -104,8 +104,8 @@ describe("useDailyInsight", () => {
       expect(result.current.isLoadingDaily).toBe(false)
     })
 
-    // Should fill gaps to have exactly LAST_N_DAYS entries
-    expect(result.current.dailyTotals.length).toBe(10)
+    // Should fill gaps from start of month to today
+    expect(result.current.dailyTotals.length).toBe(20)
     // Latest entry should be today
     expect(result.current.dailyTotals[result.current.dailyTotals.length - 1].date).toBe(todayStr)
   })
@@ -131,12 +131,12 @@ describe("useDailyInsight", () => {
       expect(result.current.isLoadingDaily).toBe(false)
     })
 
-    // 10 historical + 10 projected = 20
-    expect(result.current.accumulatedData.length).toBe(20)
+    // 20 historical (Jun 1–Jun 20) + 10 projected (Jun 21–Jun 30) = 30
+    expect(result.current.accumulatedData.length).toBe(30)
 
-    // First 10 should not be projected, last 10 should be projected
-    const historical = result.current.accumulatedData.slice(0, 10)
-    const projected = result.current.accumulatedData.slice(10)
+    // First 20 should not be projected, last 10 should be projected
+    const historical = result.current.accumulatedData.slice(0, 20)
+    const projected = result.current.accumulatedData.slice(20)
 
     historical.forEach((point) => {
       expect("isProjected" in point).toBe(false)
@@ -238,7 +238,7 @@ describe("useDailyInsight", () => {
 
     expect(result.current.todayError).toBe("Today fetch failed")
     expect(result.current.dailyError).toBeNull()
-    expect(result.current.dailyTotals.length).toBe(10)
+    expect(result.current.dailyTotals.length).toBe(20)
   })
 
   it("handles partial errors — daily fails but today still renders", async () => {
