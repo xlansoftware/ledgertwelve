@@ -10,6 +10,7 @@ import CreateBookPage from "@/pages/books/CreateBookPage";
 import EditBookPage from "@/pages/books/EditBookPage";
 import EditTransactionPage from "@/pages/edit-transaction/EditTransactionPage";
 import InisghtPage from "@/pages/insight/InisghtPage";
+import InsightDailyPage from "@/pages/insight/InsightDailyPage";
 
 const router = createBrowserRouter([
   {
@@ -48,7 +49,10 @@ const router = createBrowserRouter([
       },
       {
         path: "insight",
-        element: <InisghtPage />,
+        children: [
+          { index: true, element: <InisghtPage /> },
+          { path: "daily", element: <InsightDailyPage /> },
+        ],
       },
 
     ],

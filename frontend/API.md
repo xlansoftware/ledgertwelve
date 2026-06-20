@@ -861,6 +861,51 @@ to=2026-05-31
 
 ---
 
+# GET /api/v1/reports/daily
+
+### Purpose
+
+Returns daily net amounts for the Main book within a given date range.
+
+### Query Parameters
+
+```text
+from=2026-06-11
+to=2026-06-20
+```
+
+Both `from` and `to` are required ISO 8601 date strings.
+
+### Response
+
+```json
+{
+  "data": [
+    { "date": "2026-06-11", "amount": -45.00 },
+    { "date": "2026-06-12", "amount": 120.00 },
+    { "date": "2026-06-13", "amount": -30.00 }
+  ]
+}
+```
+
+- `date` — `YYYY-MM-DD` string (date only, no time component).
+- `amount` — net amount for that day (negative = net expense, positive = net income).
+- Sorted ascending by date.
+- Days with no transactions are omitted from the response.
+- Uses Main book only.
+
+### Errors
+
+```json
+// 400 — Missing from or to
+{ "error": "from and to query parameters are required" }
+
+// 401 — Unauthenticated
+{ "error": "Unauthorized" }
+```
+
+---
+
 # Export
 
 Exports should be asynchronous because XLSX generation can become expensive.

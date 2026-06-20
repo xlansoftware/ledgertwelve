@@ -70,6 +70,11 @@ export interface CategoryReportRow {
   amount: number
 }
 
+export interface DailyReportRow {
+  date: string   // "YYYY-MM-DD"
+  amount: number
+}
+
 export interface ExchangeRateDto {
   from: string
   to: string
