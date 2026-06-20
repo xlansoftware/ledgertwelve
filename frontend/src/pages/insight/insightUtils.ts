@@ -16,6 +16,13 @@ export interface ProjectedRow {
   isProjected: true
 }
 
+export interface ChartDataRow {
+  date: string
+  delta: number
+  historical: number | null
+  projected: number | null
+}
+
 /**
  * Compute running accumulation from raw daily totals.
  *
@@ -88,4 +95,37 @@ export function computeProjection(
   }
 
   return projected
+}
+
+
+export function computeChartData(data: (AccumulatedRow | ProjectedRow)[]) : ChartDataRow[] {
+  const chartData = data.map((row) => ({
+    date: row.date,
+    delta: row.daily,
+    historical:
+      "isProjected" in row && row.isProjected
+        ? null
+        : row.cumulative,
+    projected:
+      "isProjected" in row && row.isProjected
+        ? row.cumulative
+        : null,
+  }))
+
+  const lastHistoricalIndex = data.findIndex(
+    (d) => "isProjected" in d && d.isProjected
+  )
+
+  if (lastHistoricalIndex > 0) {
+    const previous = data[lastHistoricalIndex - 1]
+
+    chartData.splice(lastHistoricalIndex, 0, {
+      date: previous.date,
+      delta: previous.daily,
+      historical: previous.cumulative,
+      projected: previous.cumulative,
+    })
+  }
+
+  return chartData;
 }

@@ -9,12 +9,13 @@ import {
   XAxis,
   YAxis,
   Tooltip,
+  Line,
 } from "recharts"
 import { format } from "date-fns"
 
 import { ChartContainer } from "@/components/ui/chart"
 import { formatCurrency } from "@/lib/utils"
-import type { AccumulatedRow, ProjectedRow } from "./insightUtils"
+import { computeChartData, type AccumulatedRow, type ChartDataRow, type ProjectedRow } from "./insightUtils"
 
 // ---------------------------------------------------------------------------
 // Custom Tooltip
@@ -22,7 +23,7 @@ import type { AccumulatedRow, ProjectedRow } from "./insightUtils"
 
 interface CustomTooltipProps {
   active?: boolean
-  payload?: Array<{ payload: AccumulatedRow | ProjectedRow }>
+  payload?: Array<{ payload: ChartDataRow }>
 }
 
 function CustomTooltip({ active, payload }: CustomTooltipProps) {
@@ -30,7 +31,7 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
 
   const item = payload[0]
   const dataPoint = item.payload
-  const isProjected = "isProjected" in dataPoint && dataPoint.isProjected
+  const isProjected = dataPoint.projected !== null
   const prefix = isProjected ? "Projected: " : ""
 
   return (
@@ -39,10 +40,10 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
         {formatTooltipDate(dataPoint.date)}
       </span>
       <span className="font-medium">
-        {prefix}Daily: {formatCurrency(dataPoint.daily)}
+        {prefix}Daily: {formatCurrency(dataPoint.delta)}
       </span>
       <span className="font-medium">
-        {prefix}Total: {formatCurrency(dataPoint.cumulative)}
+        {prefix}Total: {formatCurrency(dataPoint.historical ?? dataPoint.projected ?? 0)}
       </span>
     </div>
   )
@@ -77,7 +78,6 @@ function formatTooltipDate(dateStr: string): string {
 // ---------------------------------------------------------------------------
 
 export function DailyAreaChart({ data, isLoading, error }: DailyAreaChartProps) {
-  const hasData = data.length > 0 && !isLoading && !error
 
   // Build chart config for the two series
   const chartConfig = {
@@ -108,10 +108,7 @@ export function DailyAreaChart({ data, isLoading, error }: DailyAreaChartProps) 
     )
   }
 
-  // If no data, show a flat line at zero
-  const chartData = hasData
-    ? data
-    : [{ date: "", daily: 0, cumulative: 0, isProjected: false as const }]
+  const chartData = computeChartData(data);
 
   return (
     <div className="w-full">
@@ -155,31 +152,33 @@ export function DailyAreaChart({ data, isLoading, error }: DailyAreaChartProps) 
             </defs>
 
             <Area
-              type="monotone"
-              dataKey="cumulative"
-              stroke="hsl(var(--primary))"
+              type="step"
+              dataKey="historical"
+              // stroke="hsl(var(--primary))"
+              // stroke="#000000"
               strokeWidth={2}
               fill="url(#historicalGradient)"
               dot={false}
-              activeDot={{ r: 4, stroke: "hsl(var(--primary))", strokeWidth: 2, fill: "white" }}
+              // activeDot={{ r: 4, 
+              //   // stroke: "hsl(var(--primary))", 
+              //   strokeWidth: 2, 
+              //   // fill: "white" 
+              // }}
               isAnimationActive={false}
             />
 
             {/* Projected line (only when data has projected points) */}
-            {hasData && data.some((d) => "isProjected" in d && d.isProjected) && (
-              <Area
-                type="monotone"
-                dataKey="cumulative"
-                stroke="hsl(var(--muted-foreground))"
-                strokeWidth={2}
-                strokeDasharray="6 3"
-                fill="none"
-                dot={false}
-                activeDot={{ r: 4, stroke: "hsl(var(--muted-foreground))", strokeWidth: 2, fill: "white" }}
-                isAnimationActive={false}
-                connectNulls={false}
-              />
-            )}
+            <Line
+              type="monotone"
+              dataKey="projected"
+              // stroke="hsl(var(--muted-foreground))"
+              stroke="#ff0000"
+              strokeWidth={2}
+              strokeDasharray="6 3"
+              dot={false}
+              connectNulls={false}
+              isAnimationActive={false}
+            />
           </AreaChart>
         </ChartContainer>
       </div>
