@@ -158,7 +158,7 @@ export function useDailyInsight(todayStr?: string): UseDailyInsightReturn {
         setTodayError(err instanceof Error ? err.message : "Failed to load today's data")
         setIsLoadingToday(false)
       })
-  }, [])
+  }, [today])
 
   // ── Fetch daily totals (area chart + list) ──
   useEffect(() => {
@@ -178,7 +178,7 @@ export function useDailyInsight(todayStr?: string): UseDailyInsightReturn {
         setDailyError(err instanceof Error ? err.message : "Failed to load daily data")
         setIsLoadingDaily(false)
       })
-  }, [])
+  }, [today, todayDate])
 
   // ── Fetch selected day's categories ──
   useEffect(() => {
