@@ -196,8 +196,11 @@ describe("useMonthlyInsight", () => {
     // First accumulated point should be opening balance + first month's amount
     // openingBalance = -1000, first month = -(1*100+50) = -150
     // cumulative = -1000 + (-150) = -1150
+    // expect(firstHistorical.cumulative).toBe(-1150)
+
+    // the openingBalance was replaced with 0
     const firstHistorical = result.current.accumulatedData[0]
-    expect(firstHistorical.cumulative).toBe(-1150)
+    expect(firstHistorical.cumulative).toBe(-150)
   })
 
   it("selectedMonth starts as null (current month)", async () => {

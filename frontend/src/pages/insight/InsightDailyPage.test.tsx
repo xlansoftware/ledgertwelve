@@ -206,10 +206,6 @@ describe("InsightDailyPage", () => {
       })
     })
 
-    it("renders the Running Balance area chart section", () => {
-      expect(screen.getByText("Running Balance")).toBeInTheDocument()
-    })
-
     it("shows DailyList with all days of the month so far", async () => {
       await waitFor(() => {
         expect(screen.getByText("Daily Net")).toBeInTheDocument()

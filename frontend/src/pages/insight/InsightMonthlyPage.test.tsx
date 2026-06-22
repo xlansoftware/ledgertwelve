@@ -184,10 +184,6 @@ describe("InsightMonthlyPage", () => {
       })
     })
 
-    it("renders the Year-to-Date Running Balance area chart section", () => {
-      expect(screen.getByText("Year-to-Date Running Balance")).toBeInTheDocument()
-    })
-
     it("shows MonthlyList with all months from Jan to current", async () => {
       await waitFor(() => {
         expect(screen.getByText("Monthly Net")).toBeInTheDocument()

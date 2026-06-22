@@ -117,7 +117,7 @@ export function useMonthlyInsight(): UseMonthlyInsightReturn {
   const [averageError, setAverageError] = useState<string | null>(null)
 
   // ── Opening balance (as of Dec 31 previous year) ──
-  const [openingBalance, setOpeningBalance] = useState<number | null>(null)
+  const [/*openingBalance*/, setOpeningBalance] = useState<number | null>(null)
 
   // ── Pie chart category breakdown ──
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null) // null = current month
@@ -252,7 +252,7 @@ export function useMonthlyInsight(): UseMonthlyInsightReturn {
     // Fallback: compute projection from short-window historical data
     const projection = computeProjection(accumulated, remainingMonths)
     return [...accumulated, ...projection]
-  }, [filledMonthlyTotals, remainingMonths, openingBalance, averageChange])
+  }, [filledMonthlyTotals, remainingMonths, averageChange])
 
   // ── Actions ──
 
