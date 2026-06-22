@@ -37,9 +37,11 @@ function firstOfMonth(date: Date): string {
  * Get start and end ISO strings for a single day.
  */
 function dayRange(dateStr: string): { from: string; to: string } {
+  // from is inclusive, to is exclusive (next day at midnight)
+  const nextDate = offsetDate(1, new Date(dateStr + "T00:00:00"))
   return {
     from: `${dateStr}T00:00:00`,
-    to: `${dateStr}T23:59:59`,
+    to: `${nextDate}T00:00:00`,
   }
 }
 
@@ -148,14 +150,14 @@ export function useDailyInsight(todayStr?: string): UseDailyInsightReturn {
 
   // ── Fetch daily totals (area chart + list) ──
   useEffect(() => {
-    const to = today
     const from = firstOfMonth(todayDate)
+    const reportTo = offsetDate(1) // exclusive upper bound = tomorrow
 
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsLoadingDaily(true)
     setDailyError(null)
 
-    getDailyReport({ from, to })
+    getDailyReport({ from, to: reportTo })
       .then((data) => {
         setDailyRows(data)
         setIsLoadingDaily(false)
@@ -211,11 +213,10 @@ export function useDailyInsight(todayStr?: string): UseDailyInsightReturn {
     [pieRows],
   )
 
-  // ── Filled daily totals (gaps filled) ──
+  // ── Filled daily totals (gaps filled from first of month up to today inclusive) ──
   const filledDailyTotals = useMemo(() => {
-    const to = today
     const from = firstOfMonth(todayDate)
-    return fillDailyGaps(dailyRows, from, to)
+    return fillDailyGaps(dailyRows, from, today)
   }, [dailyRows, todayDate, today])
 
   // ── Accumulated data with projection ──

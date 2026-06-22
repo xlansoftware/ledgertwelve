@@ -14,10 +14,7 @@ export default function InisghtPage() {
     const to = new Date(
       now.getFullYear(),
       now.getMonth() + 1,
-      0,
-      23,
-      59,
-      59,
+      1,
     ).toISOString();
 
     // eslint-disable-next-line react-hooks/set-state-in-effect

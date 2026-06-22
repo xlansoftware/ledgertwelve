@@ -348,6 +348,45 @@ Response (201):
 
 ---
 
+### Date range convention (from inclusive → to exclusive)
+
+When designing endpoints that accept date range parameters (`from`, `to`, `asOf`):
+
+- **`from`** is always **inclusive** (`>=`).
+- **`to`** is always **exclusive** (`<`).
+- **`asOf`** is inclusive (end-of-day semantics: server adds one day internally and uses `<`).
+
+For **single-day queries**, the frontend sends `from = day` and `to = nextDay`:
+
+```text
+# Get transactions for Jan 20
+from=2026-01-20&to=2026-01-21
+```
+
+For **month/range queries**, the frontend sends `to` as the day after the last included day:
+
+```text
+# Get transactions for all of January 2026
+from=2026-01-01&to=2026-02-01
+```
+
+#### Server-side implementation pattern
+
+```ts
+if (from) filtered = filtered.filter(tx => tx.dateTime >= fromDate)
+if (to)   filtered = filtered.filter(tx => tx.dateTime <  toDate)
+```
+
+#### Never
+
+- Use `T23:59:59[.999]Z` to make a date inclusive — use the exclusive `to` with `<` instead.
+- Use `<=` when comparing against a `to` parameter — always use `<`.
+- Mix hour/minute/second components into a date-only `to` value.
+
+This convention applies to **all** endpoints: transaction lists, reports, exports, and book stats.
+
+---
+
 ### Mocking requirements
 
 Every endpoint documented in `API.md` must have a corresponding MSW handler.

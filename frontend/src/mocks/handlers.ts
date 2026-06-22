@@ -772,8 +772,10 @@ export const handlers = [
     const url = new URL(request.url)
     const asOf = url.searchParams.get('asOf')
     if (asOf) {
-      const asOfDate = new Date(asOf + 'T23:59:59.999Z')
-      relevantTx = relevantTx.filter(tx => tx.dateTime <= asOfDate)
+      // asOf is inclusive: treat as "end of day" by using next day midnight as exclusive bound
+      const asOfDate = new Date(asOf + 'T00:00:00.000Z')
+      asOfDate.setDate(asOfDate.getDate() + 1)
+      relevantTx = relevantTx.filter(tx => tx.dateTime < asOfDate)
     }
 
     const transactionCount = relevantTx.length
@@ -893,7 +895,7 @@ export const handlers = [
     }
     if (to) {
       const toDate = new Date(to)
-      filtered = filtered.filter(tx => tx.dateTime <= toDate)
+      filtered = filtered.filter(tx => tx.dateTime < toDate)
     }
     if (categories.length > 0) {
       filtered = filtered.filter(tx => tx.categoryName && categories.includes(tx.categoryName))
@@ -1076,7 +1078,7 @@ export const handlers = [
     }
     if (to) {
       const toDate = new Date(to)
-      txs = txs.filter(tx => tx.dateTime <= toDate)
+      txs = txs.filter(tx => tx.dateTime < toDate)
     }
 
     // Group by period
@@ -1129,10 +1131,10 @@ export const handlers = [
     if (!mainBook) return HttpResponse.json({ error: 'Main book not found' }, { status: 500 })
 
     const fromDate = new Date(from + "T00:00:00.000Z")
-    const toDate = new Date(to + "T23:59:59.999Z")
+    const toDate = new Date(to + "T00:00:00.000Z")
 
     let txs = transactions.filter(tx => tx.bookId === mainBook.id && !tx.isBookClosingEntry)
-    txs = txs.filter(tx => tx.dateTime >= fromDate && tx.dateTime <= toDate)
+    txs = txs.filter(tx => tx.dateTime >= fromDate && tx.dateTime < toDate)
 
     // Group by date (YYYY-MM-DD) and sum amounts
     const groups = new Map<string, number>()
@@ -1162,7 +1164,7 @@ export const handlers = [
 
     let txs = transactions.filter(tx => tx.bookId === mainBook.id)
     if (from) txs = txs.filter(tx => tx.dateTime >= new Date(from))
-    if (to) txs = txs.filter(tx => tx.dateTime <= new Date(to))
+    if (to) txs = txs.filter(tx => tx.dateTime < new Date(to))
 
     const groups = new Map<string, number>()
     txs.forEach(tx => {
@@ -1326,7 +1328,7 @@ export const handlers = [
     }
     if (job.to) {
       const toDate = new Date(job.to)
-      txs = txs.filter(tx => tx.dateTime <= toDate)
+      txs = txs.filter(tx => tx.dateTime < toDate)
     }
 
     if (job.format === 'csv') {

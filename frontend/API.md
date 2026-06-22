@@ -6,6 +6,48 @@ Auth: Cookie-based (Identity). `/api/v1/auth/login` and `/api/v1/auth/whoami` ar
 
 Error shape: `{ "error": "Human-readable message" }`
 
+---
+
+## Date range conventions
+
+Endpoints that accept date range parameters (`from`, `to`, or `asOf`) follow this convention:
+
+| Parameter | Semantics |
+|-----------|-----------|
+| `from`    | **Inclusive** — transactions on or after this date/time are included. |
+| `to`      | **Exclusive** — transactions **before** this date/time are included. The upper bound itself is **not** included. |
+| `asOf`    | **Inclusive** — transactions on or before this date are included (end-of-day semantics). |
+
+### Examples
+
+| Query | What it returns |
+|-------|----------------|
+| `from=2026-01-20&to=2026-01-21` | Transactions for **Jan 20** only (from inclusive, to exclusive). |
+| `from=2026-01-01&to=2026-02-01` | All transactions in **January** (from Jan 1 inclusive, to Feb 1 exclusive means up to end of Jan 31). |
+| `from=2026-01-01&to=2026-12-31` | Transactions from **Jan 1 through Dec 30** — likely a mistake unless Dec 31 should be excluded. To include all of Dec, use `to=2027-01-01`. |
+
+### Best practice for single-day queries
+
+```text
+# Get all transactions on 2026-01-20
+from=2026-01-20&to=2026-01-21
+```
+
+Send `to` as the **next day** after the last day you want to include. No time components are needed — the exclusive upper bound handles the boundary cleanly.
+
+### Server-side implementation
+
+When implementing filter logic:
+
+```
+if (from) tx.dateTime >= fromDate
+if (to)   tx.dateTime <  toDate
+```
+
+This principle applies uniformly across list endpoints, report endpoints, and export endpoints.
+
+---
+
 # Authentication
 
 ASP.NET Identity handles registration, password reset, email verification, etc.
@@ -482,7 +524,7 @@ asOf=2026-05-31   (optional ISO 8601 date string)
 ```
 
 - If `asOf` is **omitted**, behavior is unchanged: returns stats for the entire book (all non-closing transactions).
-- If `asOf` is **provided**, `transactionCount` and `totalSum` are computed from non-closing transactions **on or before** that date only. Uses the inclusive date boundary (`<=`), so transactions occurring exactly on that date are included. This returns the net balance as of end of day on the specified date.
+- If `asOf` is **provided**, `transactionCount` and `totalSum` are computed from non-closing transactions **on or before** that date only. `asOf` uses inclusive semantics — the server treats it as end-of-day by computing the exclusive upper bound as the next day (internally `dateTime < asOfDate + 1 day`). This returns the net balance as of end of day on the specified date.
 
 ### Response
 
