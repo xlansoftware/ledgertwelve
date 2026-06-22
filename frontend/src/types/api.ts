@@ -30,6 +30,10 @@ export interface BulkReassignResponse {
   affectedTransactions: number
 }
 
+export interface ReorderCategoriesResponse {
+  success: true
+}
+
 export interface CloseBookResponse {
   bookId: string
   status: "closed"

@@ -377,6 +377,44 @@ Bulk category reassignment.
 
 ---
 
+# PUT /api/v1/categories/reorder
+
+### Purpose
+
+Reorder categories for the current user. The client sends the full list of category IDs in the desired display order. The server assigns the `order` field on each category accordingly.
+
+### Request
+
+```json
+{
+  "orderedIds": ["cat_3", "cat_1", "cat_2", "cat_5", "cat_4"]
+}
+```
+
+`orderedIds` must contain every category ID belonging to the current user, in the new order.
+
+### Response
+
+```json
+{
+  "data": {
+    "success": true
+  }
+}
+```
+
+### Errors
+
+```json
+// 400 — Missing orderedIds or mismatched count
+{ "error": "orderedIds must contain all user categories" }
+
+// 401 — Unauthenticated
+{ "error": "Unauthorized" }
+```
+
+---
+
 # Books
 
 ---

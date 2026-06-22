@@ -17,8 +17,10 @@ export default function CategoriesPage() {
   const createCategory = useCategoriesStore((s) => s.createCategory)
   const deleteCategory = useCategoriesStore((s) => s.deleteCategory)
   const reassignCategories = useCategoriesStore((s) => s.reassignCategories)
+  const reorderCategories = useCategoriesStore((s) => s.reorderCategories)
 
   const [order, setOrder] = useState<number[]>([]);
+  const [beforeOrder, setBeforeOrder] = useState<number[]>([]);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [reordering, setReordering] = useState(false);
 
@@ -54,15 +56,27 @@ export default function CategoriesPage() {
 
   const handleReorder = async () => {
     if (reordering) {
+      // "Done" clicked — persist the reorder
+      const afterOrder = order;
+      const orderedIds = afterOrder.map((idx) => categories[idx].id);
+
+      // Debug: log before vs after for tracking
+      const beforeIds = beforeOrder.map((idx) => categories[idx].id);
+      console.debug("Categories reorder — before:", beforeIds, "after:", orderedIds);
+
       try {
-        //TODO: call update categories order
+        await reorderCategories({ orderedIds });
         toast.success("Reorder saved");
       } catch (err) {
         toast.error("Reorder failed");
         console.error(err);
+        // Revert to before state on failure
+        setOrder(beforeOrder);
       }
       setReordering(false);
     } else {
+      // "Reorder" clicked — capture the "before" snapshot and enter reorder mode
+      setBeforeOrder([...order]);
       setReordering(true);
     }
   };

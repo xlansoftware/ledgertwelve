@@ -6,12 +6,14 @@ import {
   updateCategory,
   deleteCategory,
   reassignCategories,
+  reorderCategories,
 } from "@/services"
 import type {
   CreateCategoryRequest,
   UpdateCategoryRequest,
   DeleteCategoryParams,
   ReassignCategoriesRequest,
+  ReorderCategoriesRequest,
 } from "@/services"
 
 // ---------------------------------------------------------------------------
@@ -42,6 +44,8 @@ interface CategoriesActions {
   deleteCategory: (categoryId: string, params?: DeleteCategoryParams) => Promise<void>
   /** Bulk-reassign transactions from one category to another, then refetch. */
   reassignCategories: (req: ReassignCategoriesRequest) => Promise<void>
+  /** Reorder categories by issuing a full ordered ID list. */
+  reorderCategories: (req: ReorderCategoriesRequest) => Promise<void>
 }
 
 // ---------------------------------------------------------------------------
@@ -127,6 +131,19 @@ export const useCategoriesStore = create<CategoriesState & CategoriesActions>((s
       await get().fetchCategories()
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to reassign categories"
+      set({ error: message })
+      throw err
+    }
+  },
+
+  reorderCategories: async (req: ReorderCategoriesRequest) => {
+    set({ error: null })
+    try {
+      await reorderCategories(req)
+      // Refresh the full list to reflect the new order
+      await get().fetchCategories()
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to reorder categories"
       set({ error: message })
       throw err
     }

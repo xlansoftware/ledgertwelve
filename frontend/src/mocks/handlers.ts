@@ -448,7 +448,9 @@ export const handlers = [
     const auth = requireAuth(request)
     if (auth.error) return auth.response
     const user = auth.user!
-    const userCategories = categories.filter(c => c.userId === user.id)
+    const userCategories = categories
+      .filter(c => c.userId === user.id)
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
     return HttpResponse.json({
       data: userCategories.map(c => ({
         id: c.id,
@@ -501,6 +503,37 @@ export const handlers = [
       },
       { status: 201 },
     )
+  }),
+
+  http.put('/api/v1/categories/reorder', async ({ request }) => {
+    const auth = requireAuth(request)
+    if (auth.error) return auth.response
+    const user = auth.user!
+    const body = (await request.json()) as { orderedIds?: string[] }
+    if (!body.orderedIds || !Array.isArray(body.orderedIds)) {
+      return HttpResponse.json({ error: 'orderedIds required' }, { status: 400 })
+    }
+
+    const userCategories = categories.filter(c => c.userId === user.id)
+    if (body.orderedIds.length !== userCategories.length) {
+      return HttpResponse.json({ error: 'orderedIds must contain all user categories' }, { status: 400 })
+    }
+
+    // Validate all IDs belong to the user
+    const userCatIds = new Set(userCategories.map(c => c.id))
+    for (const id of body.orderedIds) {
+      if (!userCatIds.has(id)) {
+        return HttpResponse.json({ error: 'orderedIds contains invalid category id' }, { status: 400 })
+      }
+    }
+
+    // Update the order
+    const idToOrder = new Map(body.orderedIds.map((id, idx) => [id, idx + 1]))
+    userCategories.forEach(c => {
+      c.order = idToOrder.get(c.id) ?? c.order
+    })
+
+    return HttpResponse.json({ data: { success: true } })
   }),
 
   http.put('/api/v1/categories/:categoryId', async ({ request, params }) => {

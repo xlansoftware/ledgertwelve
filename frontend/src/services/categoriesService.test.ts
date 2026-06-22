@@ -9,6 +9,7 @@ import {
   updateCategory,
   deleteCategory,
   reassignCategories,
+  reorderCategories,
 } from "./categoriesService"
 import { login } from "./authService"
 
@@ -111,6 +112,28 @@ describe("categoriesService", () => {
       expect(result).toMatchObject({
         affectedTransactions: expect.any(Number),
       })
+    })
+  })
+
+  describe("reorderCategories", () => {
+    it("reorders categories and returns success", async () => {
+      // Fetch current categories to know their IDs
+      const cats = await getCategories()
+      const ids = cats.map(c => c.id)
+      // Reverse the order
+      const reversed = [...ids].reverse()
+      const result = await reorderCategories({ orderedIds: reversed })
+      expect(result).toEqual({ success: true })
+
+      // Verify the new order is reflected after refetch
+      const updated = await getCategories()
+      expect(updated.map(c => c.id)).toEqual(reversed)
+    })
+
+    it("throws when orderedIds is empty", async () => {
+      await expect(
+        reorderCategories({ orderedIds: [] }),
+      ).rejects.toThrow()
     })
   })
 })

@@ -4,6 +4,7 @@ import type {
   CategoryDto,
   DeleteResponse,
   BulkReassignResponse,
+  ReorderCategoriesResponse,
 } from "@/types"
 
 // ---------------------------------------------------------------------------
@@ -93,5 +94,23 @@ export async function reassignCategories(
     method: "POST",
     body: req,
   })
+  return res.data
+}
+
+// ---------------------------------------------------------------------------
+// PUT   /api/v1/categories/reorder
+// ---------------------------------------------------------------------------
+
+export interface ReorderCategoriesRequest {
+  orderedIds: string[]
+}
+
+export async function reorderCategories(
+  req: ReorderCategoriesRequest,
+): Promise<ReorderCategoriesResponse> {
+  const res = await request<ApiResponse<ReorderCategoriesResponse>>(
+    "/api/v1/categories/reorder",
+    { method: "PUT", body: req },
+  )
   return res.data
 }
