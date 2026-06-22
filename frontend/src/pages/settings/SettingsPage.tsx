@@ -1,9 +1,12 @@
+import { useTheme } from "@/components/common/theme/theme-context";
+import { ThemeToggle } from "@/components/common/theme/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 
 export default function SettingsPage() {
   const navigate = useNavigate()
+  const { setTheme } = useTheme();
   
   return (
     <div className="flex flex-col justify-center items-center px-4 items-stretch">
@@ -27,6 +30,22 @@ export default function SettingsPage() {
             </Button>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Theme</CardTitle>
+            <CardDescription>Toggle dark/light mode.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-4">
+              <ThemeToggle />
+              <Button variant={"link"} onClick={() => setTheme("default")}>
+                Use auto
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
       </div>
     </div>
   );

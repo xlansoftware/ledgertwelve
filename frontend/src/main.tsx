@@ -3,15 +3,16 @@ import { createRoot, type Root } from 'react-dom/client'
 import { RouterProvider } from 'react-router-dom';
 
 import './index.css'
-import router from "./routes";
+import router from "@/routes";
 
-import { worker } from './mocks/browser';
-import { login } from './services';
-import { Toaster } from './components/ui/sonner';
-import { SuccessOverlayProvider } from './components/common/success';
-import { ConfirmDialogProvider } from './components/common/dialog/ConfirmDialogContext';
-import { initializeApp } from './lib/init';
+import { worker } from '@/mocks/browser';
+import { login } from '@/services';
+import { Toaster } from '@/components/ui/sonner';
+import { SuccessOverlayProvider } from '@/components/common/success';
+import { ConfirmDialogProvider } from '@/components/common/dialog/ConfirmDialogContext';
+import { initializeApp } from '@/lib/init';
 import { Loader2 } from 'lucide-react';
+import { ThemeProvider } from '@/components/common/theme/theme-context';
 
 // ---------------------------------------------------------------------------
 // Entry point — phases:
@@ -24,12 +25,14 @@ import { Loader2 } from 'lucide-react';
 function renderApp(root: Root) {
   root.render(
     <StrictMode>
-      <SuccessOverlayProvider>
-        <ConfirmDialogProvider>
-          <RouterProvider router={router} />
-          <Toaster />
-        </ConfirmDialogProvider>
-      </SuccessOverlayProvider>
+      <ThemeProvider>
+        <SuccessOverlayProvider>
+          <ConfirmDialogProvider>
+            <RouterProvider router={router} />
+            <Toaster />
+          </ConfirmDialogProvider>
+        </SuccessOverlayProvider>
+      </ThemeProvider>
     </StrictMode>,
   )
 }
