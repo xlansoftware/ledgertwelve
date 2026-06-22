@@ -17,13 +17,26 @@ import type { AccumulatedRow, ProjectedRow } from "./insightUtils"
 // ---------------------------------------------------------------------------
 
 /**
- * Get an ISO date string for a date offset from a given base date.
- * Defaults to today if no base date is given.
+ * Offsets a date by a number of days (positive or negative), correctly
+ * rolling over/under month and year boundaries.
+ *
+ * @param daysOffset - Number of days to add (positive) or subtract (negative).
+ * @param base - The date to offset from. Defaults to the current date/time.
+ * @returns The resulting date as an ISO date string ("YYYY-MM-DD").
  */
-function offsetDate(daysOffset: number, base?: Date): string {
-  const d = base ? new Date(base) : new Date()
-  d.setDate(d.getDate() + daysOffset)
-  return d.toISOString().slice(0, 10)
+function offsetDate(daysOffset: number, base: Date = new Date()): string {
+  // Work in UTC to avoid DST/timezone shifting the calendar day unexpectedly.
+  const result = new Date(
+    Date.UTC(base.getUTCFullYear(), base.getUTCMonth(), base.getUTCDate())
+  );
+
+  result.setUTCDate(result.getUTCDate() + daysOffset);
+
+  const year = result.getUTCFullYear();
+  const month = String(result.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(result.getUTCDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
 }
 
 /**
@@ -38,10 +51,10 @@ function firstOfMonth(date: Date): string {
  */
 function dayRange(dateStr: string): { from: string; to: string } {
   // from is inclusive, to is exclusive (next day at midnight)
-  const nextDate = offsetDate(1, new Date(dateStr + "T00:00:00"))
+  const nextDate = offsetDate(1, new Date(dateStr))
   return {
-    from: `${dateStr}T00:00:00`,
-    to: `${nextDate}T00:00:00`,
+    from: `${dateStr}`,
+    to: `${nextDate}`,
   }
 }
 
