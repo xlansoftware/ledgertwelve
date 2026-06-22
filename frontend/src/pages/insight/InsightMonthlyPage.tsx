@@ -13,9 +13,6 @@ import { format } from "date-fns"
 // Helpers
 // ---------------------------------------------------------------------------
 
-const now = new Date()
-const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`
-
 function formatPieTitle(selectedMonth: string | null): string {
   if (selectedMonth === null) return "This Month"
   const [year, month] = selectedMonth.split("-")

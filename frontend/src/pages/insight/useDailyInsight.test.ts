@@ -7,7 +7,7 @@ import { renderHook, waitFor } from "@testing-library/react"
 import { useDailyInsight } from "./useDailyInsight"
 import * as reportsService from "@/services/reportsService"
 import * as booksService from "@/services/booksService"
-import type { CategoryReportRow, AverageReportDto } from "@/types"
+import type { CategoryReportRow } from "@/types"
 
 // ---------------------------------------------------------------------------
 // Mocks

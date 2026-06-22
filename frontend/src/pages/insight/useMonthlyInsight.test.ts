@@ -7,7 +7,7 @@ import { renderHook, waitFor } from "@testing-library/react"
 import { useMonthlyInsight } from "./useMonthlyInsight"
 import * as reportsService from "@/services/reportsService"
 import * as booksService from "@/services/booksService"
-import type { CategoryReportRow, MonthlyReportRow, AverageReportDto } from "@/types"
+import type { MonthlyReportRow } from "@/types"
 
 // ---------------------------------------------------------------------------
 // Mocks
