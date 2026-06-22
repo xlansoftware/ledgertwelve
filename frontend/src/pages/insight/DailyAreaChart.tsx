@@ -110,9 +110,6 @@ export function DailyAreaChart({ data, isLoading, error }: DailyAreaChartProps) 
 
   const chartData = computeChartData(data);
 
-  console.log(data);
-  console.log(chartData);
-
   return (
     <div className="w-full">
       <h3 className="mb-2 text-sm font-medium text-muted-foreground">
