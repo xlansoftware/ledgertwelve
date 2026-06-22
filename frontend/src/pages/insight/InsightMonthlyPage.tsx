@@ -36,6 +36,7 @@ export default function InsightMonthlyPage() {
 
     selectedMonth,
 
+    averageChange,
     monthlyTotals,
     selectMonth,
   } = useMonthlyInsight()
@@ -76,6 +77,7 @@ export default function InsightMonthlyPage() {
           isLoading={isLoadingMonthly}
           error={monthlyError}
           selectedMonth={selectedMonth}
+          average={averageChange || undefined}
           onSelectMonth={selectMonth}
         />
       </section>

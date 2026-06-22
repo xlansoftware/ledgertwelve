@@ -78,6 +78,8 @@ export interface PeriodAreaChartProps {
   formatTooltipLabel: (period: string) => string  // Tooltip date/period label
   deltaLabel?: string                             // Label for the delta line (default: "Daily")
   balanceLabel?: string                           // Label for the balance line (default: "Balance")
+  average?: number                                // Average change per period (shown above chart)
+  unitLabel?: string                              // Unit label for values (e.g. "/mo", "/day")
 }
 
 // ---------------------------------------------------------------------------
@@ -95,6 +97,8 @@ export function PeriodAreaChart({
   formatTooltipLabel,
   deltaLabel = "Daily",
   balanceLabel = "Balance",
+  average,
+  unitLabel = "",
 }: PeriodAreaChartProps) {
 
   const chartConfig = {
@@ -127,9 +131,45 @@ export function PeriodAreaChart({
 
   const chartData = computeChartData(data)
 
+  // Derived summary values shown above the chart
+  const beginningValue =
+    chartData.length > 0
+      ? chartData.find((d) => d.historical !== null)?.historical ?? null
+      : null
+  const endValue =
+    chartData.length > 0
+      ? chartData[chartData.length - 1].projected ??
+        chartData[chartData.length - 1].historical
+      : null
+
   return (
     <div className="w-full">
       <h3 className="mb-2 text-sm font-medium text-muted-foreground">{title}</h3>
+
+      {/* Summary header — shadcn style with beginning, end, and average */}
+      <div className="mb-3 flex items-center gap-6 text-xs">
+        <div className="flex flex-col gap-0.5">
+          <span className="text-muted-foreground">Beginning</span>
+          <span className="text-base font-bold tabular-nums text-foreground">
+            {beginningValue !== null ? formatCurrency(beginningValue) : "—"}
+          </span>
+        </div>
+        <div className="flex flex-col gap-0.5">
+          <span className="text-muted-foreground">Projected End</span>
+          <span className="text-base font-bold tabular-nums text-foreground">
+            {endValue !== null ? formatCurrency(endValue) : "—"}
+          </span>
+        </div>
+        <div className="flex flex-col gap-0.5">
+          <span className="text-muted-foreground">
+            Average{unitLabel ?? ""}
+          </span>
+          <span className="text-base font-bold tabular-nums text-foreground">
+            {average !== undefined ? formatCurrency(average) : "—"}
+          </span>
+        </div>
+      </div>
+
       <div className="h-52 w-full">
         <ChartContainer config={chartConfig} className="h-full w-full">
           <AreaChart

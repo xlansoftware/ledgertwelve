@@ -16,6 +16,7 @@ export interface MonthlyAreaChartProps {
   error: string | null
   selectedMonth?: string | null
   onSelectMonth?: (month: string) => void
+  average?: number
 }
 
 // ---------------------------------------------------------------------------
@@ -46,6 +47,7 @@ export function MonthlyAreaChart({
   error,
   selectedMonth,
   onSelectMonth,
+  average,
 }: MonthlyAreaChartProps) {
   return (
     <PeriodAreaChart
@@ -59,6 +61,8 @@ export function MonthlyAreaChart({
       formatTooltipLabel={formatTooltipLabel}
       deltaLabel="Monthly"
       balanceLabel="Balance"
+      average={average}
+      unitLabel="/mo"
     />
   )
 }

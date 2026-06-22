@@ -16,6 +16,7 @@ export interface DailyAreaChartProps {
   error: string | null
   selectedDay?: string | null
   onSelectDay?: (date: string) => void
+  average?: number
 }
 
 // ---------------------------------------------------------------------------
@@ -42,6 +43,7 @@ export function DailyAreaChart({
   error,
   selectedDay,
   onSelectDay,
+  average,
 }: DailyAreaChartProps) {
   return (
     <PeriodAreaChart
@@ -55,6 +57,8 @@ export function DailyAreaChart({
       formatTooltipLabel={formatTooltipLabel}
       deltaLabel="Daily"
       balanceLabel="Balance"
+      average={average}
+      unitLabel="/day"
     />
   )
 }

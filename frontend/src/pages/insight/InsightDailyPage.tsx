@@ -35,6 +35,7 @@ export default function InsightDailyPage() {
 
     selectedDay,
 
+    averageChange,
     dailyTotals,
     selectDay,
   } = useDailyInsight()
@@ -75,6 +76,7 @@ export default function InsightDailyPage() {
           isLoading={isLoadingDaily}
           error={dailyError}
           selectedDay={selectedDay}
+          average={averageChange || undefined}
           onSelectDay={selectDay}
         />
       </section>
