@@ -52,7 +52,7 @@ export function DailyAreaChart({
       error={error}
       selectedPeriod={selectedDay}
       onSelectPeriod={onSelectDay}
-      title="Running Balance"
+      title="This Month"
       formatLabel={formatLabel}
       formatTooltipLabel={formatTooltipLabel}
       deltaLabel="Daily"

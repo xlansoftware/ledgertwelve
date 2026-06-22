@@ -132,10 +132,10 @@ export function PeriodAreaChart({
   const chartData = computeChartData(data)
 
   // Derived summary values shown above the chart
-  const beginningValue =
-    chartData.length > 0 && chartData[0]?.historical && chartData[0]?.delta
-      ? chartData[0].historical - chartData[0].delta
-      : null
+  // const beginningValue =
+  //   chartData.length > 0 && chartData[0]?.historical && chartData[0]?.delta
+  //     ? chartData[0].historical - chartData[0].delta
+  //     : null
   const endValue =
     chartData.length > 0
       ? chartData[chartData.length - 1].projected ??
@@ -144,28 +144,29 @@ export function PeriodAreaChart({
 
   return (
     <div className="w-full">
-      <h3 className="mb-2 text-sm font-medium text-muted-foreground">{title}</h3>
-
       {/* Summary header — shadcn style with beginning, end, and average */}
-      <div className="mb-3 flex items-center gap-6 text-xs">
-        <div className="flex flex-col gap-0.5">
+      <div className="mb-3 flex items-center text-xs">
+        {/* <div className="flex flex-col gap-0.5">
           <span className="text-muted-foreground">Beginning</span>
           <span className="text-base font-bold tabular-nums text-foreground">
             {beginningValue !== null ? formatCurrency(beginningValue) : "—"}
           </span>
+        </div> */}
+        <div className="flex-1 px-3 py-2">
+          <h3 className="mb-2 text-sm font-medium text-muted-foreground">{title}</h3>
         </div>
-        <div className="flex flex-col gap-0.5">
-          <span className="text-muted-foreground">Projected End</span>
-          <span className="text-base font-bold tabular-nums text-foreground">
-            {endValue !== null ? formatCurrency(endValue) : "—"}
-          </span>
-        </div>
-        <div className="flex flex-col gap-0.5">
+        <div className="flex flex-col gap-0.5 px-3 py-2 border">
           <span className="text-muted-foreground">
             Average{unitLabel ?? ""}
           </span>
           <span className="text-base font-bold tabular-nums text-foreground">
             {average !== undefined ? formatCurrency(average) : "—"}
+          </span>
+        </div>
+        <div className="flex flex-col gap-0.5 px-3 py-2 border">
+          <span className="text-muted-foreground">Projected End</span>
+          <span className="text-base font-bold tabular-nums text-foreground">
+            {endValue !== null ? formatCurrency(endValue) : "—"}
           </span>
         </div>
       </div>

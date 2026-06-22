@@ -56,7 +56,7 @@ export function MonthlyAreaChart({
       error={error}
       selectedPeriod={selectedMonth}
       onSelectPeriod={onSelectMonth}
-      title="Year-to-Date Running Balance"
+      title="This Year"
       formatLabel={formatLabel}
       formatTooltipLabel={formatTooltipLabel}
       deltaLabel="Monthly"
