@@ -4,7 +4,7 @@
 
 import { useMemo } from "react"
 import { format } from "date-fns"
-import { PeriodList } from "./PeriodList"
+import { PeriodList } from "@/pages/insight/PeriodList"
 import type { DailyReportRow } from "@/types"
 
 // ---------------------------------------------------------------------------

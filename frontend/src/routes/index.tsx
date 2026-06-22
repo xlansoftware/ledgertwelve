@@ -5,13 +5,13 @@ import NotFoundPage from "../pages/NotFoundPage";
 import HistoryPage from "@/pages/history/HistoryPage";
 import SettingsPage from "@/pages/SettingsPage";
 import AddPage from "@/pages/add/AddPage";
-import BookPage from "@/pages/books/BookPage";
-import CreateBookPage from "@/pages/books/CreateBookPage";
-import EditBookPage from "@/pages/books/EditBookPage";
+import BookPage from "@/pages/book/BookPage";
+import CreateBookPage from "@/pages/book-create/CreateBookPage";
+import EditBookPage from "@/pages/book-edit/EditBookPage";
 import EditTransactionPage from "@/pages/edit-transaction/EditTransactionPage";
 // import InisghtPage from "@/pages/insight/InisghtPage";
-import InsightDailyPage from "@/pages/insight/InsightDailyPage";
-import InsightMonthlyPage from "@/pages/insight/InsightMonthlyPage";
+import InsightDailyPage from "@/pages/insight-daily/InsightDailyPage";
+import InsightMonthlyPage from "@/pages/insight-monthly/InsightMonthlyPage";
 
 const router = createBrowserRouter([
   {

@@ -10,8 +10,8 @@ import {
   computeAccumulation,
   computeProjection,
   computeProjectionFromAverage,
-} from "./insightUtils"
-import type { AccumulatedRow, ProjectedRow } from "./insightUtils"
+} from "@/pages/insight/insightUtils"
+import type { AccumulatedRow, ProjectedRow } from "@/pages/insight/insightUtils"
 
 // ---------------------------------------------------------------------------
 // Helpers

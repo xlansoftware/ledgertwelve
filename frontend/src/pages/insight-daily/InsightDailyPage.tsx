@@ -1,53 +1,52 @@
 // ---------------------------------------------------------------------------
-// InsightMonthlyPage — monthly insight page with pie chart, area chart, and list
+// InsightDailyPage — daily insight page with pie chart, area chart, and list
 // ---------------------------------------------------------------------------
 
 import { Skeleton } from "@/components/ui/skeleton"
 import { InsightComponent } from "@/pages/insight/InsightComponent"
-import { MonthlyAreaChart } from "@/pages/insight/MonthlyAreaChart"
-import { MonthlyList } from "@/pages/insight/MonthlyList"
-import { useMonthlyInsight } from "@/pages/insight/useMonthlyInsight"
+import { DailyAreaChart } from "./DailyAreaChart"
+import { DailyList } from "./DailyList"
+import { useDailyInsight } from "./useDailyInsight"
 import { format } from "date-fns"
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-function formatPieTitle(selectedMonth: string | null): string {
-  if (selectedMonth === null) return "This Month"
-  const [year, month] = selectedMonth.split("-")
-  const d = new Date(parseInt(year), parseInt(month) - 1, 1)
-  return format(d, "MMM yyyy")
+function formatPieTitle(selectedDay: string | null): string {
+  if (selectedDay === null) return "Today"
+  const d = new Date(selectedDay + "T00:00:00")
+  return format(d, "EEE, MMM d")
 }
 
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
-export default function InsightMonthlyPage() {
+export default function InsightDailyPage() {
   const {
     expenses,
     income,
     isLoadingPie,
 
     accumulatedData,
-    isLoadingMonthly,
-    monthlyError,
+    isLoadingDaily,
+    dailyError,
 
-    selectedMonth,
+    selectedDay,
 
     averageChange,
-    monthlyTotals,
-    selectMonth,
-  } = useMonthlyInsight()
+    dailyTotals,
+    selectDay,
+  } = useDailyInsight()
 
-  const pieTitle = formatPieTitle(selectedMonth)
+  const pieTitle = formatPieTitle(selectedDay)
   const hasPieData = Object.keys(expenses).length > 0 || Object.keys(income).length > 0
   const showPieSkeleton = isLoadingPie && !hasPieData
 
   return (
     <div className="mx-auto flex w-full max-w-lg flex-col gap-6 px-4 py-6">
-      <h1 className="text-2xl font-bold">Monthly Insight</h1>
+      <h1 className="text-2xl font-bold">Daily Insight</h1>
 
       {/* ── Pie Chart Section ── */}
       <section>
@@ -72,25 +71,25 @@ export default function InsightMonthlyPage() {
 
       {/* ── Area Chart Section ── */}
       <section>
-        <MonthlyAreaChart
+        <DailyAreaChart
           data={accumulatedData}
-          isLoading={isLoadingMonthly}
-          error={monthlyError}
-          selectedMonth={selectedMonth}
+          isLoading={isLoadingDaily}
+          error={dailyError}
+          selectedDay={selectedDay}
           average={averageChange || undefined}
-          onSelectMonth={selectMonth}
+          onSelectDay={selectDay}
         />
       </section>
 
-      {/* ── Monthly List Section ── */}
+      {/* ── Daily List Section ── */}
       <section>
-        <MonthlyList
-          monthlyTotals={monthlyTotals}
-          selectedMonth={selectedMonth}
-          isLoadingSelectedMonth={isLoadingPie}
-          isLoadingMonthly={isLoadingMonthly}
-          monthlyError={monthlyError}
-          onSelectMonth={selectMonth}
+        <DailyList
+          dailyTotals={dailyTotals}
+          selectedDay={selectedDay}
+          isLoadingSelectedDay={isLoadingPie}
+          isLoadingDaily={isLoadingDaily}
+          dailyError={dailyError}
+          onSelectDay={selectDay}
         />
       </section>
     </div>
