@@ -59,6 +59,7 @@ export interface DailyAreaChartProps {
   isLoading: boolean
   error: string | null
   selectedDay?: string | null
+  onSelectDay?: (date: string) => void
 }
 
 // ---------------------------------------------------------------------------
@@ -79,7 +80,7 @@ function formatTooltipDate(dateStr: string): string {
 // Component
 // ---------------------------------------------------------------------------
 
-export function DailyAreaChart({ data, isLoading, error, selectedDay }: DailyAreaChartProps) {
+export function DailyAreaChart({ data, isLoading, error, selectedDay, onSelectDay }: DailyAreaChartProps) {
 
   // Build chart config for the two series
   const chartConfig = {
@@ -122,6 +123,13 @@ export function DailyAreaChart({ data, isLoading, error, selectedDay }: DailyAre
           <AreaChart
             data={chartData}
             margin={{ top: 4, right: 8, bottom: 4, left: 0 }}
+            onClick={(e) => {
+              if (!e?.activeLabel) return;
+              const date = String(e?.activeLabel)
+              if (date && onSelectDay) {
+                onSelectDay(date)
+              }
+            }}
           >
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
             <XAxis

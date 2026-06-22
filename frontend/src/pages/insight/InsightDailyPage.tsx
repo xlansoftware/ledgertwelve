@@ -75,6 +75,7 @@ export default function InsightDailyPage() {
           isLoading={isLoadingDaily}
           error={dailyError}
           selectedDay={selectedDay}
+          onSelectDay={selectDay}
         />
       </section>
 
