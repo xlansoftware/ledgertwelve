@@ -10,6 +10,7 @@ import {
   YAxis,
   Tooltip,
   Line,
+  ReferenceLine,
 } from "recharts"
 import { format } from "date-fns"
 
@@ -57,6 +58,7 @@ export interface DailyAreaChartProps {
   data: (AccumulatedRow | ProjectedRow)[]
   isLoading: boolean
   error: string | null
+  selectedDay?: string | null
 }
 
 // ---------------------------------------------------------------------------
@@ -77,7 +79,7 @@ function formatTooltipDate(dateStr: string): string {
 // Component
 // ---------------------------------------------------------------------------
 
-export function DailyAreaChart({ data, isLoading, error }: DailyAreaChartProps) {
+export function DailyAreaChart({ data, isLoading, error, selectedDay }: DailyAreaChartProps) {
 
   // Build chart config for the two series
   const chartConfig = {
@@ -180,6 +182,18 @@ export function DailyAreaChart({ data, isLoading, error }: DailyAreaChartProps) 
               connectNulls={false}
               isAnimationActive={false}
             />
+
+            {/* Vertical reference line for selected day */}
+            {selectedDay && (
+              <ReferenceLine
+                x={chartData.findIndex((d) => d.date === selectedDay)}
+                // stroke="hsl(var(--primary))"
+                stroke="#ff0000"
+                strokeWidth={2}
+                strokeOpacity={0.6}
+              />
+            )}
+
           </AreaChart>
         </ChartContainer>
       </div>
