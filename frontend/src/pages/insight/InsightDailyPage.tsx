@@ -25,34 +25,23 @@ function formatPieTitle(selectedDay: string | null): string {
 
 export default function InsightDailyPage() {
   const {
-    todayExpenses,
-    todayIncome,
-    isLoadingToday,
-    todayError,
+    expenses,
+    income,
+    isLoadingPie,
 
     accumulatedData,
     isLoadingDaily,
     dailyError,
 
     selectedDay,
-    selectedDayExpenses,
-    selectedDayIncome,
-    isLoadingSelectedDay,
 
     dailyTotals,
     selectDay,
   } = useDailyInsight()
 
-  // Determine which data to show in the pie chart
-  const pieExpenses = selectedDay === null ? todayExpenses : selectedDayExpenses
-  const pieIncome = selectedDay === null ? todayIncome : selectedDayIncome
-  const pieIsLoading = selectedDay === null ? isLoadingToday : isLoadingSelectedDay
-  const pieError = selectedDay === null ? todayError : null
   const pieTitle = formatPieTitle(selectedDay)
-
-  // Show the pie data while loading a new selection (no flicker)
-  const hasPieData = Object.keys(pieExpenses).length > 0 || Object.keys(pieIncome).length > 0
-  const showPieSkeleton = pieIsLoading && !hasPieData
+  const hasPieData = Object.keys(expenses).length > 0 || Object.keys(income).length > 0
+  const showPieSkeleton = isLoadingPie && !hasPieData
 
   return (
     <div className="mx-auto flex w-full max-w-lg flex-col gap-6 px-4 py-6">
@@ -65,14 +54,10 @@ export default function InsightDailyPage() {
             <Skeleton className="h-64 w-64 rounded-full" />
             <Skeleton className="h-4 w-32" />
           </div>
-        ) : pieError ? (
-          <div className="flex h-48 w-full items-center justify-center rounded-lg border border-destructive/50 bg-destructive/5 p-4 text-sm text-destructive">
-            {pieError}
-          </div>
         ) : hasPieData ? (
           <InsightComponent
-            data={pieExpenses}
-            altData={pieIncome}
+            data={expenses}
+            altData={income}
             title={pieTitle}
           />
         ) : (
@@ -97,7 +82,7 @@ export default function InsightDailyPage() {
         <DailyList
           dailyTotals={dailyTotals}
           selectedDay={selectedDay}
-          isLoadingSelectedDay={isLoadingSelectedDay}
+          isLoadingSelectedDay={isLoadingPie}
           isLoadingDaily={isLoadingDaily}
           dailyError={dailyError}
           onSelectDay={selectDay}

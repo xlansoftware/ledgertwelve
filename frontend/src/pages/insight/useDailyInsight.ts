@@ -106,11 +106,10 @@ function fillDailyGaps(
 // ---------------------------------------------------------------------------
 
 export interface UseDailyInsightReturn {
-  // Today's pie data
-  todayExpenses: Record<string, number>
-  todayIncome: Record<string, number>
-  isLoadingToday: boolean
-  todayError: string | null
+  // Pie chart data (for selected day, or today when null)
+  expenses: Record<string, number>
+  income: Record<string, number>
+  isLoadingPie: boolean
 
   // Daily totals (area chart + list)
   dailyTotals: DailyReportRow[]
@@ -120,9 +119,6 @@ export interface UseDailyInsightReturn {
 
   // Selection
   selectedDay: string | null // null = today
-  selectedDayExpenses: Record<string, number>
-  selectedDayIncome: Record<string, number>
-  isLoadingSelectedDay: boolean
 
   // Actions
   selectDay: (date: string | null) => void
@@ -136,11 +132,6 @@ export function useDailyInsight(todayStr?: string): UseDailyInsightReturn {
   const daysInMonth = new Date(todayDate.getFullYear(), todayDate.getMonth() + 1, 0).getDate()
   const trendMDays = daysInMonth - lastNDays // days from tomorrow to end of month
 
-  // ── Today's category breakdown ──
-  const [todayRows, setTodayRows] = useState<CategoryReportRow[]>([])
-  const [isLoadingToday, setIsLoadingToday] = useState(true)
-  const [todayError, setTodayError] = useState<string | null>(null)
-
   // ── Daily totals ──
   const [dailyRows, setDailyRows] = useState<DailyReportRow[]>([])
   const [isLoadingDaily, setIsLoadingDaily] = useState(true)
@@ -149,30 +140,11 @@ export function useDailyInsight(todayStr?: string): UseDailyInsightReturn {
   // ── Opening balance (as of last day of previous month) ──
   const [openingBalance, setOpeningBalance] = useState<number | null>(null)
 
-  // ── Selected day category breakdown ──
+  // ── Pie chart category breakdown ──
   const [selectedDay, setSelectedDay] = useState<string | null>(null) // null = today
-  const [selectedDayRows, setSelectedDayRows] = useState<CategoryReportRow[]>([])
-  const [isLoadingSelectedDay, setIsLoadingSelectedDay] = useState(false)
-  const selectedDayRef = useRef<string | null>(null) // track latest for stale-request guard
-
-  // ── Fetch today's categories ──
-  useEffect(() => {
-    const range = dayRange(today)
-
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setIsLoadingToday(true)
-    setTodayError(null)
-
-    getCategoryReport(range)
-      .then((data) => {
-        setTodayRows(data)
-        setIsLoadingToday(false)
-      })
-      .catch((err: unknown) => {
-        setTodayError(err instanceof Error ? err.message : "Failed to load today's data")
-        setIsLoadingToday(false)
-      })
-  }, [today])
+  const [pieRows, setPieRows] = useState<CategoryReportRow[]>([])
+  const [isLoadingPie, setIsLoadingPie] = useState(true)
+  const fetchRef = useRef<string | null>(null) // track latest request for stale-guard
 
   // ── Fetch daily totals (area chart + list) ──
   useEffect(() => {
@@ -208,39 +180,35 @@ export function useDailyInsight(todayStr?: string): UseDailyInsightReturn {
       })
   }, [todayDate])
 
-  // ── Fetch selected day's categories ──
+  // ── Fetch pie chart categories (for selected day, or today when null) ──
   useEffect(() => {
-    if (selectedDay === null) {
-      // null means "today" — we already have today's data, no extra fetch needed
-      return
-    }
-
-    selectedDayRef.current = selectedDay
-    const range = dayRange(selectedDay)
+    const date = selectedDay ?? today
+    fetchRef.current = date
+    const range = dayRange(date)
 
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setIsLoadingSelectedDay(true)
+    setIsLoadingPie(true)
 
     getCategoryReport(range)
       .then((data) => {
         // Guard against stale responses
-        if (selectedDayRef.current === selectedDay) {
-          setSelectedDayRows(data)
-          setIsLoadingSelectedDay(false)
+        if (fetchRef.current === date) {
+          setPieRows(data)
+          setIsLoadingPie(false)
         }
       })
       .catch(() => {
-        if (selectedDayRef.current === selectedDay) {
-          setSelectedDayRows([])
-          setIsLoadingSelectedDay(false)
+        if (fetchRef.current === date) {
+          setPieRows([])
+          setIsLoadingPie(false)
         }
       })
-  }, [selectedDay])
+  }, [selectedDay, today])
 
-  // ── Split today's data by sign ──
-  const { expenses: todayExpenses, income: todayIncome } = useMemo(
-    () => splitBySign(todayRows),
-    [todayRows],
+  // ── Split pie data by sign ──
+  const { expenses, income } = useMemo(
+    () => splitBySign(pieRows),
+    [pieRows],
   )
 
   // ── Filled daily totals (gaps filled) ──
@@ -258,26 +226,19 @@ export function useDailyInsight(todayStr?: string): UseDailyInsightReturn {
     return [...accumulated, ...projection]
   }, [filledDailyTotals, trendMDays, openingBalance])
 
-  // ── Split selected day's data by sign ──
-  const { expenses: selectedDayExpenses, income: selectedDayIncome } = useMemo(
-    () => splitBySign(selectedDayRows),
-    [selectedDayRows],
-  )
-
   // ── Actions ──
 
   const selectDay = useCallback((date: string | null) => {
-    if (date === selectedDayRef.current) return // already selected, no-op
+    if (date === fetchRef.current) return // already selected, no-op
     setSelectedDay(date)
   }, [])
 
   // ── Return ──
 
   return {
-    todayExpenses,
-    todayIncome,
-    isLoadingToday,
-    todayError,
+    expenses,
+    income,
+    isLoadingPie,
 
     dailyTotals: filledDailyTotals,
     accumulatedData,
@@ -285,9 +246,6 @@ export function useDailyInsight(todayStr?: string): UseDailyInsightReturn {
     dailyError,
 
     selectedDay,
-    selectedDayExpenses,
-    selectedDayIncome,
-    isLoadingSelectedDay,
 
     selectDay,
   }

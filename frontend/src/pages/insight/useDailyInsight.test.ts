@@ -64,11 +64,11 @@ describe("useDailyInsight", () => {
 
     const { result } = renderHook(() => useDailyInsight())
 
-    expect(result.current.isLoadingToday).toBe(true)
+    expect(result.current.isLoadingPie).toBe(true)
     expect(result.current.isLoadingDaily).toBe(true)
   })
 
-  it("returns today's expenses and income split correctly", async () => {
+  it("returns expenses and income split correctly for today", async () => {
     mockGetCategoryReport.mockResolvedValue([
       { categoryName: "Groceries", amount: -45 },
       { categoryName: "Dining Out", amount: -30 },
@@ -79,14 +79,14 @@ describe("useDailyInsight", () => {
     const { result } = renderHook(() => useDailyInsight())
 
     await waitFor(() => {
-      expect(result.current.isLoadingToday).toBe(false)
+      expect(result.current.isLoadingPie).toBe(false)
     })
 
-    expect(result.current.todayExpenses).toEqual({
+    expect(result.current.expenses).toEqual({
       Groceries: 45,
       "Dining Out": 30,
     })
-    expect(result.current.todayIncome).toEqual({
+    expect(result.current.income).toEqual({
       Salary: 200,
     })
   })
@@ -104,8 +104,9 @@ describe("useDailyInsight", () => {
       expect(result.current.isLoadingDaily).toBe(false)
     })
 
+    const dayOfMonth = new Date().getDate()
     // Should fill gaps from start of month to today
-    expect(result.current.dailyTotals.length).toBe(20)
+    expect(result.current.dailyTotals.length).toBe(dayOfMonth)
     // Latest entry should be today
     expect(result.current.dailyTotals[result.current.dailyTotals.length - 1].date).toBe(todayStr)
   })
@@ -131,12 +132,17 @@ describe("useDailyInsight", () => {
       expect(result.current.isLoadingDaily).toBe(false)
     })
 
-    // 20 historical (Jun 1–Jun 20) + 10 projected (Jun 21–Jun 30) = 30
-    expect(result.current.accumulatedData.length).toBe(30)
+    const dayOfMonth = new Date().getDate()
+    const lastDayOfMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate()
+    const daysRemaining = lastDayOfMonth - dayOfMonth
+    const total = dayOfMonth + daysRemaining
 
-    // First 20 should not be projected, last 10 should be projected
-    const historical = result.current.accumulatedData.slice(0, 20)
-    const projected = result.current.accumulatedData.slice(20)
+    // historical + projected = total
+    expect(result.current.accumulatedData.length).toBe(total)
+
+    // First dayOfMonth should not be projected, last daysRemaining should be projected
+    const historical = result.current.accumulatedData.slice(0, dayOfMonth)
+    const projected = result.current.accumulatedData.slice(dayOfMonth)
 
     historical.forEach((point) => {
       expect("isProjected" in point).toBe(false)
@@ -153,14 +159,14 @@ describe("useDailyInsight", () => {
     const { result } = renderHook(() => useDailyInsight())
 
     await waitFor(() => {
-      expect(result.current.isLoadingToday).toBe(false)
+      expect(result.current.isLoadingPie).toBe(false)
     })
 
     expect(result.current.selectedDay).toBeNull()
   })
 
   it("selectDay updates selectedDay and fetches categories for that day", async () => {
-    // First resolve the initial fetches
+    // First resolve the initial fetch (for today)
     mockGetCategoryReport.mockResolvedValueOnce([])
     mockGetDailyReport.mockResolvedValueOnce([])
 
@@ -175,7 +181,7 @@ describe("useDailyInsight", () => {
 
     // Wait for initial fetches
     await waitFor(() => {
-      expect(result.current.isLoadingToday).toBe(false)
+      expect(result.current.isLoadingPie).toBe(false)
       expect(result.current.isLoadingDaily).toBe(false)
     })
 
@@ -185,12 +191,13 @@ describe("useDailyInsight", () => {
 
     await waitFor(() => {
       expect(result.current.selectedDay).toBe(targetDate)
-      expect(result.current.selectedDayExpenses).toEqual({ Food: 30 })
-      expect(result.current.selectedDayIncome).toEqual({ Salary: 100 })
+      expect(result.current.expenses).toEqual({ Food: 30 })
+      expect(result.current.income).toEqual({ Salary: 100 })
     })
   })
 
-  it("selectDay(null) resets to today without a new fetch", async () => {
+  it("selectDay(null) resets to today and fetches today's categories", async () => {
+    // Initial fetch (today)
     mockGetCategoryReport.mockResolvedValueOnce([
       { categoryName: "Groceries", amount: -45 },
     ])
@@ -199,10 +206,10 @@ describe("useDailyInsight", () => {
     const { result } = renderHook(() => useDailyInsight())
 
     await waitFor(() => {
-      expect(result.current.isLoadingToday).toBe(false)
+      expect(result.current.isLoadingPie).toBe(false)
     })
 
-    // Select a day
+    // Select a specific day
     const targetDate = daysAgo(1)
     mockGetCategoryReport.mockResolvedValueOnce([])
     result.current.selectDay(targetDate)
@@ -211,20 +218,23 @@ describe("useDailyInsight", () => {
       expect(result.current.selectedDay).toBe(targetDate)
     })
 
-    // Reset to today
-    mockGetCategoryReport.mockClear() // clear the call count
+    // Reset to today — triggers a new fetch for today's categories
+    mockGetCategoryReport.mockResolvedValueOnce([
+      { categoryName: "Groceries", amount: -45 },
+    ])
     result.current.selectDay(null)
 
     await waitFor(() => {
       expect(result.current.selectedDay).toBeNull()
+      expect(result.current.isLoadingPie).toBe(false)
     })
 
-    // Today's data stays unchanged, no extra fetch
-    expect(mockGetCategoryReport).not.toHaveBeenCalled()
+    // A new fetch was triggered for today's data
+    expect(mockGetCategoryReport).toHaveBeenCalledTimes(3) // initial + day + today reset
   })
 
-  it("handles partial errors — today fails but daily still renders", async () => {
-    mockGetCategoryReport.mockRejectedValueOnce(new Error("Today fetch failed"))
+  it("handles partial errors — pie fails but daily still renders", async () => {
+    mockGetCategoryReport.mockRejectedValueOnce(new Error("Pie fetch failed"))
     mockGetDailyReport.mockResolvedValueOnce([
       { date: todayStr, amount: -45 },
     ])
@@ -232,16 +242,20 @@ describe("useDailyInsight", () => {
     const { result } = renderHook(() => useDailyInsight())
 
     await waitFor(() => {
-      expect(result.current.isLoadingToday).toBe(false)
+      expect(result.current.isLoadingPie).toBe(false)
       expect(result.current.isLoadingDaily).toBe(false)
     })
 
-    expect(result.current.todayError).toBe("Today fetch failed")
+    // Pie data falls back to empty
+    expect(result.current.expenses).toEqual({})
+    expect(result.current.income).toEqual({})
+    // Daily data still renders
+    const dayOfMonth = new Date().getDate()
     expect(result.current.dailyError).toBeNull()
-    expect(result.current.dailyTotals.length).toBe(20)
+    expect(result.current.dailyTotals.length).toBe(dayOfMonth)
   })
 
-  it("handles partial errors — daily fails but today still renders", async () => {
+  it("handles partial errors — daily fails but pie still renders", async () => {
     mockGetCategoryReport.mockResolvedValueOnce([
       { categoryName: "Groceries", amount: -45 },
     ])
@@ -250,12 +264,11 @@ describe("useDailyInsight", () => {
     const { result } = renderHook(() => useDailyInsight())
 
     await waitFor(() => {
-      expect(result.current.isLoadingToday).toBe(false)
+      expect(result.current.isLoadingPie).toBe(false)
       expect(result.current.isLoadingDaily).toBe(false)
     })
 
-    expect(result.current.todayError).toBeNull()
     expect(result.current.dailyError).toBe("Daily fetch failed")
-    expect(result.current.todayExpenses).toEqual({ Groceries: 45 })
+    expect(result.current.expenses).toEqual({ Groceries: 45 })
   })
 })
