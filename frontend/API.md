@@ -957,6 +957,51 @@ Both `from` and `to` are required ISO 8601 date strings.
 
 ---
 
+# GET /api/v1/reports/monthly
+
+### Purpose
+
+Returns monthly net amounts for the Main book within a given date range.
+
+### Query Parameters
+
+```text
+from=2026-01-01
+to=2026-06-01
+```
+
+Both `from` and `to` are required ISO 8601 date strings.
+
+### Response
+
+```json
+{
+  "data": [
+    { "period": "2026-01", "amount": -1234.50 },
+    { "period": "2026-02", "amount": 2100.00 },
+    { "period": "2026-03", "amount": -950.25 }
+  ]
+}
+```
+
+- `period` — `"YYYY-MM"` string (date only, no time component).
+- `amount` — net amount for that month (negative = net expense, positive = net income).
+- Sorted ascending by period.
+- Months with no transactions are omitted from the response.
+- Uses Main book only.
+
+### Errors
+
+```json
+// 400 — Missing from or to
+{ "error": "from and to query parameters are required" }
+
+// 401 — Unauthenticated
+{ "error": "Unauthorized" }
+```
+
+---
+
 # Export
 
 Exports should be asynchronous because XLSX generation can become expensive.

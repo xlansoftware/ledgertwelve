@@ -75,6 +75,11 @@ export interface DailyReportRow {
   amount: number
 }
 
+export interface MonthlyReportRow {
+  period: string   // "YYYY-MM"
+  amount: number
+}
+
 export interface ExchangeRateDto {
   from: string
   to: string

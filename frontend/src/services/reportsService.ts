@@ -1,5 +1,5 @@
 import { request } from "./api"
-import type { ApiResponse, TotalsReportRow, CategoryReportRow, DailyReportRow } from "@/types"
+import type { ApiResponse, TotalsReportRow, CategoryReportRow, DailyReportRow, MonthlyReportRow } from "@/types"
 
 // ---------------------------------------------------------------------------
 // GET   /api/v1/reports/totals
@@ -55,6 +55,25 @@ export async function getDailyReport(
 ): Promise<DailyReportRow[]> {
   const res = await request<ApiResponse<DailyReportRow[]>>(
     "/api/v1/reports/daily",
+    { params: { from: params.from, to: params.to } },
+  )
+  return res.data
+}
+
+// ---------------------------------------------------------------------------
+// GET   /api/v1/reports/monthly
+// ---------------------------------------------------------------------------
+
+export interface GetMonthlyReportParams {
+  from: string
+  to: string
+}
+
+export async function getMonthlyReport(
+  params: GetMonthlyReportParams,
+): Promise<MonthlyReportRow[]> {
+  const res = await request<ApiResponse<MonthlyReportRow[]>>(
+    "/api/v1/reports/monthly",
     { params: { from: params.from, to: params.to } },
   )
   return res.data

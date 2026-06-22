@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// DailyAreaChart — thin wrapper around PeriodAreaChart with day-specific formatting
+// MonthlyAreaChart — thin wrapper around PeriodAreaChart with month-specific formatting
 // ---------------------------------------------------------------------------
 
 import { format } from "date-fns"
@@ -10,50 +10,54 @@ import type { AccumulatedRow, ProjectedRow } from "./insightUtils"
 // Types
 // ---------------------------------------------------------------------------
 
-export interface DailyAreaChartProps {
+export interface MonthlyAreaChartProps {
   data: (AccumulatedRow | ProjectedRow)[]
   isLoading: boolean
   error: string | null
-  selectedDay?: string | null
-  onSelectDay?: (date: string) => void
+  selectedMonth?: string | null
+  onSelectMonth?: (month: string) => void
 }
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-function formatLabel(dateStr: string): string {
-  const d = new Date(dateStr + "T00:00:00")
-  return format(d, "EEE d")
+function formatLabel(period: string): string {
+  // period = "YYYY-MM"
+  const [year, month] = period.split("-")
+  const d = new Date(parseInt(year), parseInt(month) - 1, 1)
+  return format(d, "MMM")
 }
 
-function formatTooltipLabel(dateStr: string): string {
-  const d = new Date(dateStr + "T00:00:00")
-  return format(d, "EEE, MMM d")
+function formatTooltipLabel(period: string): string {
+  // period = "YYYY-MM"
+  const [year, month] = period.split("-")
+  const d = new Date(parseInt(year), parseInt(month) - 1, 1)
+  return format(d, "MMM yyyy")
 }
 
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
-export function DailyAreaChart({
+export function MonthlyAreaChart({
   data,
   isLoading,
   error,
-  selectedDay,
-  onSelectDay,
-}: DailyAreaChartProps) {
+  selectedMonth,
+  onSelectMonth,
+}: MonthlyAreaChartProps) {
   return (
     <PeriodAreaChart
       data={data}
       isLoading={isLoading}
       error={error}
-      selectedPeriod={selectedDay}
-      onSelectPeriod={onSelectDay}
-      title="Running Balance"
+      selectedPeriod={selectedMonth}
+      onSelectPeriod={onSelectMonth}
+      title="Year-to-Date Running Balance"
       formatLabel={formatLabel}
       formatTooltipLabel={formatTooltipLabel}
-      deltaLabel="Daily"
+      deltaLabel="Monthly"
       balanceLabel="Balance"
     />
   )

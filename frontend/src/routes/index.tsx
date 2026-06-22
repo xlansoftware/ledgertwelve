@@ -11,6 +11,7 @@ import EditBookPage from "@/pages/books/EditBookPage";
 import EditTransactionPage from "@/pages/edit-transaction/EditTransactionPage";
 // import InisghtPage from "@/pages/insight/InisghtPage";
 import InsightDailyPage from "@/pages/insight/InsightDailyPage";
+import InsightMonthlyPage from "@/pages/insight/InsightMonthlyPage";
 
 const router = createBrowserRouter([
   {
@@ -52,6 +53,7 @@ const router = createBrowserRouter([
         children: [
           { index: true, element: <InsightDailyPage /> },
           { path: "daily", element: <InsightDailyPage /> },
+          { path: "monthly", element: <InsightMonthlyPage /> },
         ],
       },
 

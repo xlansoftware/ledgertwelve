@@ -1151,6 +1151,43 @@ export const handlers = [
     return HttpResponse.json({ data })
   }),
 
+  http.get('/api/v1/reports/monthly', ({ request }) => {
+    const auth = requireAuth(request)
+    if (auth.error) return auth.response
+    const user = auth.user!
+    const url = new URL(request.url)
+    const from = url.searchParams.get('from')
+    const to = url.searchParams.get('to')
+
+    if (!from || !to) {
+      return HttpResponse.json({ error: 'from and to query parameters are required' }, { status: 400 })
+    }
+
+    const mainBook = books.find(b => b.ownerId === user.id && b.name === 'Main')
+    if (!mainBook) return HttpResponse.json({ error: 'Main book not found' }, { status: 500 })
+
+    const fromDate = new Date(from + "T00:00:00.000Z")
+    const toDate = new Date(to + "T00:00:00.000Z")
+
+    let txs = transactions.filter(tx => tx.bookId === mainBook.id && !tx.isBookClosingEntry)
+    txs = txs.filter(tx => tx.dateTime >= fromDate && tx.dateTime < toDate)
+
+    // Group by YYYY-MM and sum amounts
+    const groups = new Map<string, number>()
+    txs.forEach(tx => {
+      const d = tx.dateTime
+      const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`
+      const current = groups.get(key) || 0
+      groups.set(key, current + tx.amount)
+    })
+
+    const data = Array.from(groups.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([period, amount]) => ({ period, amount: Math.round(amount * 100) / 100 }))
+
+    return HttpResponse.json({ data })
+  }),
+
   http.get('/api/v1/reports/categories', ({ request }) => {
     const auth = requireAuth(request)
     if (auth.error) return auth.response
