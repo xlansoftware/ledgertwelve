@@ -9,7 +9,7 @@ import BookPage from "@/pages/book/BookPage";
 import CreateBookPage from "@/pages/book-create/CreateBookPage";
 import EditBookPage from "@/pages/book-edit/EditBookPage";
 import EditTransactionPage from "@/pages/edit-transaction/EditTransactionPage";
-// import InisghtPage from "@/pages/insight/InisghtPage";
+import InisghtPage from "@/pages/insight/InisghtPage";
 import InsightDailyPage from "@/pages/insight-daily/InsightDailyPage";
 import InsightMonthlyPage from "@/pages/insight-monthly/InsightMonthlyPage";
 
@@ -51,7 +51,7 @@ const router = createBrowserRouter([
       {
         path: "insight",
         children: [
-          { index: true, element: <InsightDailyPage /> },
+          { index: true, element: <InisghtPage /> },
           { path: "daily", element: <InsightDailyPage /> },
           { path: "monthly", element: <InsightMonthlyPage /> },
         ],

@@ -1,66 +1,94 @@
-import { useEffect, useState, useMemo } from "react";
-import { getCategoryReport } from "@/services/reportsService";
-import type { CategoryReportRow } from "@/types";
+import { format } from "date-fns";
+import { Skeleton } from "@/components/ui/skeleton";
 import { InsightComponent } from "@/pages/insight/InsightComponent";
+import { useDailyInsight } from "@/pages/insight-daily/useDailyInsight";
+import { useMonthlyInsight } from "@/pages/insight-monthly/useMonthlyInsight";
+
+function dailyFormatPieTitle(selectedDay: string | null): string {
+  if (selectedDay === null) return "Today"
+  const d = new Date(selectedDay + "T00:00:00")
+  return format(d, "EEE, MMM d")
+}
+
+function monthlyFormatPieTitle(selectedMonth: string | null): string {
+  if (selectedMonth === null) return "This Month"
+  const [year, month] = selectedMonth.split("-")
+  const d = new Date(parseInt(year), parseInt(month) - 1, 1)
+  return format(d, "MMM yyyy")
+}
 
 export default function InisghtPage() {
-  const [rows, setRows] = useState<CategoryReportRow[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const now = new Date();
-    const from = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-    const to = new Date(
-      now.getFullYear(),
-      now.getMonth() + 1,
-      1,
-    ).toISOString();
+  const {
+    expenses: dailyExpenses,
+    income: dailyInclome,
+    isLoadingPie: dailyIsLoadingPie,
 
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setIsLoading(true);
-    setError(null);
+    selectedDay,
+  } = useDailyInsight()
 
-    getCategoryReport({ from, to })
-      .then((data) => {
-        setRows(data.map((item) => ({ ...item, amount: Math.abs(item.amount)})));
-        setIsLoading(false);
-      })
-      .catch((err: unknown) => {
-        setError(
-          err instanceof Error ? err.message : "Failed to load report",
-        );
-        setIsLoading(false);
-      });
-  }, []);
+  const {
+    expenses: monthlyExpenses,
+    income: monthlyIncome,
+    isLoadingPie: monthlyIsLoading,
 
-  const data = useMemo<Record<string, number>>(
-    () =>
-      rows.reduce(
-        (acc, row) => {
-          acc[row.categoryName] = row.amount;
-          return acc;
-        },
-        {} as Record<string, number>,
-      ),
-    [rows],
-  );
+    selectedMonth,
+
+  } = useMonthlyInsight()
+
+  const monthlyPieTitle = monthlyFormatPieTitle(selectedMonth)
+  const monthlyHasPieData = Object.keys(monthlyExpenses).length > 0 || Object.keys(monthlyIncome).length > 0
+  const monthlyShowPieSkeleton = monthlyIsLoading && !monthlyHasPieData
+
+  const dailyPieTitle = dailyFormatPieTitle(selectedDay)
+  const dailyHasPieData = Object.keys(dailyExpenses).length > 0 || Object.keys(dailyInclome).length > 0
+  const dailyShowPieSkeleton = dailyIsLoadingPie && !dailyHasPieData
 
   return (
     <div className="flex flex-col justify-center items-center px-4">
-      <h1 className="text-2xl font-bold">Insight</h1>
 
-      {isLoading && (
-        <p className="text-muted-foreground">Loading report…</p>
-      )}
+      {/* ── Pie Chart Section ── */}
+      <section>
+        {dailyShowPieSkeleton ? (
+          <div className="flex flex-col items-center gap-4">
+            <Skeleton className="h-64 w-64 rounded-full" />
+            <Skeleton className="h-4 w-32" />
+          </div>
+        ) : dailyHasPieData ? (
+          <InsightComponent
+            data={dailyExpenses}
+            altData={dailyInclome}
+            title={dailyPieTitle}
+          />
+        ) : (
+          <InsightComponent
+            data={{}}
+            title={dailyPieTitle}
+          />
+        )}
+      </section>
 
-      {error && (
-        <p className="text-destructive">{error}</p>
-      )}
+      {/* ── Pie Chart Section ── */}
+      <section>
+        {monthlyShowPieSkeleton ? (
+          <div className="flex flex-col items-center gap-4">
+            <Skeleton className="h-64 w-64 rounded-full" />
+            <Skeleton className="h-4 w-32" />
+          </div>
+        ) : monthlyHasPieData ? (
+          <InsightComponent
+            data={monthlyExpenses}
+            altData={monthlyIncome}
+            title={monthlyPieTitle}
+          />
+        ) : (
+          <InsightComponent
+            data={{}}
+            title={monthlyPieTitle}
+          />
+        )}
+      </section>
 
-      {!isLoading && !error && (
-        <InsightComponent data={data} title="Expenses by category" />
-      )}
     </div>
   );
 }
