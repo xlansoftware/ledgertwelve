@@ -1,8 +1,11 @@
 import { format } from "date-fns";
+import { useNavigate } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { InsightComponent } from "@/pages/insight/InsightComponent";
 import { useDailyInsight } from "@/pages/insight-daily/useDailyInsight";
 import { useMonthlyInsight } from "@/pages/insight-monthly/useMonthlyInsight";
+import { Button } from "@/components/ui/button";
+import { ArrowRight } from "lucide-react";
 
 function dailyFormatPieTitle(selectedDay: string | null): string {
   if (selectedDay === null) return "Today"
@@ -18,6 +21,7 @@ function monthlyFormatPieTitle(selectedMonth: string | null): string {
 }
 
 export default function InisghtPage() {
+  const navigate = useNavigate()
 
   const {
     expenses: dailyExpenses,
@@ -45,13 +49,13 @@ export default function InisghtPage() {
   const dailyShowPieSkeleton = dailyIsLoadingPie && !dailyHasPieData
 
   return (
-    <div className="flex flex-col justify-center items-center px-4">
+    <div className="mx-auto flex w-full max-w-lg flex-col gap-8 px-4 py-6">
 
-      {/* ── Pie Chart Section ── */}
+      {/* ── Daily Insight Card ── */}
       <section>
         {dailyShowPieSkeleton ? (
           <div className="flex flex-col items-center gap-4">
-            <Skeleton className="h-64 w-64 rounded-full" />
+            <Skeleton className="h-56 w-56 rounded-full" />
             <Skeleton className="h-4 w-32" />
           </div>
         ) : dailyHasPieData ? (
@@ -67,12 +71,16 @@ export default function InisghtPage() {
           />
         )}
       </section>
+      <Button variant="outline" onClick={() => navigate("/insight/daily")}>
+        View daily insights
+        <ArrowRight />
+      </Button>
 
-      {/* ── Pie Chart Section ── */}
+      {/* ── Monthly Insight Card ── */}
       <section>
         {monthlyShowPieSkeleton ? (
           <div className="flex flex-col items-center gap-4">
-            <Skeleton className="h-64 w-64 rounded-full" />
+            <Skeleton className="h-56 w-56 rounded-full" />
             <Skeleton className="h-4 w-32" />
           </div>
         ) : monthlyHasPieData ? (
@@ -88,7 +96,10 @@ export default function InisghtPage() {
           />
         )}
       </section>
-
+      <Button variant="outline" onClick={() => navigate("/insight/monthly")}>
+        View monthly insights
+        <ArrowRight />
+      </Button>
     </div>
   );
 }
