@@ -68,17 +68,12 @@ export function computeProjection(
 
   const sorted = [...accumulated].sort((a, b) => a.date.localeCompare(b.date))
 
-  // Average daily change over the historical period
-  const firstDate = new Date(sorted[0].date)
-  const lastDate = new Date(sorted[sorted.length - 1].date)
-  const dayCount = Math.max(
-    1,
-    Math.round((lastDate.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24)),
-  )
+  // Average period change over the historical period
+  const count = accumulated.length
 
   const firstCumulative = sorted[0].cumulative
   const lastCumulative = sorted[sorted.length - 1].cumulative
-  const avgDailyChange = (lastCumulative - firstCumulative) / dayCount
+  const avgDailyChange = (lastCumulative - firstCumulative) / count
 
   // Build projected points
   const projected: ProjectedRow[] = []
