@@ -3,6 +3,8 @@ import type { BookDto, CloseBookResponse, ReopenBookResponse, ShareResponse } fr
 import {
   getBooks,
   getBook,
+  getCurrentBook,
+  setCurrentBook as setCurrentBookService,
   createBook,
   updateBook,
   deleteBook,
@@ -42,6 +44,10 @@ interface BooksState {
 interface BooksActions {
   /** Fetch all books visible to the user. */
   fetchBooks: () => Promise<BookDto[]>
+  /** Fetch the persisted current book selection from the server. */
+  fetchCurrentBook: () => Promise<void>
+  /** Persist a book selection as the current book. */
+  setCurrentBook: (bookId: string) => Promise<BookDto>
   /** Fetch a single book by ID. */
   fetchBook: (bookId: string) => Promise<BookDto>
   /** Create a new book and optimistically add it to state. */
@@ -86,11 +92,49 @@ export const useBooksStore = create<BooksState & BooksActions>((set, get) => ({
     set({ isLoading: true, error: null })
     try {
       const data = await getBooks()
-      set({ books: data, isLoading: false, currentBook: get().currentBook || data[0] })
+      set({ books: data, isLoading: false })
+      // Also fetch the persisted current book selection
+      try {
+        const current = await getCurrentBook()
+        set({ currentBook: current })
+      } catch {
+        // If fetching the current book fails, fall back to first in list
+        set({ currentBook: get().currentBook || data[0] })
+      }
       return data
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to load books"
       set({ error: message, isLoading: false })
+      throw err
+    }
+  },
+
+  fetchCurrentBook: async () => {
+    try {
+      const current = await getCurrentBook()
+      set({ currentBook: current })
+    } catch {
+      // Keep existing currentBook on failure, or fall back to first book in list
+      const state = get()
+      if (!state.currentBook && state.books.length > 0) {
+        set({ currentBook: state.books[0] })
+      }
+    }
+  },
+
+  setCurrentBook: async (bookId: string) => {
+    set({ error: null })
+    const previous = get().currentBook
+    try {
+      const updated = await setCurrentBookService(bookId)
+      set({ currentBook: updated })
+      return updated
+    } catch (err: unknown) {
+      // Revert on failure
+      set({
+        currentBook: previous,
+        error: err instanceof Error ? err.message : "Failed to set current book",
+      })
       throw err
     }
   },

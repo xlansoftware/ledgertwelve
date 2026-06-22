@@ -650,6 +650,60 @@ This deserves a dedicated command endpoint because it performs a business workfl
 
 ---
 
+# GET /api/v1/books/current
+
+### Purpose
+
+Returns the user's currently selected book. If the user has never explicitly selected a book, the server returns the first visible book ordered by creation date. The server guarantees that every user has at least one book (a default "Main" book created on registration).
+
+### Response
+
+```json
+{
+  "data": {
+    "id": "book_main",
+    "name": "Main",
+    "currency": "EUR",
+    "status": "open",
+    "ownerId": "usr_1",
+    "sharedWith": [],
+    "createdAt": "2026-01-01T10:00:00Z"
+  }
+}
+```
+
+### Errors
+
+- `401 Unauthorized`
+
+---
+
+# PUT /api/v1/books/current
+
+### Purpose
+
+Sets the user's current book. Validates that the book exists and is visible to the user.
+
+### Request
+
+```json
+{
+  "bookId": "book_vacation"
+}
+```
+
+### Response
+
+Full `BookDto` of the newly selected book (same shape as GET).
+
+### Errors
+
+- `400` — `bookId` missing or invalid
+- `404` — Book not found or not visible to the user
+- `401` — Unauthorized
+
+---
+
 # POST /api/v1/books/{bookId}/close
 
 ### Purpose

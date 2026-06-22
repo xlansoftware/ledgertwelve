@@ -53,6 +53,13 @@ export function seedSession(userId: string): string {
   return userId
 }
 
+/**
+ * Clear the current authenticated user (for testing).
+ */
+export function clearAuth(): void {
+  currentUser = undefined
+}
+
 // Categories
 interface Category {
   id: string
@@ -306,6 +313,10 @@ const transactions: Transaction[] = generateMockTransactions(
   1000,
   'book_main',
 )
+
+// Current book selection — persists per user within a session
+// (mirrors the future backend behaviour where the selection is stored server-side)
+const currentBookSelection = new Map<string, string>()
 
 // Export jobs
 interface ExportJob {
@@ -598,6 +609,55 @@ export const handlers = [
     })
   }),
 
+  // ---- Current Book ----
+  http.get('/api/v1/books/current', ({ request }) => {
+    const auth = requireAuth(request)
+    if (auth.error) return auth.response
+    const user = auth.user!
+
+    const selectedId = currentBookSelection.get(user.id)
+    if (selectedId) {
+      const book = books.find(
+        b => b.id === selectedId && (b.ownerId === user.id || b.sharedWith.some(s => s.userId === user.id)),
+      )
+      if (book) {
+        return HttpResponse.json({ data: toBookDto(book) })
+      }
+    }
+
+    // No explicit selection — return the first visible book ordered by creation date
+    const visible = books
+      .filter(b => b.ownerId === user.id || b.sharedWith.some(s => s.userId === user.id))
+      .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
+
+    if (visible.length === 0) {
+      return HttpResponse.json({ error: 'No books found' }, { status: 404 })
+    }
+
+    return HttpResponse.json({ data: toBookDto(visible[0]) })
+  }),
+
+  http.put('/api/v1/books/current', async ({ request }) => {
+    const auth = requireAuth(request)
+    if (auth.error) return auth.response
+    const user = auth.user!
+
+    const body = (await request.json()) as { bookId?: string }
+    if (!body.bookId) {
+      return HttpResponse.json({ error: 'bookId is required' }, { status: 400 })
+    }
+
+    const book = books.find(
+      b => b.id === body.bookId && (b.ownerId === user.id || b.sharedWith.some(s => s.userId === user.id)),
+    )
+    if (!book) {
+      return HttpResponse.json({ error: 'Book not found or not visible' }, { status: 404 })
+    }
+
+    currentBookSelection.set(user.id, book.id)
+    return HttpResponse.json({ data: toBookDto(book) })
+  }),
+
   http.get('/api/v1/books/:bookId', ({ request, params }) => {
     const auth = requireAuth(request)
     if (auth.error) return auth.response
@@ -785,7 +845,7 @@ export const handlers = [
     })
   }),
 
-  // ---- Book Close / Reopen ----
+  // ---- Book Close / Reopen
   http.post('/api/v1/books/:bookId/close', async ({ request, params }) => {
     const auth = requireAuth(request)
     if (auth.error) return auth.response

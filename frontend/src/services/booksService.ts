@@ -126,6 +126,27 @@ export async function removeShare(bookId: string, userId: string): Promise<void>
 }
 
 // ---------------------------------------------------------------------------
+// GET   /api/v1/books/current
+// ---------------------------------------------------------------------------
+
+export async function getCurrentBook(): Promise<BookDto> {
+  const res = await request<ApiResponse<BookDto>>("/api/v1/books/current")
+  return res.data
+}
+
+// ---------------------------------------------------------------------------
+// PUT   /api/v1/books/current
+// ---------------------------------------------------------------------------
+
+export async function setCurrentBook(bookId: string): Promise<BookDto> {
+  const res = await request<ApiResponse<BookDto>>("/api/v1/books/current", {
+    method: "PUT",
+    body: { bookId },
+  })
+  return res.data
+}
+
+// ---------------------------------------------------------------------------
 // GET   /api/v1/books/{bookId}/stats
 // ---------------------------------------------------------------------------
 

@@ -6,6 +6,8 @@ import { describe, expect, it } from "vitest"
 import {
   getBooks,
   getBook,
+  getCurrentBook,
+  setCurrentBook,
   createBook,
   updateBook,
   deleteBook,
@@ -80,6 +82,67 @@ describe("booksService", () => {
       expect(pastStats.transactionCount).toBeLessThanOrEqual(fullStats.transactionCount)
       // When asOf is early, the sum should be different (smaller magnitude)
       expect(pastStats.totalSum).not.toBe(fullStats.totalSum)
+    })
+  })
+
+    describe("getCurrentBook", () => {
+    it("returns the current book for the authenticated user", async () => {
+      const result = await getCurrentBook()
+      expect(result).toMatchObject({
+        id: expect.any(String),
+        name: expect.any(String),
+        status: expect.any(String),
+      })
+    })
+
+    it("returns the first visible book when no selection was persisted", async () => {
+      // The mock returns the first book ordered by creation date when no selection exists
+      const result = await getCurrentBook()
+      expect(result.name).toBe("Main")
+    })
+
+    it("returns the persisted selection after setCurrentBook is called", async () => {
+      // First, pick a different book
+      const selected = await setCurrentBook("book_vacation")
+      expect(selected.name).toBe("Vacation 2026")
+      // Then verify GET returns the persisted selection
+      const current = await getCurrentBook()
+      expect(current.id).toBe("book_vacation")
+      // Reset back to Main for other tests
+      await setCurrentBook("book_main")
+    })
+
+    it("throws 401 on unauthenticated request", async () => {
+      const { clearAuth, seedSession } = await import("@/mocks/handlers")
+      clearAuth()
+
+      await expect(getCurrentBook()).rejects.toThrow(/Unauthorized/i)
+
+      // Restore session
+      seedSession("usr_1")
+    })
+  })
+
+  describe("setCurrentBook", () => {
+    it("sends bookId and returns the selected book DTO", async () => {
+      const result = await setCurrentBook("book_vacation")
+      expect(result).toMatchObject({
+        id: "book_vacation",
+        name: "Vacation 2026",
+        status: "open",
+      })
+      // Reset
+      await setCurrentBook("book_main")
+    })
+
+    it("throws 404 for invalid or non-visible bookId", async () => {
+      await expect(setCurrentBook("book_invalid")).rejects.toThrow(
+        /Book not found/i,
+      )
+    })
+
+    it("throws 400 when bookId is missing", async () => {
+      await expect(setCurrentBook("")).rejects.toThrow(/bookId/i)
     })
   })
 
