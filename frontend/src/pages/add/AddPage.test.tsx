@@ -5,9 +5,16 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import AddPage from "./AddPage";
-import { useBooksStore } from "@/store";
+import { useBooksStore, useCategoriesStore } from "@/store";
 import { getExchangeRate } from "@/services/ratesService";
 import type { Mock } from "vitest";
+import type { CategoryDto } from "@/types";
+
+// Pre-seed the categories store to simulate init having run
+const seedCategories: CategoryDto[] = [
+  { id: "cat_1", name: "Groceries", recurring: false, color: "#fde68a", icon: "shopping-cart", createdAt: "2026-01-01T10:00:00Z", order: 1 },
+  { id: "cat_2", name: "Pets", recurring: false, color: "#4d22b2", icon: "heart", createdAt: "2026-01-01T10:00:00Z", order: 2 },
+];
 
 // Mock the rates service so we can control its response
 vi.mock("@/services/ratesService", () => ({
@@ -24,6 +31,8 @@ describe("AddPage", () => {
       to: "EUR",
       rate: 0.91,
     })
+    // Seed stores as if initializeApp ran
+    useCategoriesStore.setState({ categories: seedCategories, isLoading: false, error: null })
   })
 
   it("renders the amount input, notes input, and add button", () => {

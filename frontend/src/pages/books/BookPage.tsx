@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useBooksStore } from "@/store";
 import {
@@ -22,12 +21,6 @@ export default function BookPage() {
     fetchBooks,
     fetchBook,
   } = useBooksStore();
-
-  useEffect(() => {
-    if (books.length === 0) {
-      fetchBooks();
-    }
-  }, [fetchBooks, books.length]);
 
   // --- Loading state (no cached data) ---
   if (isLoading && books.length === 0) {

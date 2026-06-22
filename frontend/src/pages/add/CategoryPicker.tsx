@@ -18,12 +18,6 @@ export default function CategoryPicker({ selectedId, onSelect }: CategoryPickerP
   const error = useCategoriesStore((s) => s.error);
   const fetchCategories = useCategoriesStore((s) => s.fetchCategories);
 
-  useEffect(() => {
-    if (categories.length === 0) {
-      fetchCategories();
-    }
-  }, [categories.length, fetchCategories]);
-
   // Auto-select first category when none is selected
   useEffect(() => {
     if (categories.length > 0 && !selectedId) {

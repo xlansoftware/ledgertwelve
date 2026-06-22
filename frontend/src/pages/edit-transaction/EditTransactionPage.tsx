@@ -73,7 +73,6 @@ export default function EditTransactionPage() {
   const clearError = useTransactionsStore((s) => s.clearError);
 
   const categories = useCategoriesStore((s) => s.categories);
-  const fetchCategories = useCategoriesStore((s) => s.fetchCategories);
 
   // Form state
   const [dateTime, setDateTime] = useState("");
@@ -89,7 +88,7 @@ export default function EditTransactionPage() {
   // Track whether form has been initialized from fetched data
   const formInitialized = useRef(false);
 
-  // Fetch transaction and categories on mount
+  // Fetch transaction on mount
   useEffect(() => {
     if (transactionId) {
       clearError();
@@ -98,10 +97,7 @@ export default function EditTransactionPage() {
         // Error is already handled in the store — nothing else to do
       });
     }
-    if (categories.length === 0) {
-      fetchCategories();
-    }
-  }, [transactionId, fetchTransaction, fetchCategories, clearError, categories.length]);
+  }, [transactionId, fetchTransaction, clearError]);
 
   // Pre-populate form when transaction data arrives
   useEffect(() => {

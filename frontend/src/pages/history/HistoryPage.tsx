@@ -59,20 +59,16 @@ export default function HistoryPage() {
 
   const currentBook = useBooksStore((s) => s.currentBook);
   const categories = useCategoriesStore((s) => s.categories);
-  const fetchCategories = useCategoriesStore((s) => s.fetchCategories);
   const users = useUsersStore((s) => s.users);
-  const fetchUsers = useUsersStore((s) => s.fetchUsers);
 
   const [filterOpen, setFilterOpen] = useState(false);
 
   const hasActiveFilter = Object.keys(currentFilter).length > 0;
 
-  // Fetch data on mount and when book changes
+  // Clear filter when book changes
   useEffect(() => {
     clearFilter(currentBook?.id);
-    fetchCategories();
-    fetchUsers();
-  }, [currentBook, clearFilter, fetchCategories, fetchUsers]);
+  }, [currentBook, clearFilter]);
 
   // Extract user emails for the Filter component
   const userEmails = users.map((u) => u.email);

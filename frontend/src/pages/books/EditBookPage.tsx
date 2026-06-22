@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { useBooksStore, useCategoriesStore } from "@/store"
+import { useBooksStore } from "@/store"
 import { getBookStats } from "@/services"
 import type { BookStatsDto } from "@/types"
 import { toast } from "sonner"
@@ -96,9 +96,6 @@ export default function EditBookPage() {
   const reopenBookAction = useBooksStore((s) => s.reopenBook)
   const clearError = useBooksStore((s) => s.clearError)
 
-  const categories = useCategoriesStore((s) => s.categories)
-  const fetchCategories = useCategoriesStore((s) => s.fetchCategories)
-
   // Page-local state
   const [name, setName] = useState("")
   const [currency, setCurrency] = useState("")
@@ -111,7 +108,7 @@ export default function EditBookPage() {
   // Track whether form has been initialized from fetched data
   const formInitialized = useRef(false)
 
-  // Fetch book, stats and categories on mount
+  // Fetch book and stats on mount
   useEffect(() => {
     if (!bookId) return
     clearError()
@@ -133,12 +130,8 @@ export default function EditBookPage() {
       setStatsLoading(false)
     }
     load()
-
-    if (categories.length === 0) {
-      fetchCategories()
-    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bookId, fetchBook, fetchCategories, clearError])
+  }, [bookId, fetchBook, clearError])
 
   // Pre-populate form when book data arrives
   useEffect(() => {

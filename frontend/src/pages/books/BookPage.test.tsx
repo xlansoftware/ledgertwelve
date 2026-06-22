@@ -5,11 +5,35 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react"
 import { describe, expect, it, vi, beforeEach } from "vitest"
 import { createMemoryRouter, RouterProvider } from "react-router-dom"
+import { useBooksStore } from "@/store"
+import type { BookDto } from "@/types"
 import BookPage from "./BookPage"
 
 const { navigateSpy } = vi.hoisted(() => ({
   navigateSpy: vi.fn(),
 }))
+
+// Pre-seed the books store to simulate init having run
+const seedBooks: BookDto[] = [
+  {
+    id: "book_main",
+    name: "Main",
+    currency: "EUR",
+    status: "open",
+    ownerId: "usr_1",
+    sharedWith: [],
+    createdAt: "2026-01-01T10:00:00Z",
+  },
+  {
+    id: "book_vacation",
+    name: "Vacation 2026",
+    currency: "EUR",
+    status: "open",
+    ownerId: "usr_1",
+    sharedWith: [],
+    createdAt: "2026-03-15T10:00:00Z",
+  },
+]
 
 vi.mock("react-router-dom", async () => {
   const actual = await vi.importActual("react-router-dom")
@@ -46,6 +70,8 @@ function renderPage() {
 describe("BookPage", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    // Seed the store with books as if initializeApp ran
+    useBooksStore.setState({ books: seedBooks, isLoading: false, error: null, currentBook: seedBooks[0] })
   })
 
   it("renders book cards with an Edit button for each book", async () => {
