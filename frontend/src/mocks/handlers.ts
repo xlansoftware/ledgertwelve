@@ -185,9 +185,9 @@ const WEIGHTED_CATS = [
   { name: 'Parents',         min: -300, max: -20, w: 0.02 },
   { name: 'Kids',            min: -200, max: -10, w: 0.02 },
   { name: 'Travel',          min: -2000,max: -50, w: 0.02 },
-  { name: 'Savings',         min: 100,  max: 800, w: 0.02 },
-  { name: 'Freelance',       min: 200,  max: 2500,w: 0.01 },
-  { name: 'Salary',          min: 2800, max: 5000,w: 0.02 },
+  // { name: 'Savings',         min: 100,  max: 800, w: 0.02 },
+  // { name: 'Freelance',       min: 200,  max: 2500,w: 0.01 },
+  // { name: 'Salary',          min: 2800, max: 5000,w: 0.02 },
   { name: 'Taxes',           min: -3000,max: -400, w: 0.01 },
 ]
 

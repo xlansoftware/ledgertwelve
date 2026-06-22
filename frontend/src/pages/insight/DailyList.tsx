@@ -47,6 +47,7 @@ export function DailyList({
   dailyError,
   onSelectDay,
 }: DailyListProps) {
+
   // Compute a stable list of all days (today first, then descending)
   const listDays = useMemo(() => {
     // dailyTotals is already filled (all 10 days present), sorted ascending

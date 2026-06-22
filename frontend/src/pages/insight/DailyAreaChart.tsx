@@ -14,7 +14,7 @@ import {
 import { format } from "date-fns"
 
 import { ChartContainer } from "@/components/ui/chart"
-import { formatCurrency } from "@/lib/utils"
+import { formatCompactNumber, formatCurrency } from "@/lib/utils"
 import { computeChartData, type AccumulatedRow, type ChartDataRow, type ProjectedRow } from "./insightUtils"
 
 // ---------------------------------------------------------------------------
@@ -110,6 +110,9 @@ export function DailyAreaChart({ data, isLoading, error }: DailyAreaChartProps) 
 
   const chartData = computeChartData(data);
 
+  console.log(data);
+  console.log(chartData);
+
   return (
     <div className="w-full">
       <h3 className="mb-2 text-sm font-medium text-muted-foreground">
@@ -131,12 +134,13 @@ export function DailyAreaChart({ data, isLoading, error }: DailyAreaChartProps) 
               fontSize={11}
             />
             <YAxis
-              tickFormatter={(v: number) => `${v}`}
+              tickFormatter={(v: number) => `${formatCompactNumber(v)}`}
               tickLine={false}
               axisLine={false}
               tickMargin={6}
               fontSize={11}
               width={40}
+              reversed={true}
             />
             <Tooltip
               content={<CustomTooltip />}

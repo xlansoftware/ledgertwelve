@@ -182,3 +182,26 @@ export function formatDateWithoutCurrentYear(
     { locale }
   );
 }
+
+/**
+ * Format a number into a compact string with K (thousands) and M (millions) suffixes
+ * @param num - The number to format
+ * @param decimals - Number of decimal places to show (default: 0)
+ * @returns Formatted string with K or M suffix
+ */
+export function formatCompactNumber(num: number, decimals: number = 0): string {
+  if (num === 0) return '0';
+  
+  const absNum = Math.abs(num);
+  const sign = num < 0 ? '-' : '';
+  
+  if (absNum >= 1_000_000) {
+    return `${sign}${(absNum / 1_000_000).toFixed(decimals)}M`;
+  }
+  
+  if (absNum >= 1_000) {
+    return `${sign}${(absNum / 1_000).toFixed(decimals)}K`;
+  }
+  
+  return `${sign}${absNum.toString()}`;
+}
