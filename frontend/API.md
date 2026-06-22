@@ -1002,6 +1002,104 @@ Both `from` and `to` are required ISO 8601 date strings.
 
 ---
 
+# GET /api/v1/reports/average/daily
+
+### Purpose
+
+Returns the average daily net amount over a date range. Used to compute the projection rate for the daily insight chart.
+
+### Query Parameters
+
+| Parameter | Required | Format | Description |
+|-----------|----------|--------|-------------|
+| `from` | yes | `YYYY-MM-DD` | Inclusive start date. |
+| `to` | yes | `YYYY-MM-DD` | Exclusive end date. |
+
+### Semantics
+
+Server computes `SUM(amount) / COUNT(days_with_transactions)` for Main-book transactions whose `date` is `>= from` and `< to`. Days with no transactions are not counted — they contribute zero to the sum but do not inflate the divisor.
+
+### Response
+
+```json
+{
+  "data": {
+    "average": -45.50,
+    "count": 365
+  }
+}
+```
+
+- `average` — net average per day (negative = net expense, positive = net income). Rounded to 2 decimal places.
+- `count` — number of days in the queried range that have at least one transaction.
+
+### Errors
+
+```json
+// 400 — Missing from or to
+{ "error": "from and to query parameters are required" }
+
+// 401 — Unauthenticated
+{ "error": "Unauthorized" }
+```
+
+### Example
+
+```text
+GET /api/v1/reports/average/daily?from=2025-06-22&to=2026-06-22
+```
+
+---
+
+# GET /api/v1/reports/average/monthly
+
+### Purpose
+
+Returns the average monthly net amount over a date range. Used to compute the projection rate for the monthly insight chart.
+
+### Query Parameters
+
+| Parameter | Required | Format | Description |
+|-----------|----------|--------|-------------|
+| `from` | yes | `YYYY-MM-DD` | Inclusive start date. |
+| `to` | yes | `YYYY-MM-DD` | Exclusive end date. |
+
+### Semantics
+
+Server groups transactions by calendar month (`YYYY-MM`) within `[from, to)`, computes the net sum for each month, then returns `SUM(monthly_net) / COUNT(months_with_transactions)`. Months with no transactions are not counted.
+
+### Response
+
+```json
+{
+  "data": {
+    "average": -1380.00,
+    "count": 12
+  }
+}
+```
+
+- `average` — net average per month (negative = net expense, positive = net income). Rounded to 2 decimal places.
+- `count` — number of months in the queried range that have at least one transaction.
+
+### Errors
+
+```json
+// 400 — Missing from or to
+{ "error": "from and to query parameters are required" }
+
+// 401 — Unauthenticated
+{ "error": "Unauthorized" }
+```
+
+### Example
+
+```text
+GET /api/v1/reports/average/monthly?from=2025-06-01&to=2026-06-01
+```
+
+---
+
 # Export
 
 Exports should be asynchronous because XLSX generation can become expensive.

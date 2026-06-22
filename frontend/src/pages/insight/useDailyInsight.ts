@@ -3,12 +3,13 @@
 // ---------------------------------------------------------------------------
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react"
-import { getCategoryReport, getDailyReport } from "@/services/reportsService"
+import { getCategoryReport, getDailyReport, getDailyAverage } from "@/services/reportsService"
 import { getBookStats } from "@/services/booksService"
-import type { DailyReportRow, CategoryReportRow } from "@/types"
+import type { DailyReportRow, CategoryReportRow, AverageReportDto } from "@/types"
 import {
   computeAccumulation,
   computeProjection,
+  computeProjectionFromAverage,
 } from "./insightUtils"
 import type { AccumulatedRow, ProjectedRow } from "./insightUtils"
 
@@ -132,6 +133,11 @@ export interface UseDailyInsightReturn {
   isLoadingDaily: boolean
   dailyError: string | null
 
+  // Average (projection rate)
+  averageChange: number | null
+  isLoadingAverage: boolean
+  averageError: string | null
+
   // Selection
   selectedDay: string | null // null = today
 
@@ -151,6 +157,11 @@ export function useDailyInsight(todayStr?: string): UseDailyInsightReturn {
   const [dailyRows, setDailyRows] = useState<DailyReportRow[]>([])
   const [isLoadingDaily, setIsLoadingDaily] = useState(true)
   const [dailyError, setDailyError] = useState<string | null>(null)
+
+  // ── Wide-window average (projection rate) ──
+  const [averageChange, setAverageChange] = useState<number | null>(null)
+  const [isLoadingAverage, setIsLoadingAverage] = useState(true)
+  const [averageError, setAverageError] = useState<string | null>(null)
 
   // ── Opening balance (as of last day of previous month) ──
   const [openingBalance, setOpeningBalance] = useState<number | null>(null)
@@ -178,6 +189,27 @@ export function useDailyInsight(todayStr?: string): UseDailyInsightReturn {
       .catch((err: unknown) => {
         setDailyError(err instanceof Error ? err.message : "Failed to load daily data")
         setIsLoadingDaily(false)
+      })
+  }, [today, todayDate])
+
+  // ── Fetch wide-window average (365-day rolling) ──
+  useEffect(() => {
+    const from = offsetDate(-365, todayDate) // 365 days ago, inclusive
+    const to = today // exclusive upper bound = today
+
+    setIsLoadingAverage(true)
+    setAverageError(null)
+
+    getDailyAverage({ from, to })
+      .then((data: AverageReportDto) => {
+        setAverageChange(data.average)
+        setIsLoadingAverage(false)
+      })
+      .catch(() => {
+        // Graceful degradation: averageChange stays null, falls back to short-window projection
+        setAverageChange(null)
+        setIsLoadingAverage(false)
+        setAverageError(null) // suppress error — user sees existing chart
       })
   }, [today, todayDate])
 
@@ -236,9 +268,22 @@ export function useDailyInsight(todayStr?: string): UseDailyInsightReturn {
   const accumulatedData = useMemo<(AccumulatedRow | ProjectedRow)[]>(() => {
     const seed = openingBalance ?? 0  // graceful degradation: fall back to zero
     const accumulated = computeAccumulation(filledDailyTotals, seed)
+
+    if (averageChange !== null && accumulated.length > 0) {
+      const lastRow = accumulated[accumulated.length - 1]
+      const projection = computeProjectionFromAverage(
+        lastRow.cumulative,
+        averageChange,
+        trendMDays,
+        lastRow.date,
+      )
+      return [...accumulated, ...projection]
+    }
+
+    // Fallback: compute projection from short-window historical data
     const projection = computeProjection(accumulated, trendMDays)
     return [...accumulated, ...projection]
-  }, [filledDailyTotals, trendMDays, openingBalance])
+  }, [filledDailyTotals, trendMDays, openingBalance, averageChange])
 
   // ── Actions ──
 
@@ -258,6 +303,10 @@ export function useDailyInsight(todayStr?: string): UseDailyInsightReturn {
     accumulatedData,
     isLoadingDaily,
     dailyError,
+
+    averageChange,
+    isLoadingAverage,
+    averageError,
 
     selectedDay,
 

@@ -18,6 +18,7 @@ import type { CategoryDto } from "@/types"
 vi.mock("@/services/reportsService", () => ({
   getCategoryReport: vi.fn(),
   getMonthlyReport: vi.fn(),
+  getMonthlyAverage: vi.fn(),
 }))
 
 vi.mock("@/services/booksService", () => ({
@@ -26,6 +27,7 @@ vi.mock("@/services/booksService", () => ({
 
 const mockGetCategoryReport = vi.mocked(reportsService.getCategoryReport)
 const mockGetMonthlyReport = vi.mocked(reportsService.getMonthlyReport)
+const mockGetMonthlyAverage = vi.mocked(reportsService.getMonthlyAverage)
 const mockGetBookStats = vi.mocked(booksService.getBookStats)
 
 // ---------------------------------------------------------------------------
@@ -96,6 +98,7 @@ beforeEach(() => {
   // Mock successful API responses
   mockGetMonthlyReport.mockResolvedValue(buildMonthlyData())
   mockGetBookStats.mockResolvedValue({ transactionCount: 100, totalSum: -500 })
+  mockGetMonthlyAverage.mockResolvedValue({ average: -1380.0, count: 12 })
 
   // getCategoryReport returns different data depending on the month
   mockGetCategoryReport.mockImplementation((params) => {

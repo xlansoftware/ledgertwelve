@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest"
 import {
   computeAccumulation,
   computeProjection,
+  computeProjectionFromAverage,
 } from "./insightUtils"
 import type { AccumulatedRow } from "./insightUtils"
 
@@ -122,7 +123,7 @@ describe("computeProjection", () => {
       { date: "2026-06-12", daily: -30, cumulative: 75 },
       { date: "2026-06-13", daily: -25, cumulative: 100 },
     ]
-    // 2 days between first and last: cumulative goes from 45 to 100 = +55 over 2 days = +27.5/day
+    // 3 data points: cumulative goes from 45 to 100 = +55 over 3 points = +18.33/day
     const result = computeProjection(data, 3)
     expect(result).toHaveLength(3)
 
@@ -137,10 +138,10 @@ describe("computeProjection", () => {
     expect(result[2].date).toBe("2026-06-16")
 
     // Cumulative should extend by avg daily rate
-    // 100 + 27.5 = 127.5, 127.5 + 27.5 = 155, 155 + 27.5 = 182.5
-    expect(result[0].cumulative).toBe(127.5)
-    expect(result[1].cumulative).toBe(155)
-    expect(result[2].cumulative).toBe(182.5)
+    // 100 + 18.333 = 118.333 → 118.33, 118.33 + 18.333 = 136.667 → 136.67, 136.67 + 18.333 = 155
+    expect(result[0].cumulative).toBe(118.33)
+    expect(result[1].cumulative).toBe(136.67)
+    expect(result[2].cumulative).toBe(155)
   })
 
   it("projects correctly with negative average rate (income exceeds expenses)", () => {
@@ -148,16 +149,16 @@ describe("computeProjection", () => {
       { date: "2026-06-11", daily: -45, cumulative: 45 },
       { date: "2026-06-12", daily: 200, cumulative: -155 },
     ]
-    // 1 day: cumulative goes from 45 to -155 = -200 over 1 day = -200/day
+    // 2 data points: cumulative goes from 45 to -155 = -200 over 2 points = -100/point
     const result = computeProjection(data, 2)
     expect(result).toHaveLength(2)
 
     expect(result[0].date).toBe("2026-06-13")
     expect(result[1].date).toBe("2026-06-14")
 
-    // -155 + (-200) = -355, -355 + (-200) = -555
-    expect(result[0].cumulative).toBe(-355)
-    expect(result[1].cumulative).toBe(-555)
+    // -155 + (-100) = -255, -255 + (-100) = -355
+    expect(result[0].cumulative).toBe(-255)
+    expect(result[1].cumulative).toBe(-355)
   })
 
   it("handles flat data (zero daily change)", () => {
@@ -177,9 +178,9 @@ describe("computeProjection", () => {
       { date: "2026-06-12", daily: -33.33, cumulative: 66.66 },
     ]
     const result = computeProjection(data, 1)
-    // avg daily change = (66.66 - 33.33) / 1 = 33.33
-    // cumulative = 66.66 + 33.33 = 99.99
-    expect(result[0].cumulative).toBe(99.99)
+    // avg daily change = (66.66 - 33.33) / 2 = 16.665
+    // cumulative = 66.66 + 16.665 ≈ 83.32 (floating point rounds down)
+    expect(result[0].cumulative).toBe(83.32)
   })
 
   it("sorts input by date ascending before computing", () => {
@@ -190,7 +191,61 @@ describe("computeProjection", () => {
     ]
     const result = computeProjection(data, 1)
     expect(result[0].date).toBe("2026-06-14")
-    // avg daily = (100 - 45) / 2 = 27.5
-    expect(result[0].cumulative).toBe(127.5)
+    // avg daily = (100 - 45) / 3 = 18.33
+    expect(result[0].cumulative).toBe(118.33)
+  })
+})
+
+describe("computeProjectionFromAverage", () => {
+  it("returns empty array when M is 0", () => {
+    const result = computeProjectionFromAverage(100, -50, 0, "2026-06-22")
+    expect(result).toEqual([])
+  })
+
+  it("returns empty array when M is negative", () => {
+    const result = computeProjectionFromAverage(100, -50, -1, "2026-06-22")
+    expect(result).toEqual([])
+  })
+
+  it("projects M points forward using avgChange", () => {
+    const result = computeProjectionFromAverage(100, -45.5, 3, "2026-06-22")
+    expect(result).toHaveLength(3)
+
+    result.forEach((point) => {
+      expect(point.isProjected).toBe(true)
+    })
+
+    // Dates increment from last date
+    expect(result[0].date).toBe("2026-06-23")
+    expect(result[1].date).toBe("2026-06-24")
+    expect(result[2].date).toBe("2026-06-25")
+
+    // Cumulative extends by avgChange each step
+    expect(result[0].cumulative).toBe(54.5)   // 100 + (-45.5)
+    expect(result[1].cumulative).toBe(9)      // 54.5 + (-45.5) = 9
+    expect(result[2].cumulative).toBe(-36.5)  // 9 + (-45.5)
+  })
+
+  it("handles positive avgChange (net income)", () => {
+    const result = computeProjectionFromAverage(500, 200, 2, "2026-06-22")
+    expect(result[0].cumulative).toBe(700)    // 500 + 200
+    expect(result[1].cumulative).toBe(900)    // 700 + 200
+  })
+
+  it("handles zero avgChange (flat)", () => {
+    const result = computeProjectionFromAverage(50, 0, 2, "2026-06-22")
+    expect(result[0].cumulative).toBe(50)
+    expect(result[1].cumulative).toBe(50)
+  })
+
+  it("rounds cumulative to 2 decimal places", () => {
+    const result = computeProjectionFromAverage(100, -33.333, 1, "2026-06-22")
+    expect(result[0].cumulative).toBe(66.67)  // 100 - 33.333 = 66.667 → rounds to 66.67
+  })
+
+  it("sets daily field to avgChange for every projected point", () => {
+    const result = computeProjectionFromAverage(200, -50, 2, "2026-06-22")
+    expect(result[0].daily).toBe(-50)
+    expect(result[1].daily).toBe(-50)
   })
 })

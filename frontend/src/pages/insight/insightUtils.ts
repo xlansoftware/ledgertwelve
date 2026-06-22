@@ -96,6 +96,44 @@ export function computeProjection(
   return projected
 }
 
+/**
+ * Compute a forward projection using an externally provided average change.
+ * Used when the wide-window average API returns a value.
+ * Falls back to computeProjection when the API is unavailable.
+ *
+ * @param lastCumulative - The cumulative balance at the last historical data point.
+ * @param avgChange - The net average change per period (from the API).
+ * @param M - Number of projected periods forward.
+ * @param lastDate - The date string of the last historical data point.
+ * @returns Projected data points with `isProjected: true`.
+ */
+export function computeProjectionFromAverage(
+  lastCumulative: number,
+  avgChange: number,
+  M: number,
+  lastDate: string,
+): ProjectedRow[] {
+  if (M <= 0) return []
+
+  const projected: ProjectedRow[] = []
+  const lastDateObj = new Date(lastDate)
+  let cumulative = lastCumulative
+
+  for (let i = 1; i <= M; i++) {
+    const projectedDate = new Date(lastDateObj)
+    projectedDate.setDate(projectedDate.getDate() + i)
+    cumulative += avgChange
+
+    projected.push({
+      date: projectedDate.toISOString().slice(0, 10),
+      daily: avgChange,
+      cumulative: Math.round(cumulative * 100) / 100,
+      isProjected: true,
+    })
+  }
+
+  return projected
+}
 
 export function computeChartData(data: (AccumulatedRow | ProjectedRow)[]) : ChartDataRow[] {
   const chartData = data.map((row) => ({

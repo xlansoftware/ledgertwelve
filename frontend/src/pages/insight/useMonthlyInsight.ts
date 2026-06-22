@@ -3,12 +3,13 @@
 // ---------------------------------------------------------------------------
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react"
-import { getCategoryReport, getMonthlyReport } from "@/services/reportsService"
+import { getCategoryReport, getMonthlyReport, getMonthlyAverage } from "@/services/reportsService"
 import { getBookStats } from "@/services/booksService"
-import type { MonthlyReportRow, CategoryReportRow } from "@/types"
+import type { MonthlyReportRow, CategoryReportRow, AverageReportDto } from "@/types"
 import {
   computeAccumulation,
   computeProjection,
+  computeProjectionFromAverage,
 } from "./insightUtils"
 import type { AccumulatedRow, ProjectedRow } from "./insightUtils"
 
@@ -77,6 +78,11 @@ export interface UseMonthlyInsightReturn {
   isLoadingMonthly: boolean
   monthlyError: string | null
 
+  // Average (projection rate)
+  averageChange: number | null
+  isLoadingAverage: boolean
+  averageError: string | null
+
   // Selection
   selectedMonth: string | null // null = current month ("YYYY-MM")
 
@@ -105,6 +111,11 @@ export function useMonthlyInsight(): UseMonthlyInsightReturn {
   const [isLoadingMonthly, setIsLoadingMonthly] = useState(true)
   const [monthlyError, setMonthlyError] = useState<string | null>(null)
 
+  // ── Wide-window average (projection rate) ──
+  const [averageChange, setAverageChange] = useState<number | null>(null)
+  const [isLoadingAverage, setIsLoadingAverage] = useState(true)
+  const [averageError, setAverageError] = useState<string | null>(null)
+
   // ── Opening balance (as of Dec 31 previous year) ──
   const [openingBalance, setOpeningBalance] = useState<number | null>(null)
 
@@ -130,6 +141,29 @@ export function useMonthlyInsight(): UseMonthlyInsightReturn {
         setIsLoadingMonthly(false)
       })
   }, [yearStart, yearEnd])
+
+  // ── Fetch wide-window average (12-month rolling) ──
+  useEffect(() => {
+    // 12 months ago, 1st of that month → 1st of current month (exclusive)
+    const fromDate = new Date(currentYear, currentMonth - 13, 1)
+    const fromStr = fromDate.toISOString().slice(0, 10)
+    const toStr = firstOfMonth(currentYear, currentMonth)
+
+    setIsLoadingAverage(true)
+    setAverageError(null)
+
+    getMonthlyAverage({ from: fromStr, to: toStr })
+      .then((data: AverageReportDto) => {
+        setAverageChange(data.average)
+        setIsLoadingAverage(false)
+      })
+      .catch(() => {
+        // Graceful degradation: averageChange stays null, falls back to short-window projection
+        setAverageChange(null)
+        setIsLoadingAverage(false)
+        setAverageError(null) // suppress error — user sees existing chart
+      })
+  }, [yearStart, yearEnd, currentYear, currentMonth])
 
   // ── Fetch opening balance as of Dec 31 of previous year ──
   useEffect(() => {
@@ -201,9 +235,22 @@ export function useMonthlyInsight(): UseMonthlyInsightReturn {
       amount: row.amount,
     }))
     const accumulated = computeAccumulation(mapped, seed)
+
+    if (averageChange !== null && accumulated.length > 0) {
+      const lastRow = accumulated[accumulated.length - 1]
+      const projection = computeProjectionFromAverage(
+        lastRow.cumulative,
+        averageChange,
+        remainingMonths,
+        lastRow.date,
+      )
+      return [...accumulated, ...projection]
+    }
+
+    // Fallback: compute projection from short-window historical data
     const projection = computeProjection(accumulated, remainingMonths)
     return [...accumulated, ...projection]
-  }, [filledMonthlyTotals, remainingMonths, openingBalance])
+  }, [filledMonthlyTotals, remainingMonths, openingBalance, averageChange])
 
   // ── Actions ──
 
@@ -223,6 +270,10 @@ export function useMonthlyInsight(): UseMonthlyInsightReturn {
     accumulatedData,
     isLoadingMonthly,
     monthlyError,
+
+    averageChange,
+    isLoadingAverage,
+    averageError,
 
     selectedMonth,
 

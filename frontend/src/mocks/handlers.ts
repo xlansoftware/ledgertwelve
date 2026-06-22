@@ -1218,6 +1218,84 @@ export const handlers = [
     return HttpResponse.json({ data })
   }),
 
+  // ---- Average Reports ----
+  http.get('/api/v1/reports/average/daily', ({ request }) => {
+    const auth = requireAuth(request)
+    if (auth.error) return auth.response
+    const user = auth.user!
+    const url = new URL(request.url)
+    const from = url.searchParams.get('from')
+    const to = url.searchParams.get('to')
+
+    if (!from || !to) {
+      return HttpResponse.json({ error: 'from and to query parameters are required' }, { status: 400 })
+    }
+
+    const mainBook = books.find(b => b.ownerId === user.id && b.name === 'Main')
+    if (!mainBook) return HttpResponse.json({ error: 'Main book not found' }, { status: 500 })
+
+    const fromDate = new Date(from + 'T00:00:00.000Z')
+    const toDate = new Date(to + 'T00:00:00.000Z')
+
+    let txs = transactions.filter(tx => tx.bookId === mainBook.id && !tx.isBookClosingEntry)
+    txs = txs.filter(tx => tx.dateTime >= fromDate && tx.dateTime < toDate)
+
+    // Group by date and sum
+    const groups = new Map<string, number>()
+    txs.forEach(tx => {
+      const key = tx.dateTime.toISOString().slice(0, 10)
+      const current = groups.get(key) || 0
+      groups.set(key, current + tx.amount)
+    })
+
+    const daysWithTx = groups.size
+    const totalSum = Array.from(groups.values()).reduce((s, v) => s + v, 0)
+    const average = daysWithTx > 0 ? Math.round((totalSum / daysWithTx) * 100) / 100 : 0
+
+    return HttpResponse.json({
+      data: { average, count: daysWithTx },
+    })
+  }),
+
+  http.get('/api/v1/reports/average/monthly', ({ request }) => {
+    const auth = requireAuth(request)
+    if (auth.error) return auth.response
+    const user = auth.user!
+    const url = new URL(request.url)
+    const from = url.searchParams.get('from')
+    const to = url.searchParams.get('to')
+
+    if (!from || !to) {
+      return HttpResponse.json({ error: 'from and to query parameters are required' }, { status: 400 })
+    }
+
+    const mainBook = books.find(b => b.ownerId === user.id && b.name === 'Main')
+    if (!mainBook) return HttpResponse.json({ error: 'Main book not found' }, { status: 500 })
+
+    const fromDate = new Date(from + 'T00:00:00.000Z')
+    const toDate = new Date(to + 'T00:00:00.000Z')
+
+    let txs = transactions.filter(tx => tx.bookId === mainBook.id && !tx.isBookClosingEntry)
+    txs = txs.filter(tx => tx.dateTime >= fromDate && tx.dateTime < toDate)
+
+    // Group by YYYY-MM and sum
+    const groups = new Map<string, number>()
+    txs.forEach(tx => {
+      const d = tx.dateTime
+      const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`
+      const current = groups.get(key) || 0
+      groups.set(key, current + tx.amount)
+    })
+
+    const monthsWithTx = groups.size
+    const totalSum = Array.from(groups.values()).reduce((s, v) => s + v, 0)
+    const average = monthsWithTx > 0 ? Math.round((totalSum / monthsWithTx) * 100) / 100 : 0
+
+    return HttpResponse.json({
+      data: { average, count: monthsWithTx },
+    })
+  }),
+
   // ---- Users ----
   http.get('/api/v1/users', ({ request }) => {
     const auth = requireAuth(request)

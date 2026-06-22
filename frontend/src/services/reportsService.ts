@@ -1,5 +1,5 @@
 import { request } from "./api"
-import type { ApiResponse, TotalsReportRow, CategoryReportRow, DailyReportRow, MonthlyReportRow } from "@/types"
+import type { ApiResponse, TotalsReportRow, CategoryReportRow, DailyReportRow, MonthlyReportRow, AverageReportDto } from "@/types"
 
 // ---------------------------------------------------------------------------
 // GET   /api/v1/reports/totals
@@ -74,6 +74,39 @@ export async function getMonthlyReport(
 ): Promise<MonthlyReportRow[]> {
   const res = await request<ApiResponse<MonthlyReportRow[]>>(
     "/api/v1/reports/monthly",
+    { params: { from: params.from, to: params.to } },
+  )
+  return res.data
+}
+
+// ---------------------------------------------------------------------------
+// GET   /api/v1/reports/average/daily
+// ---------------------------------------------------------------------------
+
+export interface GetAverageParams {
+  from: string
+  to: string
+}
+
+export async function getDailyAverage(
+  params: GetAverageParams,
+): Promise<AverageReportDto> {
+  const res = await request<ApiResponse<AverageReportDto>>(
+    "/api/v1/reports/average/daily",
+    { params: { from: params.from, to: params.to } },
+  )
+  return res.data
+}
+
+// ---------------------------------------------------------------------------
+// GET   /api/v1/reports/average/monthly
+// ---------------------------------------------------------------------------
+
+export async function getMonthlyAverage(
+  params: GetAverageParams,
+): Promise<AverageReportDto> {
+  const res = await request<ApiResponse<AverageReportDto>>(
+    "/api/v1/reports/average/monthly",
     { params: { from: params.from, to: params.to } },
   )
   return res.data

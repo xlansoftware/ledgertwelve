@@ -90,3 +90,8 @@ export interface BookStatsDto {
   transactionCount: number
   totalSum: number
 }
+
+export interface AverageReportDto {
+  average: number
+  count: number
+}

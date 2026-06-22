@@ -7,7 +7,7 @@ import { renderHook, waitFor } from "@testing-library/react"
 import { useMonthlyInsight } from "./useMonthlyInsight"
 import * as reportsService from "@/services/reportsService"
 import * as booksService from "@/services/booksService"
-import type { CategoryReportRow, MonthlyReportRow } from "@/types"
+import type { CategoryReportRow, MonthlyReportRow, AverageReportDto } from "@/types"
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -16,6 +16,7 @@ import type { CategoryReportRow, MonthlyReportRow } from "@/types"
 vi.mock("@/services/reportsService", () => ({
   getCategoryReport: vi.fn(),
   getMonthlyReport: vi.fn(),
+  getMonthlyAverage: vi.fn(),
 }))
 
 vi.mock("@/services/booksService", () => ({
@@ -24,6 +25,7 @@ vi.mock("@/services/booksService", () => ({
 
 const mockGetCategoryReport = vi.mocked(reportsService.getCategoryReport)
 const mockGetMonthlyReport = vi.mocked(reportsService.getMonthlyReport)
+const mockGetMonthlyAverage = vi.mocked(reportsService.getMonthlyAverage)
 const mockGetBookStats = vi.mocked(booksService.getBookStats)
 
 // ---------------------------------------------------------------------------
@@ -73,6 +75,9 @@ beforeEach(() => {
 
   mockGetMonthlyReport.mockResolvedValue(buildMonthlyData())
   mockGetBookStats.mockResolvedValue({ transactionCount: 100, totalSum: -500 })
+
+  // Default: getMonthlyAverage succeeds
+  mockGetMonthlyAverage.mockResolvedValue({ average: -1380.0, count: 12 })
 
   // Default: return today's categories for the initial (current month) fetch
   mockGetCategoryReport.mockImplementation((params) => {
@@ -303,5 +308,53 @@ describe("useMonthlyInsight", () => {
 
     expect(result.current.monthlyError).toBe("Monthly fetch failed")
     expect(result.current.expenses).toEqual({ Groceries: 45, "Dining Out": 30 })
+  })
+
+  it("uses the external average for projection when available", async () => {
+    mockGetCategoryReport.mockResolvedValueOnce(TODAY_CATEGORIES)
+    mockGetMonthlyReport.mockResolvedValueOnce(buildMonthlyData())
+    mockGetBookStats.mockResolvedValueOnce({ transactionCount: 100, totalSum: -500 })
+    mockGetMonthlyAverage.mockResolvedValueOnce({ average: -1200, count: 12 })
+
+    const { result } = renderHook(() => useMonthlyInsight())
+
+    await waitFor(() => {
+      expect(result.current.isLoadingMonthly).toBe(false)
+    })
+
+    const remainingMonths = 12 - currentMonth
+    const total = currentMonth + remainingMonths
+
+    expect(result.current.accumulatedData.length).toBe(total)
+    expect(result.current.averageChange).toBe(-1200)
+  })
+
+  it("falls back to short-window projection when average API fails", async () => {
+    mockGetCategoryReport.mockResolvedValueOnce(TODAY_CATEGORIES)
+    mockGetMonthlyReport.mockResolvedValueOnce(buildMonthlyData())
+    mockGetBookStats.mockResolvedValueOnce({ transactionCount: 100, totalSum: -500 })
+    mockGetMonthlyAverage.mockRejectedValueOnce(new Error("Average API failed"))
+
+    const { result } = renderHook(() => useMonthlyInsight())
+
+    await waitFor(() => {
+      expect(result.current.isLoadingMonthly).toBe(false)
+    })
+
+    // averageChange should be null (fell back)
+    expect(result.current.averageChange).toBeNull()
+    // accumulatedData should still exist (fallback projection)
+    expect(result.current.accumulatedData.length).toBeGreaterThan(0)
+  })
+
+  it("shows loading average state during fetch", () => {
+    mockGetMonthlyReport.mockReturnValue(new Promise(() => {}))
+    mockGetBookStats.mockReturnValue(new Promise(() => {}))
+    mockGetCategoryReport.mockReturnValue(new Promise(() => {}))
+    mockGetMonthlyAverage.mockReturnValue(new Promise(() => {}))
+
+    const { result } = renderHook(() => useMonthlyInsight())
+
+    expect(result.current.isLoadingAverage).toBe(true)
   })
 })

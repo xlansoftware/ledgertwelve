@@ -6,7 +6,8 @@ import { describe, expect, it, vi, beforeEach } from "vitest"
 import { renderHook, waitFor } from "@testing-library/react"
 import { useDailyInsight } from "./useDailyInsight"
 import * as reportsService from "@/services/reportsService"
-import type { CategoryReportRow } from "@/types"
+import * as booksService from "@/services/booksService"
+import type { CategoryReportRow, AverageReportDto } from "@/types"
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -15,10 +16,17 @@ import type { CategoryReportRow } from "@/types"
 vi.mock("@/services/reportsService", () => ({
   getCategoryReport: vi.fn(),
   getDailyReport: vi.fn(),
+  getDailyAverage: vi.fn(),
+}))
+
+vi.mock("@/services/booksService", () => ({
+  getBookStats: vi.fn(),
 }))
 
 const mockGetCategoryReport = vi.mocked(reportsService.getCategoryReport)
 const mockGetDailyReport = vi.mocked(reportsService.getDailyReport)
+const mockGetDailyAverage = vi.mocked(reportsService.getDailyAverage)
+const mockGetBookStats = vi.mocked(booksService.getBookStats)
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -38,6 +46,11 @@ function daysAgo(n: number): string {
 
 beforeEach(() => {
   vi.clearAllMocks()
+
+  // Default: getDailyAverage succeeds
+  mockGetDailyAverage.mockResolvedValue({ average: -45.5, count: 365 })
+  // Default: getBookStats succeeds (opening balance)
+  mockGetBookStats.mockResolvedValue({ transactionCount: 0, totalSum: 0 })
 })
 
 // ---------------------------------------------------------------------------
@@ -54,6 +67,7 @@ describe("useDailyInsight", () => {
     await waitFor(() => {
       expect(mockGetCategoryReport).toHaveBeenCalledTimes(1)
       expect(mockGetDailyReport).toHaveBeenCalledTimes(1)
+      expect(mockGetDailyAverage).toHaveBeenCalledTimes(1)
     })
   })
 
@@ -109,6 +123,62 @@ describe("useDailyInsight", () => {
     expect(result.current.dailyTotals.length).toBe(dayOfMonth)
     // Latest entry should be today
     expect(result.current.dailyTotals[result.current.dailyTotals.length - 1].date).toBe(todayStr)
+  })
+
+  it("uses the external average for projection when available", async () => {
+    mockGetCategoryReport.mockResolvedValue([])
+    mockGetBookStats.mockResolvedValue({ transactionCount: 0, totalSum: 0 })
+    const today = new Date().toISOString().slice(0, 10)
+    mockGetDailyReport.mockResolvedValue([
+      { date: today, amount: -50 },
+    ])
+    // Average of -45.5 per day
+    mockGetDailyAverage.mockResolvedValue({ average: -45.5, count: 365 })
+
+    const { result } = renderHook(() => useDailyInsight())
+
+    await waitFor(() => {
+      expect(result.current.isLoadingDaily).toBe(false)
+    })
+
+    const dayOfMonth = new Date().getDate()
+    const lastDayOfMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate()
+    const daysRemaining = lastDayOfMonth - dayOfMonth
+    const total = dayOfMonth + daysRemaining
+
+    expect(result.current.accumulatedData.length).toBe(total)
+    expect(result.current.averageChange).toBe(-45.5)
+  })
+
+  it("falls back to short-window projection when average API fails", async () => {
+    mockGetCategoryReport.mockResolvedValue([])
+    mockGetBookStats.mockResolvedValue({ transactionCount: 0, totalSum: 0 })
+    mockGetDailyAverage.mockRejectedValue(new Error("Average API failed"))
+    const today = new Date().toISOString().slice(0, 10)
+    mockGetDailyReport.mockResolvedValue([
+      { date: today, amount: -50 },
+    ])
+
+    const { result } = renderHook(() => useDailyInsight())
+
+    await waitFor(() => {
+      expect(result.current.isLoadingDaily).toBe(false)
+    })
+
+    // averageChange should be null (fell back)
+    expect(result.current.averageChange).toBeNull()
+    // accumulatedData should still exist (fallback projection)
+    expect(result.current.accumulatedData.length).toBeGreaterThan(0)
+  })
+
+  it("shows loading average state during fetch", () => {
+    mockGetCategoryReport.mockReturnValue(new Promise(() => {}))
+    mockGetDailyReport.mockReturnValue(new Promise(() => {}))
+    mockGetDailyAverage.mockReturnValue(new Promise(() => {}))
+
+    const { result } = renderHook(() => useDailyInsight())
+
+    expect(result.current.isLoadingAverage).toBe(true)
   })
 
   it("returns accumulated data with projection appended", async () => {

@@ -18,6 +18,7 @@ import type { CategoryDto } from "@/types"
 vi.mock("@/services/reportsService", () => ({
   getCategoryReport: vi.fn(),
   getDailyReport: vi.fn(),
+  getDailyAverage: vi.fn(),
 }))
 
 vi.mock("@/services/booksService", () => ({
@@ -26,6 +27,7 @@ vi.mock("@/services/booksService", () => ({
 
 const mockGetCategoryReport = vi.mocked(reportsService.getCategoryReport)
 const mockGetDailyReport = vi.mocked(reportsService.getDailyReport)
+const mockGetDailyAverage = vi.mocked(reportsService.getDailyAverage)
 const mockGetBookStats = vi.mocked(booksService.getBookStats)
 
 // ---------------------------------------------------------------------------
@@ -145,6 +147,7 @@ beforeEach(() => {
   // Mock successful API responses
   mockGetDailyReport.mockResolvedValue(buildDailyData())
   mockGetBookStats.mockResolvedValue({ transactionCount: 100, totalSum: -500 })
+  mockGetDailyAverage.mockResolvedValue({ average: -45.5, count: 365 })
 
   // getCategoryReport returns different data depending on the day requested
   mockGetCategoryReport.mockImplementation((params) => {
