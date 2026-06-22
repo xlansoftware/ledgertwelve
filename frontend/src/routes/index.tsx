@@ -3,7 +3,7 @@ import { createBrowserRouter } from "react-router-dom";
 import App from "../App";
 import NotFoundPage from "../pages/NotFoundPage";
 import HistoryPage from "@/pages/history/HistoryPage";
-import SettingsPage from "@/pages/SettingsPage";
+import SettingsPage from "@/pages/settings/SettingsPage";
 import AddPage from "@/pages/add/AddPage";
 import BookPage from "@/pages/book/BookPage";
 import CreateBookPage from "@/pages/book-create/CreateBookPage";
