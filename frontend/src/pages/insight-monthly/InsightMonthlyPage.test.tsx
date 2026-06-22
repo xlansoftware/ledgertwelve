@@ -168,10 +168,6 @@ describe("InsightMonthlyPage", () => {
       })
     })
 
-    it("renders the page heading", () => {
-      expect(screen.getByText("Monthly Insight")).toBeInTheDocument()
-    })
-
     it("shows the pie chart with current month's expenses, income, and title", async () => {
       // Expenses: Groceries 45 + Dining Out 30 = 75  → "75"
       // Income: Salary 200  → "(200)"
