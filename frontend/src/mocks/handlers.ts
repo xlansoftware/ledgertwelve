@@ -1013,7 +1013,12 @@ export const handlers = [
       }
     }
 
-    const { items, totalCount } = paginate(filtered, page, pageSize)
+    // Sort by dateTime descending so newest transactions appear first
+    const sorted = [...filtered].sort(
+      (a, b) => b.dateTime.getTime() - a.dateTime.getTime(),
+    )
+
+    const { items, totalCount } = paginate(sorted, page, pageSize)
     return HttpResponse.json({
       data: items.map(toTransactionDto),
       meta: { page, pageSize, total: totalCount },

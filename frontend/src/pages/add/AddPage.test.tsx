@@ -4,8 +4,11 @@
 
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi, beforeEach } from "vitest";
+import { MemoryRouter } from "react-router-dom";
 import AddPage from "./AddPage";
+import HistoryPage from "@/pages/history/HistoryPage";
 import { useBooksStore, useCategoriesStore } from "@/store";
+import { useTransactionsStore } from "@/store/useTransactionsStore";
 import { getExchangeRate } from "@/services/ratesService";
 import type { Mock } from "vitest";
 import type { CategoryDto } from "@/types";
@@ -209,6 +212,99 @@ describe("AddPage", () => {
       // Amount input was cleared by AmountInput on Add press (same flow)
       // User can now type a new amount
       expect(amountInput).toHaveValue("")
+    })
+  })
+
+  // ---------------------------------------------------------------------
+  // Integration: Add → History
+  // ---------------------------------------------------------------------
+
+  describe("add → history integration", () => {
+    beforeEach(() => {
+      useBooksStore.setState({
+        currentBook: {
+          id: "book_main",
+          name: "Main",
+          currency: "EUR",
+          status: "open",
+          ownerId: "usr_1",
+          sharedWith: [],
+          createdAt: "2026-01-01T10:00:00Z",
+        },
+      })
+
+      // Reset transactions store so the history page fetches fresh
+      useTransactionsStore.setState({
+        transactions: [],
+        currentTransaction: null,
+        isLoading: false,
+        error: null,
+        page: 1,
+        pageSize: 50,
+        total: 0,
+        hasMore: false,
+        isLoadingMore: false,
+        epoch: 0,
+        loadMoreError: null,
+        lastParams: {},
+        currentFilter: {},
+      })
+    })
+
+    it("adds a transaction and shows it first in the HistoryPage", async () => {
+      const UNIQUE_NOTE = "Integration test transaction"
+
+      // ---- Step 1: Add a transaction via AddPage ----
+
+      const { unmount: unmountAdd } = render(<AddPage />)
+
+      // Wait for categories to load (auto-selects first one)
+      await waitFor(() => {
+        expect(screen.getByRole("button", { name: "Category Groceries" })).toBeInTheDocument()
+      })
+
+      // Type the amount (same currency as book — EUR — no conversion dialog)
+      const amountInput = screen.getByLabelText("Amount")
+      fireEvent.change(amountInput, { target: { value: "42.50" } })
+
+      // Type a unique note so we can find the transaction later
+      const notesInput = screen.getByLabelText("Notes")
+      fireEvent.change(notesInput, { target: { value: UNIQUE_NOTE } })
+
+      // Click Add
+      fireEvent.click(screen.getByRole("button", { name: "Add" }))
+
+      // Wait for the amount input to be cleared (indicates the transaction
+      // has been submitted and the store is being updated)
+      await waitFor(() => {
+        expect(amountInput).toHaveValue("")
+      })
+
+      // Give the async createTransaction a moment to complete
+      await waitFor(() => {
+        const store = useTransactionsStore.getState()
+        expect(store.transactions.length).toBeGreaterThan(0)
+        expect(store.transactions[0].note).toBe(UNIQUE_NOTE)
+      })
+
+      // Clean up AddPage
+      unmountAdd()
+
+      // ---- Step 2: Navigate to HistoryPage ----
+
+      render(<MemoryRouter><HistoryPage /></MemoryRouter>)
+
+      // Wait for transactions to load into the HistoryPage
+      // The new transaction should be first because the GET handler now
+      // sorts by dateTime descending
+      await waitFor(() => {
+        expect(screen.getByText(UNIQUE_NOTE)).toBeInTheDocument()
+      })
+
+      // Verify it appears as the first transaction row
+      const items = screen.getAllByTestId(/^Item:/)
+      expect(items.length).toBeGreaterThan(0)
+      expect(items[0]).toHaveTextContent(UNIQUE_NOTE)
     })
   })
 });
