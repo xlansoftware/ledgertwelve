@@ -197,6 +197,7 @@ export function useDailyInsight(todayStr?: string): UseDailyInsightReturn {
     const from = offsetDate(-365, todayDate) // 365 days ago, inclusive
     const to = today // exclusive upper bound = today
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsLoadingAverage(true)
     setAverageError(null)
 

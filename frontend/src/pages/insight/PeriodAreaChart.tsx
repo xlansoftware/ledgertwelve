@@ -133,8 +133,8 @@ export function PeriodAreaChart({
 
   // Derived summary values shown above the chart
   const beginningValue =
-    chartData.length > 0
-      ? chartData.find((d) => d.historical !== null)?.historical ?? null
+    chartData.length > 0 && chartData[0]?.historical && chartData[0]?.delta
+      ? chartData[0].historical - chartData[0].delta
       : null
   const endValue =
     chartData.length > 0

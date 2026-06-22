@@ -149,6 +149,7 @@ export function useMonthlyInsight(): UseMonthlyInsightReturn {
     const fromStr = fromDate.toISOString().slice(0, 10)
     const toStr = firstOfMonth(currentYear, currentMonth)
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsLoadingAverage(true)
     setAverageError(null)
 
@@ -229,7 +230,8 @@ export function useMonthlyInsight(): UseMonthlyInsightReturn {
 
   // ── Accumulated data with projection ──
   const accumulatedData = useMemo<(AccumulatedRow | ProjectedRow)[]>(() => {
-    const seed = openingBalance ?? 0 // graceful degradation: fall back to zero
+    // const seed = openingBalance ?? 0 // graceful degradation: fall back to zero
+    const seed = 0 // try the version where each year is of it's own
     const mapped = filledMonthlyTotals.map((row) => ({
       date: row.period,
       amount: row.amount,
