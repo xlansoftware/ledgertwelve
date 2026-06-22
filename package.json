@@ -16,7 +16,7 @@
   "license": "ISC",
   "type": "commonjs",
   "devDependencies": {
-    "@earendil-works/pi-coding-agent": "^0.78.1",
+    "@earendil-works/pi-coding-agent": "^0.79.9",
     "@xlansoftware/agentignore": "^0.4.3",
     "concurrently": "^9.2.1"
   }
