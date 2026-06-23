@@ -4,6 +4,7 @@
 
 import { render, screen, fireEvent, waitFor } from "@testing-library/react"
 import { describe, expect, it, vi, beforeEach } from "vitest"
+import { MemoryRouter } from "react-router-dom"
 import InsightDailyPage from "./InsightDailyPage"
 import * as reportsService from "@/services/reportsService"
 import * as booksService from "@/services/booksService"
@@ -172,7 +173,7 @@ describe("InsightDailyPage", () => {
   it("shows a skeleton while daily data is loading", () => {
     mockGetDailyReport.mockReturnValue(new Promise(() => {}))
 
-    render(<InsightDailyPage />)
+    render(<MemoryRouter><InsightDailyPage /></MemoryRouter>)
 
     const animatePulse = document.querySelectorAll(".animate-pulse")
     expect(animatePulse.length).toBeGreaterThan(0)
@@ -180,7 +181,7 @@ describe("InsightDailyPage", () => {
 
   describe("initial load — Today", () => {
     beforeEach(async () => {
-      render(<InsightDailyPage />)
+      render(<MemoryRouter><InsightDailyPage /></MemoryRouter>)
 
       // Wait for all three parallel fetches to settle
       await waitFor(() => {
@@ -252,7 +253,7 @@ describe("InsightDailyPage", () => {
 
   describe("day selection", () => {
     it("selecting a day updates the pie chart to that day's transactions", async () => {
-      render(<InsightDailyPage />)
+      render(<MemoryRouter><InsightDailyPage /></MemoryRouter>)
 
       // Wait for initial load (today's data)
       await waitFor(() => {
@@ -281,7 +282,7 @@ describe("InsightDailyPage", () => {
     })
 
     it("selecting a different day changes the pie chart again", async () => {
-      render(<InsightDailyPage />)
+      render(<MemoryRouter><InsightDailyPage /></MemoryRouter>)
 
       await waitFor(() => {
         expect(screen.getByText("75")).toBeInTheDocument()
@@ -311,7 +312,7 @@ describe("InsightDailyPage", () => {
     })
 
     it("clicking Today resets the pie chart", async () => {
-      render(<InsightDailyPage />)
+      render(<MemoryRouter><InsightDailyPage /></MemoryRouter>)
 
       await waitFor(() => {
         expect(screen.getByText("75")).toBeInTheDocument()
@@ -337,7 +338,7 @@ describe("InsightDailyPage", () => {
     })
 
     it("DailyList row amounts correspond to what the pie chart shows per day", async () => {
-      render(<InsightDailyPage />)
+      render(<MemoryRouter><InsightDailyPage /></MemoryRouter>)
 
       await waitFor(() => {
         expect(screen.getByText("75")).toBeInTheDocument()
@@ -387,7 +388,7 @@ describe("InsightDailyPage", () => {
       mockGetCategoryReport.mockResolvedValue([])
       mockGetBookStats.mockResolvedValue({ transactionCount: 0, totalSum: 0 })
 
-      render(<InsightDailyPage />)
+      render(<MemoryRouter><InsightDailyPage /></MemoryRouter>)
 
       await waitFor(() => {
         // Error appears in both DailyAreaChart and DailyList sections

@@ -4,6 +4,7 @@
 
 import { render, screen, fireEvent, waitFor } from "@testing-library/react"
 import { describe, expect, it, vi, beforeEach } from "vitest"
+import { MemoryRouter } from "react-router-dom"
 import InsightMonthlyPage from "./InsightMonthlyPage"
 import * as reportsService from "@/services/reportsService"
 import * as booksService from "@/services/booksService"
@@ -150,7 +151,7 @@ describe("InsightMonthlyPage", () => {
   it("shows a skeleton while monthly data is loading", () => {
     mockGetMonthlyReport.mockReturnValue(new Promise(() => {}))
 
-    render(<InsightMonthlyPage />)
+    render(<MemoryRouter><InsightMonthlyPage /></MemoryRouter>)
 
     const animatePulse = document.querySelectorAll(".animate-pulse")
     expect(animatePulse.length).toBeGreaterThan(0)
@@ -158,7 +159,7 @@ describe("InsightMonthlyPage", () => {
 
   describe("initial load — current month", () => {
     beforeEach(async () => {
-      render(<InsightMonthlyPage />)
+      render(<MemoryRouter><InsightMonthlyPage /></MemoryRouter>)
 
       // Wait for all three parallel fetches to settle
       await waitFor(() => {
@@ -212,7 +213,7 @@ describe("InsightMonthlyPage", () => {
 
   describe("month selection", () => {
     it("selecting a month updates the pie chart", async () => {
-      render(<InsightMonthlyPage />)
+      render(<MemoryRouter><InsightMonthlyPage /></MemoryRouter>)
 
       // Wait for initial load (current month data)
       await waitFor(() => {
@@ -237,7 +238,7 @@ describe("InsightMonthlyPage", () => {
     })
 
     it("selecting a different month changes the pie chart again", async () => {
-      render(<InsightMonthlyPage />)
+      render(<MemoryRouter><InsightMonthlyPage /></MemoryRouter>)
 
       await waitFor(() => {
         expect(screen.getByText("75")).toBeInTheDocument()
@@ -264,7 +265,7 @@ describe("InsightMonthlyPage", () => {
     })
 
     it("clicking 'This Month' resets the pie chart", async () => {
-      render(<InsightMonthlyPage />)
+      render(<MemoryRouter><InsightMonthlyPage /></MemoryRouter>)
 
       await waitFor(() => {
         expect(screen.getByText("75")).toBeInTheDocument()
@@ -295,7 +296,7 @@ describe("InsightMonthlyPage", () => {
       mockGetCategoryReport.mockResolvedValue([])
       mockGetBookStats.mockResolvedValue({ transactionCount: 0, totalSum: 0 })
 
-      render(<InsightMonthlyPage />)
+      render(<MemoryRouter><InsightMonthlyPage /></MemoryRouter>)
 
       await waitFor(() => {
         // Error appears in both MonthlyAreaChart and MonthlyList sections
