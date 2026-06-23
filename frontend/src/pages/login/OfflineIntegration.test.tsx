@@ -144,20 +144,10 @@ describe("Offline mode integration", () => {
 
     // ================================================================
     // Step 3 — Open the add page and add a transaction
+    //
+    // currentBook was already set by initializeApp() in bootstrapOffline()
+    // via fetchBooks() → getCurrentBook() through the offline service.
     // ================================================================
-
-    // Ensure currentBook is set so the Add page has a target book
-    useBooksStore.setState({
-      currentBook: {
-        id: "book_main",
-        name: "Main",
-        currency: "EUR",
-        status: "open",
-        ownerId: useUsersStore.getState().users[0]?.id ?? "local_user",
-        sharedWith: [],
-        createdAt: new Date().toISOString(),
-      },
-    })
 
     render(
       <MemoryRouter>
@@ -199,20 +189,10 @@ describe("Offline mode integration", () => {
 
     // ================================================================
     // Step 4 — Open the history page and assert the transaction is there
+    //
+    // currentBook is still set from initializeApp(), so HistoryPage's
+    // useEffect → clearFilter(currentBook?.id) works correctly.
     // ================================================================
-
-    // Current book must still be set for the HistoryPage's filter effect
-    useBooksStore.setState({
-      currentBook: {
-        id: "book_main",
-        name: "Main",
-        currency: "EUR",
-        status: "open",
-        ownerId: useUsersStore.getState().users[0]?.id ?? "local_user",
-        sharedWith: [],
-        createdAt: new Date().toISOString(),
-      },
-    })
 
     render(
       <MemoryRouter>
