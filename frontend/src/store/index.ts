@@ -1,3 +1,5 @@
+export { useAuthStore } from "./useAuthStore"
+export type { AuthState } from "./useAuthStore"
 export { useBooksStore } from "./useBooksStore"
 export { useCategoriesStore } from "./useCategoriesStore"
 export { useTransactionsStore } from "./useTransactionsStore"

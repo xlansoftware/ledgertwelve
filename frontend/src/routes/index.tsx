@@ -2,6 +2,7 @@
 import { createBrowserRouter } from "react-router-dom";
 import App from "../App";
 import NotFoundPage from "../pages/NotFoundPage";
+import LoginPage from "../pages/login/LoginPage";
 import HistoryPage from "@/pages/history/HistoryPage";
 import SettingsPage from "@/pages/settings/SettingsPage";
 import AddPage from "@/pages/add/AddPage";
@@ -15,6 +16,11 @@ import InsightMonthlyPage from "@/pages/insight-monthly/InsightMonthlyPage";
 import CategoriesPage from "@/pages/category/CategoriesPage";
 
 const router = createBrowserRouter([
+  {
+    // Login sits as a sibling to the root layout — no Header / app chrome
+    path: "/login",
+    element: <LoginPage />,
+  },
   {
     path: "/",
     // Using 'Component' is preferred with the Data Router API

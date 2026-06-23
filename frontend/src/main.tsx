@@ -6,7 +6,7 @@ import './index.css'
 import router from "@/routes";
 
 import { worker } from '@/mocks/browser';
-import { login } from '@/services';
+import { useAuthStore } from '@/store';
 import { Toaster } from '@/components/ui/sonner';
 import { SuccessOverlayProvider } from '@/components/common/success';
 import { ConfirmDialogProvider } from '@/components/common/dialog/ConfirmDialogContext';
@@ -17,9 +17,11 @@ import { ThemeProvider } from '@/components/common/theme/theme-context';
 // ---------------------------------------------------------------------------
 // Entry point — phases:
 //   1. Show loading spinner immediately
-//   2. Start MSW worker, log in
-//   3. Fetch reference data (books, categories, users)
-//   4. Render the real app (or an error screen on failure)
+//   2. Start MSW worker
+//   3. Check for existing session via whoami()
+//   4. If authenticated, fetch reference data (books, categories, users)
+//   5. Render the real app (or error screen on failure)
+//   6. Unauthenticated users are redirected to /login by the auth guard
 // ---------------------------------------------------------------------------
 
 function renderApp(root: Root) {
@@ -66,26 +68,35 @@ async function main() {
   // Phase 1 — spinner
   renderLoading(root)
 
-  // Phase 2 — MSW + login
+  // Phase 2 — Start MSW
   try {
     await worker.start()
-    await login({ email: 'john@example.com', password: 'secret-password' })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Failed to start application'
     renderError(root, message)
     return
   }
 
-  // Phase 3 — fetch reference data
+  // Phase 3 — Check for existing session
   try {
-    await initializeApp()
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'Failed to load application data'
-    renderError(root, message)
-    return
+    await useAuthStore.getState().checkSession()
+  } catch {
+    // Not authenticated — will redirect to /login via auth guard
   }
 
-  // Phase 4 — render the app
+  // Phase 4 — If authenticated, fetch reference data
+  const authState = useAuthStore.getState().state
+  if (authState.status === 'authenticated' || authState.status === 'local') {
+    try {
+      await initializeApp()
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to load application data'
+      renderError(root, message)
+      return
+    }
+  }
+
+  // Phase 5 — render the app
   renderApp(root)
 }
 

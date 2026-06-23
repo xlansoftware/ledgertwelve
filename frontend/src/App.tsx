@@ -1,7 +1,15 @@
-import { Outlet } from "react-router-dom";
+import { Navigate, Outlet } from "react-router-dom";
 import Header from "./components/layout/Header";
+import { useAuthStore } from "@/store";
 
 function App() {
+  const authState = useAuthStore((s) => s.state);
+
+  // Auth guard — redirect unauthenticated users to the login page
+  if (authState.status === "unauthenticated") {
+    return <Navigate to="/login" replace />;
+  }
+
   return (
     <div className="flex flex-col bg-background h-full">
       <Header />

@@ -45,6 +45,11 @@ const users: User[] = [
 let currentUser: User | undefined
 export { currentUser }
 
+// Make the user store mutable for tests
+function setCurrentUser(user: User | undefined) {
+  currentUser = user
+}
+
 /**
  * Pre-seed a session for testing. Called from test-setup.
  */
@@ -441,6 +446,11 @@ export const handlers = [
       return HttpResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     return HttpResponse.json({ data: { id: user.id, email: user.email } })
+  }),
+
+  http.post('/api/v1/auth/logout', () => {
+    setCurrentUser(undefined)
+    return HttpResponse.json({ data: { success: true } })
   }),
 
   // ---- Categories ----

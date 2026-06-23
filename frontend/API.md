@@ -96,6 +96,34 @@ SameSite=Lax
 
 ---
 
+# POST /api/v1/auth/logout
+
+### Purpose
+
+End the current authenticated session. Server clears the session cookie.
+
+### Request
+
+No body.
+
+### Response
+
+```json
+{
+  "data": {
+    "success": true
+  }
+}
+```
+
+### Unauthorized
+
+```http
+401 Unauthorized
+```
+
+---
+
 # GET /api/v1/auth/whoami
 
 ### Purpose

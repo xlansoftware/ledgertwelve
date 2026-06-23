@@ -26,3 +26,13 @@ export async function whoami(): Promise<UserSummary> {
   const res = await request<ApiResponse<UserSummary>>("/api/v1/auth/whoami")
   return res.data
 }
+
+// ---------------------------------------------------------------------------
+// POST  /api/v1/auth/logout
+// ---------------------------------------------------------------------------
+
+export async function logout(): Promise<void> {
+  await request<ApiResponse<{ success: boolean }>>("/api/v1/auth/logout", {
+    method: "POST",
+  })
+}
