@@ -51,7 +51,7 @@ export default function InisghtPage() {
   return (
     <div className="mx-auto flex w-full max-w-lg flex-col gap-2 px-4 items-stretch">
 
-      <div className="flex-1 flex flex-col items-end">
+      <div className="flex-1 flex flex-col items-end relative -mb-10 z-10">
         <ButtonGroup>
           <Button variant="outline" onClick={() => navigate("/insight/daily")}>
             Month
