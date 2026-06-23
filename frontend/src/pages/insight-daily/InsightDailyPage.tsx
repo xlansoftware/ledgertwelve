@@ -8,6 +8,9 @@ import { DailyAreaChart } from "./DailyAreaChart"
 import { DailyList } from "./DailyList"
 import { useDailyInsight } from "./useDailyInsight"
 import { format } from "date-fns"
+import { ArrowLeft } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { useNavigate } from "react-router-dom"
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -24,6 +27,8 @@ function formatPieTitle(selectedDay: string | null): string {
 // ---------------------------------------------------------------------------
 
 export default function InsightDailyPage() {
+  const navigate = useNavigate()
+
   const {
     expenses,
     income,
@@ -45,7 +50,10 @@ export default function InsightDailyPage() {
   const showPieSkeleton = isLoadingPie && !hasPieData
 
   return (
-    <div className="mx-auto flex w-full max-w-lg flex-col gap-6 px-4 py-6">
+    <div className="mx-auto flex w-full max-w-lg flex-col gap-2 px-4">
+      <div className="relative -mb-10 z-10">
+        <Button variant="outline" onClick={() => navigate("/insight")}><ArrowLeft /></Button>
+      </div>
 
       {/* ── Pie Chart Section ── */}
       <section>

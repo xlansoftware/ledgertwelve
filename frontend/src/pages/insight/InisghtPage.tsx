@@ -5,7 +5,7 @@ import { InsightComponent } from "@/pages/insight/InsightComponent";
 import { useDailyInsight } from "@/pages/insight-daily/useDailyInsight";
 import { useMonthlyInsight } from "@/pages/insight-monthly/useMonthlyInsight";
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
+import { ButtonGroup } from "@/components/ui/button-group";
 
 function dailyFormatPieTitle(selectedDay: string | null): string {
   if (selectedDay === null) return "Today"
@@ -49,7 +49,19 @@ export default function InisghtPage() {
   const dailyShowPieSkeleton = dailyIsLoadingPie && !dailyHasPieData
 
   return (
-    <div className="mx-auto flex w-full max-w-lg flex-col gap-8 px-4 py-6">
+    <div className="mx-auto flex w-full max-w-lg flex-col gap-2 px-4 items-stretch">
+
+      <div className="flex-1 flex flex-col items-end">
+        <ButtonGroup>
+          <Button variant="outline" onClick={() => navigate("/insight/daily")}>
+            Month
+          </Button>
+          <Button variant="outline" onClick={() => navigate("/insight/monthly")}>
+            Year
+          </Button>
+        </ButtonGroup>
+      </div>
+      
 
       {/* ── Daily Insight Card ── */}
       <section>
@@ -71,10 +83,7 @@ export default function InisghtPage() {
           />
         )}
       </section>
-      <Button variant="outline" onClick={() => navigate("/insight/daily")}>
-        View daily insights
-        <ArrowRight />
-      </Button>
+      
 
       {/* ── Monthly Insight Card ── */}
       <section>
@@ -96,10 +105,7 @@ export default function InisghtPage() {
           />
         )}
       </section>
-      <Button variant="outline" onClick={() => navigate("/insight/monthly")}>
-        View monthly insights
-        <ArrowRight />
-      </Button>
+      
     </div>
   );
 }

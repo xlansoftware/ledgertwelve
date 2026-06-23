@@ -8,6 +8,9 @@ import { MonthlyAreaChart } from "./MonthlyAreaChart"
 import { MonthlyList } from "./MonthlyList"
 import { useMonthlyInsight } from "./useMonthlyInsight"
 import { format } from "date-fns"
+import { Button } from "@/components/ui/button"
+import { useNavigate } from "react-router-dom"
+import { ArrowLeft } from "lucide-react"
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -25,6 +28,8 @@ function formatPieTitle(selectedMonth: string | null): string {
 // ---------------------------------------------------------------------------
 
 export default function InsightMonthlyPage() {
+  const navigate = useNavigate()
+  
   const {
     expenses,
     income,
@@ -46,7 +51,10 @@ export default function InsightMonthlyPage() {
   const showPieSkeleton = isLoadingPie && !hasPieData
 
   return (
-    <div className="mx-auto flex w-full max-w-lg flex-col gap-6 px-4 py-6">
+    <div className="mx-auto flex w-full max-w-lg flex-col gap-6 px-4">
+      <div className="relative -mb-10 z-10">
+        <Button variant="outline" onClick={() => navigate("/insight")}><ArrowLeft /></Button>
+      </div>
 
       {/* ── Pie Chart Section ── */}
       <section>
