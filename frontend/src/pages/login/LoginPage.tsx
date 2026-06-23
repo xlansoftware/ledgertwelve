@@ -52,6 +52,7 @@ export default function LoginPage() {
   const handleOfflineMode = () => {
     localStorage.setItem('ledger12.mode', 'offline')
     window.location.reload()
+    window.location.href = "/"
   }
 
   return (
