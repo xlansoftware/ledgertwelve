@@ -4,16 +4,15 @@
 
 import type { UserSummary } from "@/types"
 import type { IUsersService } from "@/features/offline/interfaces/IUsersService"
-import { OfflineUserStore } from "./OfflineUserStore"
 
 export class OfflineUsersService implements IUsersService {
-  private userStore: OfflineUserStore
+  private userStore: IUsersService
 
-  constructor(userStore: OfflineUserStore) {
+  constructor(userStore: IUsersService) {
     this.userStore = userStore
   }
 
   async getUsers(): Promise<UserSummary[]> {
-    return [this.userStore.getUser()]
+    return this.userStore.getUsers()
   }
 }

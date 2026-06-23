@@ -2,6 +2,7 @@
 // Unit tests — OfflineTransactionsService
 // ---------------------------------------------------------------------------
 
+import type { TransactionDto } from "@/types"
 import { describe, expect, it, vi, beforeEach } from "vitest"
 import { setupMockIdbKeyRange } from "./__tests__/db-mock"
 
@@ -12,7 +13,7 @@ setupMockIdbKeyRange()
 const STORES = { books: "books", categories: "categories", transactions: "transactions", users: "users", sharedUsers: "sharedUsers" }
 const TEST_USER_ID = "test_user_001"
 
-let mockTxStore: any[] = []
+let mockTxStore: TransactionDto[] = []
 
 function resetTxStore() {
   mockTxStore = []
@@ -53,32 +54,33 @@ const mockDb = {
   STORES,
   async getAll<T>(): Promise<T[]> { return [...(mockTxStore as unknown as T[])] },
   async getById<T>(_storeName: string, id: string): Promise<T | undefined> {
-    return mockTxStore.find((x: any) => x.id === id) as T | undefined
+    return mockTxStore.find((x) => x.id === id) as T | undefined
   },
   async put<T>(_storeName: string, value: T): Promise<void> {
-    const idx = mockTxStore.findIndex((x: any) => x.id === (value as any).id)
-    if (idx >= 0) mockTxStore[idx] = value
-    else mockTxStore.push(value)
+    const valueWithId = value as unknown as { id: string }
+    const idx = mockTxStore.findIndex((x) => x.id === valueWithId.id)
+    if (idx >= 0) mockTxStore[idx] = value as TransactionDto
+    else mockTxStore.push(value as TransactionDto)
   },
   async remove(_storeName: string, id: string): Promise<void> {
-    const idx = mockTxStore.findIndex((x: any) => x.id === id)
+    const idx = mockTxStore.findIndex((x) => x.id === id)
     if (idx >= 0) mockTxStore.splice(idx, 1)
   },
   async clearStore(): Promise<void> { resetTxStore() },
   async getAllByIndex<T>(_storeName: string, _indexName: string, value: string): Promise<T[]> {
     if (_indexName === "bookId") {
-      return mockTxStore.filter((x: any) => x.bookId === value) as T[]
+      return mockTxStore.filter((x) => x.bookId === value) as unknown as T[]
     }
-    return mockTxStore.filter((x: any) => x[_indexName] === value) as T[]
+    return mockTxStore.filter((x) => (x as unknown as Record<string, string>)[_indexName] === value) as unknown as T[]
   },
-  async getAllByIndexRange<T>(_storeName: string, _indexName: string, range: any): Promise<T[]> {
-    return mockTxStore.filter((x: any) => {
-      if (_indexName === "bookId_dateTime") {
-        return range.includes([x.bookId, x.dateTime])
-      }
-      return range.includes(x[_indexName])
-    }) as T[]
-  },
+  // async getAllByIndexRange<T>(_storeName: string, _indexName: string, range): Promise<T[]> {
+  //   return mockTxStore.filter((x) => {
+  //     if (_indexName === "bookId_dateTime") {
+  //       return range.includes([x.bookId, x.dateTime])
+  //     }
+  //     return range.includes((x as unknown as Record<string, string>)[_indexName])
+  //   }) as unknown as T[]
+  // },
   getAllSharedUsersForBook: vi.fn().mockResolvedValue([]),
   removeSharedUser: vi.fn().mockResolvedValue(undefined),
   clearAllSharedUsersForBook: vi.fn().mockResolvedValue(undefined),
@@ -98,7 +100,10 @@ const { OfflineTransactionsService } = await import("./OfflineTransactionsServic
 
 describe("OfflineTransactionsService", () => {
   let service: InstanceType<typeof OfflineTransactionsService>
-  const mockUserStore = { getUserId: () => TEST_USER_ID, getUser: () => ({ id: TEST_USER_ID, email: "local@ledger12.app" }) }
+  const mockUserStore: { getUserId: () => string; getUser: () => { id: string; email: string } } = {
+    getUserId: () => TEST_USER_ID,
+    getUser: () => ({ id: TEST_USER_ID, email: "local@ledger12.app" }),
+  }
 
   beforeEach(() => {
     resetTxStore()
@@ -124,7 +129,7 @@ describe("OfflineTransactionsService", () => {
       seedSampleTransactions()
       const result = await service.getTransactions()
 
-      const dates = result.items.map((tx: any) => tx.dateTime)
+      const dates = result.items.map((tx) => tx.dateTime)
       expect(dates).toEqual([
         "2026-03-01T08:00:00.000Z",
         "2026-02-05T10:00:00.000Z",
@@ -147,7 +152,7 @@ describe("OfflineTransactionsService", () => {
       const result = await service.getTransactions({ category: ["Groceries"] })
 
       expect(result.items).toHaveLength(2)
-      expect(result.items.every((tx: any) => tx.categoryName === "Groceries")).toBe(true)
+      expect(result.items.every((tx) => tx.categoryName === "Groceries")).toBe(true)
     })
 
     it("filters by multiple categories (OR match)", async () => {
@@ -194,7 +199,7 @@ describe("OfflineTransactionsService", () => {
       const result = await service.getTransactions({ maxValue: -100 })
 
       expect(result.items.length).toBeGreaterThanOrEqual(2)
-      result.items.forEach((tx: any) => {
+      result.items.forEach((tx) => {
         expect(tx.amount).toBeLessThanOrEqual(-100)
       })
     })
@@ -204,7 +209,7 @@ describe("OfflineTransactionsService", () => {
       const result = await service.getTransactions({ minValue: -100, maxValue: 1000 })
 
       expect(result.items).toHaveLength(2)
-      result.items.forEach((tx: any) => {
+      result.items.forEach((tx) => {
         expect(tx.amount).toBeGreaterThanOrEqual(-100)
         expect(tx.amount).toBeLessThanOrEqual(1000)
       })
@@ -351,9 +356,9 @@ describe("OfflineTransactionsService", () => {
         amount: -25,
       })
 
-      const stored = mockTxStore.find((tx: any) => tx.id === created.id)
+      const stored = mockTxStore.find((tx) => tx.id === created.id)
       expect(stored).toBeDefined()
-      expect(stored.amount).toBe(-25)
+      expect(stored?.amount).toBe(-25)
     })
   })
 
@@ -433,7 +438,7 @@ describe("OfflineTransactionsService", () => {
       })
 
       await expect(service.deleteTransaction(tx.id)).resolves.toBeUndefined()
-      const stored = mockTxStore.find((t: any) => t.id === tx.id)
+      const stored = mockTxStore.find((t) => t.id === tx.id)
       expect(stored).toBeUndefined()
     })
 

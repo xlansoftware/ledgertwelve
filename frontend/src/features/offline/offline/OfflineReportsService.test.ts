@@ -2,6 +2,8 @@
 // Unit tests — OfflineReportsService
 // ---------------------------------------------------------------------------
 
+import type { TotalsReportRow, CategoryReportRow, DailyReportRow, MonthlyReportRow } from "@/types"
+import type { SharedUserEntry } from "./db"
 import { describe, expect, it, vi, beforeEach } from "vitest"
 import { setupMockIdbKeyRange } from "./__tests__/db-mock"
 
@@ -11,7 +13,24 @@ setupMockIdbKeyRange()
 
 const STORES = { books: "books", categories: "categories", transactions: "transactions", users: "users", sharedUsers: "sharedUsers" }
 
-let mockDbState: Record<string, any[]> = {}
+let mockDbState: {
+  books: { id: string; name: string; currency: string; status: "open" | "closed"; ownerId: string; sharedWith: { userId: string; email: string; permission: "view" | "edit" }[]; createdAt: string; closedAt?: string | null }[]
+  categories: { id: string; name: string; recurring: boolean; color: string; icon: string; createdAt: string; order?: number }[]
+  transactions: {
+    id: string; bookId: string; userId: string; dateTime: string; amount: number;
+    originalCurrency?: string; originalAmount?: number; exchangeRate?: number;
+    categoryName?: string; note?: string; createdAt: string;
+    isBookClosingEntry?: boolean; closedBookId?: string
+  }[]
+  users: { id: string; email: string }[]
+  sharedUsers: SharedUserEntry[]
+} = {
+  books: [],
+  categories: [],
+  transactions: [],
+  users: [],
+  sharedUsers: [],
+}
 
 function resetDb() {
   mockDbState = { books: [], categories: [], transactions: [], users: [], sharedUsers: [] }
@@ -21,27 +40,29 @@ resetDb()
 const mockDb = {
   STORES,
   async getAll<T>(storeName: string): Promise<T[]> {
-    return [...(mockDbState[storeName] as unknown as T[])]
+    const items = mockDbState[storeName as keyof typeof mockDbState] as unknown as T[]
+    return [...items]
   },
   async getById<T>(storeName: string, id: string): Promise<T | undefined> {
-    const items = mockDbState[storeName] as any[]
-    return items.find((x: any) => x.id === id) as T | undefined
+    const items = mockDbState[storeName as keyof typeof mockDbState] as unknown as T[]
+    return items.find((x) => (x as unknown as { id: string }).id === id)
   },
   async put<T>(storeName: string, value: T): Promise<void> {
-    const items = mockDbState[storeName] as any[]
-    const idx = items.findIndex((x: any) => x.id === (value as any).id)
+    const items = mockDbState[storeName as keyof typeof mockDbState] as unknown as T[]
+    const valueWithId = value as unknown as { id: string }
+    const idx = items.findIndex((x) => (x as unknown as { id: string }).id === valueWithId.id)
     if (idx >= 0) items[idx] = value
     else items.push(value)
   },
   async getAllByIndex<T>(_storeName: string, _indexName: string, value: string): Promise<T[]> {
-    const items = mockDbState.transactions as any[]
+    const items = mockDbState.transactions as unknown as T[]
     if (_indexName === "bookId") {
-      return items.filter((x: any) => x.bookId === value) as T[]
+      return items.filter((x) => (x as unknown as { bookId: string }).bookId === value)
     }
-    return items.filter((x: any) => x[_indexName] === value) as T[]
+    return items.filter((x) => (x as unknown as Record<string, string>)[_indexName] === value)
   },
   getAllByIndexRange: vi.fn().mockResolvedValue([]),
-  getAllSharedUsersForBook: vi.fn().mockResolvedValue([]),
+  getAllSharedUsersForBook: vi.fn().mockResolvedValue([] as SharedUserEntry[]),
   removeSharedUser: vi.fn().mockResolvedValue(undefined),
   clearAllSharedUsersForBook: vi.fn().mockResolvedValue(undefined),
   clearStore: vi.fn().mockResolvedValue(undefined),
@@ -178,7 +199,7 @@ describe("OfflineReportsService", () => {
       seedTransactions()
       const result = await service.getTotals()
 
-      expect(result.map((r: any) => r.period)).toEqual(["2026-01", "2026-02", "2026-03"])
+      expect(result.map((r: TotalsReportRow) => r.period)).toEqual(["2026-01", "2026-02", "2026-03"])
     })
 
     it("returns empty array when no transactions in range", async () => {
@@ -220,7 +241,7 @@ describe("OfflineReportsService", () => {
       ]
 
       const result = await service.getCategoryReport()
-      const uncategorized = result.find((r: any) => r.categoryName === "Uncategorized")
+      const uncategorized = result.find((r: CategoryReportRow) => r.categoryName === "Uncategorized")
       expect(uncategorized).toBeDefined()
       expect(uncategorized!.amount).toBe(-42)
     })
@@ -230,7 +251,7 @@ describe("OfflineReportsService", () => {
       seedTransactions()
       const result = await service.getCategoryReport()
 
-      expect(result.find((r: any) => r.categoryName === "Transfers")).toBeUndefined()
+      expect(result.find((r: CategoryReportRow) => r.categoryName === "Transfers")).toBeUndefined()
     })
 
     it("respects date range filter", async () => {
@@ -286,7 +307,7 @@ describe("OfflineReportsService", () => {
         to: "2026-04-01",
       })
 
-      expect(result.find((r: any) => r.date === "2026-03-31")).toBeUndefined()
+      expect(result.find((r: DailyReportRow) => r.date === "2026-03-31")).toBeUndefined()
       expect(result).toHaveLength(1) // Only Mar 5
     })
   })
@@ -324,7 +345,7 @@ describe("OfflineReportsService", () => {
         to: "2026-04-01",
       })
 
-      expect(result.map((r: any) => r.period)).toEqual(["2026-01", "2026-02", "2026-03"])
+      expect(result.map((r: MonthlyReportRow) => r.period)).toEqual(["2026-01", "2026-02", "2026-03"])
     })
   })
 

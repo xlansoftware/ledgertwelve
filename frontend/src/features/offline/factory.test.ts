@@ -2,6 +2,7 @@
 // Unit tests — offline factory
 // ---------------------------------------------------------------------------
 
+import type { ServiceFactory } from "./factory"
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest"
 
 // -----------------------------------------------------------------------
@@ -17,24 +18,24 @@ class MockOnlineUsersClass { type = "online_users" }
 
 class MockOfflineBooksClass {
   type = "offline_books"
-  userStore: any
-  constructor(userStore: any) {
+  userStore: MockUserStoreClass
+  constructor(userStore: MockUserStoreClass) {
     this.userStore = userStore
   }
 }
 class MockOfflineCategoriesClass { type = "offline_categories" }
 class MockOfflineTransactionsClass {
   type = "offline_transactions"
-  userStore: any
-  constructor(userStore: any) {
+  userStore: MockUserStoreClass
+  constructor(userStore: MockUserStoreClass) {
     this.userStore = userStore
   }
 }
 class MockOfflineReportsClass { type = "offline_reports" }
 class MockOfflineUsersClass {
   type = "offline_users"
-  userStore: any
-  constructor(userStore: any) {
+  userStore: MockUserStoreClass
+  constructor(userStore: MockUserStoreClass) {
     this.userStore = userStore
   }
 }
@@ -126,9 +127,9 @@ describe("factory", () => {
       const factory = createOfflineFactory()
 
       expect(factory.books).toBeInstanceOf(MockOfflineBooksClass)
-      expect((factory.books as any).userStore).toBeInstanceOf(MockUserStoreClass)
-      expect((factory.transactions as any).userStore).toBeInstanceOf(MockUserStoreClass)
-      expect((factory.users as any).userStore).toBeInstanceOf(MockUserStoreClass)
+      expect((factory.books as unknown as MockOfflineBooksClass).userStore).toBeInstanceOf(MockUserStoreClass)
+      expect((factory.transactions as unknown as MockOfflineTransactionsClass).userStore).toBeInstanceOf(MockUserStoreClass)
+      expect((factory.users as unknown as MockOfflineUsersClass).userStore).toBeInstanceOf(MockUserStoreClass)
     })
   })
 
@@ -139,11 +140,11 @@ describe("factory", () => {
   describe("setFactory / getFactory", () => {
     it("setFactory stores the factory and getFactory returns it", () => {
       const factory = {
-        books: { type: "custom" } as any,
-        categories: { type: "custom" } as any,
-        transactions: { type: "custom" } as any,
-        reports: { type: "custom" } as any,
-        users: { type: "custom" } as any,
+        books: { type: "custom" } as unknown as ServiceFactory["books"],
+        categories: { type: "custom" } as unknown as ServiceFactory["categories"],
+        transactions: { type: "custom" } as unknown as ServiceFactory["transactions"],
+        reports: { type: "custom" } as unknown as ServiceFactory["reports"],
+        users: { type: "custom" } as unknown as ServiceFactory["users"],
       }
       setFactory(factory)
       expect(getFactory()).toBe(factory)
@@ -190,7 +191,7 @@ describe("factory", () => {
 
       await seedOfflineData()
 
-      const putCalls = (MockDb.put.mock.calls as [string, any][]).filter(
+      const putCalls = (MockDb.put.mock.calls as [string, unknown][]).filter(
         ([store]) => store === "books",
       )
       expect(putCalls).toHaveLength(0)
@@ -203,7 +204,7 @@ describe("factory", () => {
 
       await seedOfflineData()
 
-      const categoryPuts = (MockDb.put.mock.calls as [string, any][]).filter(
+      const categoryPuts = (MockDb.put.mock.calls as [string, unknown][]).filter(
         ([store]) => store === "categories",
       )
       expect(categoryPuts).toHaveLength(22)
@@ -218,7 +219,7 @@ describe("factory", () => {
 
       await seedOfflineData()
 
-      const categoryPuts = (MockDb.put.mock.calls as [string, any][]).filter(
+      const categoryPuts = (MockDb.put.mock.calls as [string, unknown][]).filter(
         ([store]) => store === "categories",
       )
       expect(categoryPuts).toHaveLength(0)

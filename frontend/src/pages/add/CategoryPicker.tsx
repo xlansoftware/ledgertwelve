@@ -62,7 +62,7 @@ export default function CategoryPicker({ selectedId, onSelect }: CategoryPickerP
       {categories
         .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
         .map((category) => {
-          const IconCompnent = iconMap[category.icon] || MoreHorizontal;
+          const IconCompnent = iconMap[category?.icon || ""] || MoreHorizontal;
           const isSelected = selectedId === category.id;
           const color = category.color ?? "#6b7280"; // default: gray-500
 

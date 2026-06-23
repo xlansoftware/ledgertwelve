@@ -6,7 +6,7 @@
 // Uses Main book only, per the API contract.
 // ---------------------------------------------------------------------------
 
-import type { TotalsReportRow, CategoryReportRow, DailyReportRow, MonthlyReportRow, AverageReportDto } from "@/types"
+import type { TotalsReportRow, CategoryReportRow, DailyReportRow, MonthlyReportRow, AverageReportDto, TransactionDto } from "@/types"
 import type { IReportsService, GetTotalsParams, GetCategoryReportParams, GetDailyReportParams, GetMonthlyReportParams, GetAverageParams } from "@/features/offline/interfaces/IReportsService"
 import * as db from "./db"
 
@@ -14,24 +14,24 @@ export class OfflineReportsService implements IReportsService {
   /**
    * Get all transactions for the Main book within the given date range.
    */
-  private async getMainBookTransactions(from?: string, to?: string): Promise<any[]> {
+  private async getMainBookTransactions(from?: string, to?: string): Promise<TransactionDto[]> {
     const allBooks = await db.getAll<{ id: string; name: string }>(db.STORES.books)
     const mainBook = allBooks.find((b) => b.name === "Main")
     if (!mainBook) {
       throw new Error("Main book not found")
     }
 
-    const allTxs = await db.getAllByIndex<any>(db.STORES.transactions, "bookId", mainBook.id)
+    const allTxs = await db.getAllByIndex<TransactionDto>(db.STORES.transactions, "bookId", mainBook.id)
 
-    let filtered = allTxs.filter((tx: any) => !tx.isBookClosingEntry)
+    let filtered = allTxs.filter((tx) => !tx.isBookClosingEntry)
 
     if (from) {
       const fromDate = new Date(from + "T00:00:00.000Z")
-      filtered = filtered.filter((tx: any) => new Date(tx.dateTime) >= fromDate)
+      filtered = filtered.filter((tx) => new Date(tx.dateTime) >= fromDate)
     }
     if (to) {
       const toDate = new Date(to + "T00:00:00.000Z")
-      filtered = filtered.filter((tx: any) => new Date(tx.dateTime) < toDate)
+      filtered = filtered.filter((tx) => new Date(tx.dateTime) < toDate)
     }
 
     return filtered

@@ -5,6 +5,7 @@
 // ---------------------------------------------------------------------------
 
 import type { UserSummary } from "@/types"
+import type { IUsersService } from "../interfaces/IUsersService"
 
 const LOCAL_USER_KEY = "ledger12.localUserId"
 
@@ -22,12 +23,16 @@ function loadOrCreateUserId(): string {
   return id
 }
 
-export class OfflineUserStore {
+export class OfflineUserStore implements IUsersService {
   private user: UserSummary
 
   constructor() {
     const id = loadOrCreateUserId()
     this.user = { id, email: "local@ledger12.app" }
+  }
+
+  getUsers(): Promise<UserSummary[]> {
+    return Promise.resolve([this.user])
   }
 
   getUserId(): string {

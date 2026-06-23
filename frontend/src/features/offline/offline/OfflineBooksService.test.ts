@@ -2,6 +2,8 @@
 // Unit tests — OfflineBooksService
 // ---------------------------------------------------------------------------
 
+import type { BookDto, TransactionDto } from "@/types"
+import type { SharedUserEntry } from "./db"
 import { describe, expect, it, vi, beforeEach } from "vitest"
 import { setupMockIdbKeyRange } from "./__tests__/db-mock"
 
@@ -13,9 +15,9 @@ const STORES = { books: "books", categories: "categories", transactions: "transa
 const TEST_USER_ID = "test_user_001"
 
 // In-memory stores for db mock
-let mockBooks: any[] = []
-let mockTransactions: any[] = []
-let mockSharedUsers: any[] = []
+let mockBooks: BookDto[] = []
+let mockTransactions: TransactionDto[] = []
+let mockSharedUsers: SharedUserEntry[] = []
 
 function resetAllStores() {
   mockBooks = []
@@ -39,38 +41,39 @@ const mockDb = {
     if (storeName === "sharedUsers") {
       // Compound key format: bookId\x00userId
       const [bookId, userId] = id.split("\x00")
-      return mockSharedUsers.find((x: any) => x.bookId === bookId && x.userId === userId) as T | undefined
+      return mockSharedUsers.find((x) => x.bookId === bookId && x.userId === userId) as T | undefined
     }
     const items = storeName === "books" ? mockBooks : storeName === "transactions" ? mockTransactions : []
-    return items.find((x: any) => x.id === id) as T | undefined
+    return items.find((x) => x.id === id) as T | undefined
   },
   async put<T>(storeName: string, value: T): Promise<void> {
-    const items = storeName === "books" ? mockBooks : storeName === "transactions" ? mockTransactions : storeName === "sharedUsers" ? mockSharedUsers : []
-    const idx = items.findIndex((x: any) => x.id === (value as any).id)
-    if (idx >= 0) items[idx] = value
-    else items.push(value)
+    const items = storeName === "books" ? mockBooks : storeName === "transactions" ? mockTransactions : storeName === "sharedUsers" ? mockSharedUsers : ([] as unknown[])
+    const valueWithId = value as unknown as { id: string }
+    const idx = (items as unknown as { id: string }[]).findIndex((x) => x.id === valueWithId.id)
+    if (idx >= 0) (items as unknown[])[idx] = value as unknown
+    else (items as unknown[]).push(value as unknown)
   },
   async remove(storeName: string, id: string): Promise<void> {
     const items = storeName === "books" ? mockBooks : storeName === "transactions" ? mockTransactions : []
-    const idx = items.findIndex((x: any) => x.id === id)
+    const idx = items.findIndex((x) => x.id === id)
     if (idx >= 0) items.splice(idx, 1)
   },
   async getAllByIndex<T>(_storeName: string, _indexName: string, value: string): Promise<T[]> {
     if (_indexName === "bookId") {
-      return mockTransactions.filter((x: any) => x.bookId === value) as T[]
+      return mockTransactions.filter((x) => x.bookId === value) as unknown as T[]
     }
     return []
   },
   getAllByIndexRange: vi.fn().mockResolvedValue([]),
-  async getAllSharedUsersForBook(bookId: string): Promise<any[]> {
-    return mockSharedUsers.filter((e: any) => e.bookId === bookId)
+  async getAllSharedUsersForBook(bookId: string): Promise<SharedUserEntry[]> {
+    return mockSharedUsers.filter((e) => e.bookId === bookId)
   },
   async removeSharedUser(bookId: string, userId: string): Promise<void> {
-    const idx = mockSharedUsers.findIndex((e: any) => e.bookId === bookId && e.userId === userId)
+    const idx = mockSharedUsers.findIndex((e) => e.bookId === bookId && e.userId === userId)
     if (idx >= 0) mockSharedUsers.splice(idx, 1)
   },
   async clearAllSharedUsersForBook(bookId: string): Promise<void> {
-    mockSharedUsers = mockSharedUsers.filter((e: any) => e.bookId !== bookId)
+    mockSharedUsers = mockSharedUsers.filter((e) => e.bookId !== bookId)
   },
   clearStore: vi.fn().mockResolvedValue(undefined),
 }
@@ -110,7 +113,10 @@ function seedSecondaryBook() {
 // ---- Tests ----
 
 describe("OfflineBooksService", () => {
-  const mockUserStore = { getUserId: () => TEST_USER_ID, getUser: () => ({ id: TEST_USER_ID, email: "local@ledger12.app" }) }
+  const mockUserStore: { getUserId: () => string; getUser: () => { id: string; email: string } } = {
+    getUserId: () => TEST_USER_ID,
+    getUser: () => ({ id: TEST_USER_ID, email: "local@ledger12.app" }),
+  }
   let service: InstanceType<typeof OfflineBooksService>
 
   beforeEach(() => {
@@ -187,9 +193,9 @@ describe("OfflineBooksService", () => {
 
     it("persists the book in the database", async () => {
       const created = await service.createBook({ name: "Persisted" })
-      const stored = mockBooks.find((b: any) => b.id === created.id)
+      const stored = mockBooks.find((b) => b.id === created.id)
       expect(stored).toBeDefined()
-      expect(stored.name).toBe("Persisted")
+      expect(stored?.name).toBe("Persisted")
     })
   })
 
@@ -233,8 +239,8 @@ describe("OfflineBooksService", () => {
       mockSharedUsers.push({ bookId: "book_vacation", userId: "usr_s", email: "s@example.com", permission: "view" })
 
       await expect(service.deleteBook("book_vacation")).resolves.toBeUndefined()
-      expect(mockBooks.find((b: any) => b.id === "book_vacation")).toBeUndefined()
-      expect(mockSharedUsers.filter((s: any) => s.bookId === "book_vacation")).toHaveLength(0)
+      expect(mockBooks.find((b) => b.id === "book_vacation")).toBeUndefined()
+      expect(mockSharedUsers.filter((s) => s.bookId === "book_vacation")).toHaveLength(0)
     })
 
     it("throws when book not found", async () => {
@@ -400,16 +406,16 @@ describe("OfflineBooksService", () => {
         note: "Close Vacation 2026",
       })
 
-      const book = mockBooks.find((b: any) => b.id === "book_vacation")
-      expect(book.status).toBe("closed")
-      expect(book.closedAt).toBeTruthy()
+      const book = mockBooks.find((b) => b.id === "book_vacation")
+      expect(book?.status).toBe("closed")
+      expect(book?.closedAt).toBeTruthy()
     })
 
     it("throws when book is already closed", async () => {
       seedSecondaryBook()
-      const book = mockBooks.find((b: any) => b.id === "book_vacation")
-      book.status = "closed"
-      book.closedAt = "2026-03-01T00:00:00.000Z"
+      const book = mockBooks.find((b) => b.id === "book_vacation")
+      book!.status = "closed"
+      book!.closedAt = "2026-03-01T00:00:00.000Z"
 
       await expect(service.closeBook("book_vacation", { closingCategoryName: "Transfers" })).rejects.toThrow("Book already closed")
     })
@@ -433,9 +439,9 @@ describe("OfflineBooksService", () => {
       const result = await service.reopenBook("book_vacation")
 
       expect(result).toMatchObject({ bookId: "book_vacation", status: "open" })
-      const book = mockBooks.find((b: any) => b.id === "book_vacation")
-      expect(book.status).toBe("open")
-      expect(book.closedAt).toBeUndefined()
+      const book = mockBooks.find((b) => b.id === "book_vacation")
+      expect(book?.status).toBe("open")
+      expect(book?.closedAt).toBeUndefined()
     })
 
     it("throws when reopening a non-closed book", async () => {

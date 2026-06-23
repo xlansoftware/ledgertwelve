@@ -3,13 +3,13 @@
 // ---------------------------------------------------------------------------
 
 import { vi } from "vitest"
+import type { IUsersService } from "../../interfaces/IUsersService"
 
 const TEST_USER_ID = "test_user_001"
 
-export function createMockUserStore() {
+export function createMockUserStore(): IUsersService {
   return {
-    getUserId: vi.fn().mockReturnValue(TEST_USER_ID),
-    getUser: vi.fn().mockReturnValue({ id: TEST_USER_ID, email: "local@ledger12.app" }),
+    getUsers: vi.fn().mockReturnValue([{ id: TEST_USER_ID, email: "local@ledger12.app" }]),
   }
 }
 

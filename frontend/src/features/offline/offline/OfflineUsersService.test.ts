@@ -4,8 +4,9 @@
 
 import { describe, expect, it, vi, beforeEach } from "vitest"
 import { createMockUserStore } from "./__tests__/user-store.mock"
+import type { MockUserStore } from "./__tests__/user-store.mock"
 
-const mockUserStore = createMockUserStore()
+const mockUserStore: MockUserStore = createMockUserStore()
 
 vi.mock("./OfflineUserStore", () => ({
   OfflineUserStore: vi.fn().mockImplementation(() => mockUserStore),
@@ -19,7 +20,7 @@ describe("OfflineUsersService", () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    service = new OfflineUsersService(mockUserStore as any)
+    service = new OfflineUsersService(mockUserStore)
   })
 
   describe("getUsers", () => {
@@ -35,7 +36,7 @@ describe("OfflineUsersService", () => {
 
     it("calls the underlying user store", async () => {
       await service.getUsers()
-      expect(mockUserStore.getUser).toHaveBeenCalledTimes(1)
+      expect(mockUserStore.getUsers).toHaveBeenCalledTimes(1)
     })
   })
 })

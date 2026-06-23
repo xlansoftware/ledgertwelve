@@ -10,10 +10,10 @@ export interface UserSummary {
 export interface CategoryDto {
   id: string
   name: string
-  recurring: boolean
-  color: string
-  icon: string
-  createdAt: string
+  recurring?: boolean
+  color?: string
+  icon?: string
+  createdAt?: string
   order?: number
 }
 

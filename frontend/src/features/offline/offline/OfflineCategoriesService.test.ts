@@ -2,6 +2,8 @@
 // Unit tests — OfflineCategoriesService
 // ---------------------------------------------------------------------------
 
+import type { CategoryDto, TransactionDto } from "@/types"
+import type { SharedUserEntry } from "./db"
 import { describe, expect, it, vi, beforeEach } from "vitest"
 import { setupMockIdbKeyRange } from "./__tests__/db-mock"
 
@@ -12,7 +14,19 @@ setupMockIdbKeyRange()
 // Inline mock for db — avoid import inside vi.mock which is hoisted
 const STORES = { books: "books", categories: "categories", transactions: "transactions", users: "users", sharedUsers: "sharedUsers" }
 
-let mockStore: Record<string, any[]> = {}
+let mockStore: {
+  books: CategoryDto[]
+  categories: CategoryDto[]
+  transactions: TransactionDto[]
+  users: { id: string; email: string }[]
+  sharedUsers: SharedUserEntry[]
+} = {
+  books: [],
+  categories: [],
+  transactions: [],
+  users: [],
+  sharedUsers: [],
+}
 
 function mockReset() {
   mockStore = { books: [], categories: [], transactions: [], users: [], sharedUsers: [] }
@@ -22,40 +36,45 @@ mockReset()
 const mockDb = {
   STORES,
   async getAll<T>(storeName: string): Promise<T[]> {
-    return [...(mockStore[storeName] as unknown as T[])]
+    const items = mockStore[storeName as keyof typeof mockStore] as unknown as T[]
+    return [...items]
   },
   async getById<T>(storeName: string, id: string): Promise<T | undefined> {
-    const items = mockStore[storeName] as any[]
-    return items.find((x: any) => x.id === id) as T | undefined
+    const items = mockStore[storeName as keyof typeof mockStore] as unknown as T[]
+    return items.find((x) => (x as unknown as { id: string }).id === id)
   },
   async put<T>(storeName: string, value: T): Promise<void> {
-    const items = mockStore[storeName] as any[]
-    const idx = items.findIndex((x: any) => x.id === (value as any).id)
+    const items = mockStore[storeName as keyof typeof mockStore] as unknown as T[]
+    const valueWithId = value as unknown as { id: string }
+    const idx = items.findIndex((x) => (x as unknown as { id: string }).id === valueWithId.id)
     if (idx >= 0) items[idx] = value
     else items.push(value)
   },
   async remove(storeName: string, id: string): Promise<void> {
-    const items = mockStore[storeName] as any[]
-    const idx = items.findIndex((x: any) => x.id === id)
-    if (idx >= 0) items.splice(idx, 1)
+    const items = mockStore[storeName as keyof typeof mockStore] as unknown as { id: string }[]
+    const idx = items.findIndex((x) => x.id === id)
+    if (idx >= 0) (mockStore[storeName as keyof typeof mockStore] as unknown as { id: string }[]).splice(idx, 1)
   },
   async clearStore(storeName: string): Promise<void> {
-    mockStore[storeName] = []
+    const key = storeName as keyof typeof mockStore
+    if (Array.isArray(mockStore[key])) {
+      (mockStore[key] as unknown[]).length = 0
+    }
   },
   async getAllByIndex<T>(storeName: string, _indexName: string, value: string): Promise<T[]> {
-    const items = mockStore[storeName] as any[]
-    return items.filter((x: any) => x[_indexName] === value) as T[]
+    const items = mockStore[storeName as keyof typeof mockStore] as unknown as T[]
+    return items.filter((x) => (x as unknown as Record<string, string>)[_indexName] === value)
   },
   getAllByIndexRange: vi.fn().mockResolvedValue([]),
-  async getAllSharedUsersForBook(bookId: string): Promise<any[]> {
-    return mockStore.sharedUsers.filter((e: any) => e.bookId === bookId)
+  async getAllSharedUsersForBook(bookId: string): Promise<SharedUserEntry[]> {
+    return mockStore.sharedUsers.filter((e) => e.bookId === bookId)
   },
   async removeSharedUser(bookId: string, userId: string): Promise<void> {
-    const idx = mockStore.sharedUsers.findIndex((e: any) => e.bookId === bookId && e.userId === userId)
+    const idx = mockStore.sharedUsers.findIndex((e) => e.bookId === bookId && e.userId === userId)
     if (idx >= 0) mockStore.sharedUsers.splice(idx, 1)
   },
   async clearAllSharedUsersForBook(bookId: string): Promise<void> {
-    mockStore.sharedUsers = mockStore.sharedUsers.filter((e: any) => e.bookId !== bookId)
+    mockStore.sharedUsers = mockStore.sharedUsers.filter((e) => e.bookId !== bookId)
   },
 }
 
@@ -139,9 +158,9 @@ describe("OfflineCategoriesService", () => {
 
     it("persists the category in the database", async () => {
       const created = await service.createCategory({ name: "Saved Cat" })
-      const stored = mockStore.categories.find((c: any) => c.id === created.id)
+      const stored = mockStore.categories.find((c) => c.id === created.id)
       expect(stored).toBeDefined()
-      expect(stored.name).toBe("Saved Cat")
+      expect(stored?.name).toBe("Saved Cat")
     })
   })
 
@@ -178,7 +197,7 @@ describe("OfflineCategoriesService", () => {
       const cat = await service.createCategory({ name: "To Delete" })
       await service.deleteCategory(cat.id)
 
-      const stored = mockStore.categories.find((c: any) => c.id === cat.id)
+      const stored = mockStore.categories.find((c) => c.id === cat.id)
       expect(stored).toBeUndefined()
     })
 
@@ -200,10 +219,10 @@ describe("OfflineCategoriesService", () => {
 
       expect(result).toEqual({ reassignedTransactions: 2 })
 
-      const tx1 = mockStore.transactions.find((t: any) => t.id === "tx_1")
-      expect(tx1.categoryName).toBe("NewCat")
-      const tx3 = mockStore.transactions.find((t: any) => t.id === "tx_3")
-      expect(tx3.categoryName).toBe("Other")
+      const tx1 = mockStore.transactions.find((t) => t.id === "tx_1")
+      expect(tx1?.categoryName).toBe("NewCat")
+      const tx3 = mockStore.transactions.find((t) => t.id === "tx_3")
+      expect(tx3?.categoryName).toBe("Other")
     })
 
     it("throws on non-existent category", async () => {
@@ -227,8 +246,8 @@ describe("OfflineCategoriesService", () => {
       })
 
       expect(result).toEqual({ affectedTransactions: 2 })
-      expect(mockStore.transactions.filter((t: any) => t.categoryName === "B")).toHaveLength(3)
-      expect(mockStore.transactions.filter((t: any) => t.categoryName === "A")).toHaveLength(0)
+      expect(mockStore.transactions.filter((t) => t.categoryName === "B")).toHaveLength(3)
+      expect(mockStore.transactions.filter((t) => t.categoryName === "A")).toHaveLength(0)
     })
 
     it("returns 0 when no transactions match", async () => {
