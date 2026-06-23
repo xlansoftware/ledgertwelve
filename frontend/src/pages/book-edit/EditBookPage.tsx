@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { useBooksStore } from "@/store"
-import { getBookStats } from "@/services"
+import { getFactory } from "@/features/offline"
 import type { BookStatsDto } from "@/types"
 import { toast } from "sonner"
 import { useConfirmDialog } from "@/components/common/dialog/ConfirmDialogContext"
@@ -122,7 +122,7 @@ export default function EditBookPage() {
         fetchBook(bookId).catch(() => {
           // Error is handled by store — nothing else to do
         }),
-        getBookStats(bookId).then(setStats).catch(() => {
+        getFactory().books.getBookStats(bookId).then(setStats).catch(() => {
           // Stats are non-critical — silently fail
           setStats(null)
         }),

@@ -1,6 +1,6 @@
 import { create } from "zustand"
 import type { UserSummary } from "@/types"
-import { getUsers } from "@/services"
+import { getFactory } from "@/features/offline"
 
 // ---------------------------------------------------------------------------
 // State
@@ -33,7 +33,7 @@ export const useUsersStore = create<UsersState & UsersActions>((set) => ({
   fetchUsers: async () => {
     set({ isLoading: true, error: null })
     try {
-      const data = await getUsers()
+      const data = await getFactory().users.getUsers()
       set({ users: data, isLoading: false })
       return data
     } catch (err: unknown) {

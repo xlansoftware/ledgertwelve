@@ -13,6 +13,7 @@ import { login as apiLogin } from "@/services/authService"
 import { ApiError } from "@/services/api"
 import { Loader2 } from "lucide-react"
 import { initializeApp } from "@/lib/init"
+import { isOfflineMode } from "@/features/offline"
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -48,21 +49,9 @@ export default function LoginPage() {
     }
   }
 
-  const handleLocalMode = () => {
-    // Log in with hardcoded demo credentials (same as previous bootstrap)
-    setLoading(true)
-    apiLogin({ email: "john@example.com", password: "secret-password" })
-      .then(async (user) => {
-        _setAuthenticated(user)
-        await initializeApp()
-        navigate("/", { replace: true })
-      })
-      .catch((err) => {
-        setError(err instanceof Error ? err.message : "Failed to start in local mode")
-      })
-      .finally(() => {
-        setLoading(false)
-      })
+  const handleOfflineMode = () => {
+    localStorage.setItem('ledger12.mode', 'offline')
+    window.location.reload()
   }
 
   return (
@@ -126,10 +115,10 @@ export default function LoginPage() {
               type="button"
               variant="outline"
               className="w-full"
-              onClick={handleLocalMode}
+              onClick={handleOfflineMode}
               disabled={loading}
             >
-              Use App Offline
+              {isOfflineMode() ? "Restart in Online Mode" : "Use App Offline"}
             </Button>
           </form>
         </CardContent>

@@ -4,6 +4,7 @@ import { ThemeToggle } from "@/components/common/theme/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
+import { isOfflineMode } from "@/features/offline";
 
 export default function SettingsPage() {
   const navigate = useNavigate()
@@ -14,6 +15,17 @@ export default function SettingsPage() {
   const handleLogout = async () => {
     await logout();
     navigate("/login", { replace: true });
+  };
+
+  const handleModeSwitch = () => {
+    if (isOfflineMode()) {
+      // Switch to online mode
+      localStorage.removeItem('ledger12.mode')
+    } else {
+      // Switch to offline mode
+      localStorage.setItem('ledger12.mode', 'offline')
+    }
+    window.location.reload()
   };
   
   return (
@@ -28,17 +40,26 @@ export default function SettingsPage() {
               {authState.status === "authenticated"
                 ? `Online — ${authState.user.email}`
                 : authState.status === "local"
-                  ? "Local mode"
+                  ? "Offline mode"
                   : "Not signed in"}
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            {authState.status !== "local" && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleLogout}
+              >
+                Logout
+              </Button>
+            )}
             <Button
               variant="outline"
               size="sm"
-              onClick={handleLogout}
+              onClick={handleModeSwitch}
             >
-              Logout
+              {isOfflineMode() ? "Switch to Online Mode" : "Switch to Offline Mode"}
             </Button>
           </CardContent>
         </Card>

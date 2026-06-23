@@ -3,8 +3,7 @@
 // ---------------------------------------------------------------------------
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react"
-import { getCategoryReport, getDailyReport, getDailyAverage } from "@/services/reportsService"
-import { getBookStats } from "@/services/booksService"
+import { getFactory } from "@/features/offline"
 import type { DailyReportRow, CategoryReportRow, AverageReportDto } from "@/types"
 import {
   computeAccumulation,
@@ -181,7 +180,7 @@ export function useDailyInsight(todayStr?: string): UseDailyInsightReturn {
     setIsLoadingDaily(true)
     setDailyError(null)
 
-    getDailyReport({ from, to: reportTo })
+    getFactory().reports.getDailyReport({ from, to: reportTo })
       .then((data) => {
         setDailyRows(data)
         setIsLoadingDaily(false)
@@ -201,7 +200,7 @@ export function useDailyInsight(todayStr?: string): UseDailyInsightReturn {
     setIsLoadingAverage(true)
     setAverageError(null)
 
-    getDailyAverage({ from, to })
+    getFactory().reports.getDailyAverage({ from, to })
       .then((data: AverageReportDto) => {
         setAverageChange(data.average)
         setIsLoadingAverage(false)
@@ -218,7 +217,7 @@ export function useDailyInsight(todayStr?: string): UseDailyInsightReturn {
   useEffect(() => {
     const asOf = lastDayOfPreviousMonth(todayDate)
 
-    getBookStats("book_main", { asOf })
+    getFactory().books.getBookStats("book_main", { asOf })
       .then((stats) => {
         setOpeningBalance(stats.totalSum)
       })
@@ -237,7 +236,7 @@ export function useDailyInsight(todayStr?: string): UseDailyInsightReturn {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsLoadingPie(true)
 
-    getCategoryReport(range)
+    getFactory().reports.getCategoryReport(range)
       .then((data) => {
         // Guard against stale responses
         if (fetchRef.current === date) {

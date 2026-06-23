@@ -1,17 +1,11 @@
 import { create } from "zustand"
 import type { FilterRequest, TransactionDto } from "@/types"
-import {
-  getTransactions,
-  getTransaction,
-  createTransaction,
-  updateTransaction,
-  deleteTransaction,
-} from "@/services"
+import { getFactory } from "@/features/offline"
 import type {
   GetTransactionsParams,
   CreateTransactionRequest,
   UpdateTransactionRequest,
-} from "@/services"
+} from "@/features/offline/interfaces/ITransactionsService"
 import { useUsersStore } from "./useUsersStore"
 import { useCategoriesStore } from "./useCategoriesStore"
 
@@ -175,7 +169,7 @@ export const useTransactionsStore = create<TransactionsState & TransactionsActio
   fetchTransactions: async (params?: GetTransactionsParams) => {
     set({ isLoading: true, error: null, isLoadingMore: false, loadMoreError: null })
     try {
-      const result = await getTransactions(params)
+      const result = await getFactory().transactions.getTransactions(params)
       const epoch = get().epoch + 1
       set({
         transactions: result.items,
@@ -200,7 +194,7 @@ export const useTransactionsStore = create<TransactionsState & TransactionsActio
   fetchTransaction: async (transactionId: string) => {
     set({ isLoading: true, error: null })
     try {
-      const data = await getTransaction(transactionId)
+      const data = await getFactory().transactions.getTransaction(transactionId)
       set({ currentTransaction: data, isLoading: false })
       return data
     } catch (err: unknown) {
@@ -213,7 +207,7 @@ export const useTransactionsStore = create<TransactionsState & TransactionsActio
   createTransaction: async (req: CreateTransactionRequest) => {
     set({ error: null })
     try {
-      const created = await createTransaction(req)
+      const created = await getFactory().transactions.createTransaction(req)
       // Prepend the new transaction to the current list
       set((state) => ({
         transactions: [created, ...state.transactions],
@@ -242,7 +236,7 @@ export const useTransactionsStore = create<TransactionsState & TransactionsActio
           : state.currentTransaction,
     }))
     try {
-      const updated = await updateTransaction(transactionId, req)
+      const updated = await getFactory().transactions.updateTransaction(transactionId, req)
       set((state) => ({
         transactions: state.transactions.map((t) => (t.id === transactionId ? updated : t)),
         currentTransaction:
@@ -272,7 +266,7 @@ export const useTransactionsStore = create<TransactionsState & TransactionsActio
         state.currentTransaction?.id === transactionId ? null : state.currentTransaction,
     }))
     try {
-      await deleteTransaction(transactionId)
+      await getFactory().transactions.deleteTransaction(transactionId)
     } catch (err: unknown) {
       set({
         transactions: previous,
@@ -293,7 +287,7 @@ export const useTransactionsStore = create<TransactionsState & TransactionsActio
     const nextPage = state.page + 1
 
     try {
-      const result = await getTransactions({ ...state.lastParams, page: nextPage })
+      const result = await getFactory().transactions.getTransactions({ ...state.lastParams, page: nextPage })
 
       // Guard against stale response (book/filter changed while loading)
       if (get().epoch !== captureEpoch) return

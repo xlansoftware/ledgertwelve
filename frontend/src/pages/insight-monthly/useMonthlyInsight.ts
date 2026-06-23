@@ -3,8 +3,7 @@
 // ---------------------------------------------------------------------------
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react"
-import { getCategoryReport, getMonthlyReport, getMonthlyAverage } from "@/services/reportsService"
-import { getBookStats } from "@/services/booksService"
+import { getFactory } from "@/features/offline"
 import type { MonthlyReportRow, CategoryReportRow, AverageReportDto } from "@/types"
 import {
   computeAccumulation,
@@ -131,7 +130,7 @@ export function useMonthlyInsight(): UseMonthlyInsightReturn {
     setIsLoadingMonthly(true)
     setMonthlyError(null)
 
-    getMonthlyReport({ from: yearStart, to: yearEnd })
+    getFactory().reports.getMonthlyReport({ from: yearStart, to: yearEnd })
       .then((data) => {
         setMonthlyRows(data)
         setIsLoadingMonthly(false)
@@ -153,7 +152,7 @@ export function useMonthlyInsight(): UseMonthlyInsightReturn {
     setIsLoadingAverage(true)
     setAverageError(null)
 
-    getMonthlyAverage({ from: fromStr, to: toStr })
+    getFactory().reports.getMonthlyAverage({ from: fromStr, to: toStr })
       .then((data: AverageReportDto) => {
         setAverageChange(data.average)
         setIsLoadingAverage(false)
@@ -168,7 +167,7 @@ export function useMonthlyInsight(): UseMonthlyInsightReturn {
 
   // ── Fetch opening balance as of Dec 31 of previous year ──
   useEffect(() => {
-    getBookStats("book_main", { asOf: previousYearEnd })
+    getFactory().books.getBookStats("book_main", { asOf: previousYearEnd })
       .then((stats) => {
         setOpeningBalance(stats.totalSum)
       })
@@ -187,7 +186,7 @@ export function useMonthlyInsight(): UseMonthlyInsightReturn {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsLoadingPie(true)
 
-    getCategoryReport(range)
+    getFactory().reports.getCategoryReport(range)
       .then((data) => {
         // Guard against stale responses
         if (fetchRef.current === month) {

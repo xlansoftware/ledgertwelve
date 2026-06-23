@@ -32,6 +32,7 @@ interface AuthStore {
   /** Internal helpers used by main.tsx bootstrap. */
   _setAuthenticated: (user: UserSummary) => void
   _setUnauthenticated: () => void
+  _setLocal: (status: 'local') => void
 }
 
 // ---- Store ----
@@ -64,12 +65,9 @@ export const useAuthStore = create<AuthStore>((set) => ({
   },
 
   setLocalMode: () => {
-    // For now, local mode just uses the hardcoded demo user
-    // Real offline mode is a future feature
-    set({
-      state: { status: "local" },
-      isAuthenticated: true,
-    })
+    // Persist offline mode to localStorage and reload
+    localStorage.setItem('ledger12.mode', 'offline')
+    window.location.reload()
   },
 
   _setAuthenticated: (user: UserSummary) => {
@@ -78,5 +76,9 @@ export const useAuthStore = create<AuthStore>((set) => ({
 
   _setUnauthenticated: () => {
     set({ state: { status: "unauthenticated" }, isAuthenticated: false })
+  },
+
+  _setLocal: (status: 'local') => {
+    set({ state: { status }, isAuthenticated: true })
   },
 }))

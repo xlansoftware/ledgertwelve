@@ -1,26 +1,13 @@
 import { create } from "zustand"
 import type { BookDto, CloseBookResponse, ReopenBookResponse, ShareResponse } from "@/types"
-import {
-  getBooks,
-  getBook,
-  getCurrentBook,
-  setCurrentBook as setCurrentBookService,
-  createBook,
-  updateBook,
-  deleteBook,
-  closeBook,
-  reopenBook,
-  addShare,
-  updateShare,
-  removeShare,
-} from "@/services"
+import { getFactory } from "@/features/offline"
 import type {
   CreateBookRequest,
   UpdateBookRequest,
   CloseBookRequest,
   AddShareRequest,
   UpdateShareRequest,
-} from "@/services"
+} from "@/features/offline/interfaces/IBooksService"
 
 // ---------------------------------------------------------------------------
 // State
@@ -91,11 +78,11 @@ export const useBooksStore = create<BooksState & BooksActions>((set, get) => ({
   fetchBooks: async () => {
     set({ isLoading: true, error: null })
     try {
-      const data = await getBooks()
+      const data = await getFactory().books.getBooks()
       set({ books: data, isLoading: false })
       // Also fetch the persisted current book selection
       try {
-        const current = await getCurrentBook()
+        const current = await getFactory().books.getCurrentBook()
         set({ currentBook: current })
       } catch {
         // If fetching the current book fails, fall back to first in list
@@ -111,7 +98,7 @@ export const useBooksStore = create<BooksState & BooksActions>((set, get) => ({
 
   fetchCurrentBook: async () => {
     try {
-      const current = await getCurrentBook()
+      const current = await getFactory().books.getCurrentBook()
       set({ currentBook: current })
     } catch {
       // Keep existing currentBook on failure, or fall back to first book in list
@@ -126,7 +113,7 @@ export const useBooksStore = create<BooksState & BooksActions>((set, get) => ({
     set({ error: null })
     const previous = get().currentBook
     try {
-      const updated = await setCurrentBookService(bookId)
+      const updated = await getFactory().books.setCurrentBook(bookId)
       set({ currentBook: updated })
       return updated
     } catch (err: unknown) {
@@ -143,7 +130,7 @@ export const useBooksStore = create<BooksState & BooksActions>((set, get) => ({
     const callId = ++fetchBookCounter
     set({ isLoading: true, error: null })
     try {
-      const data = await getBook(bookId)
+      const data = await getFactory().books.getBook(bookId)
       if (callId !== fetchBookCounter) return data
       set({ currentBook: data, isLoading: false })
       return data
@@ -158,7 +145,7 @@ export const useBooksStore = create<BooksState & BooksActions>((set, get) => ({
   createBook: async (req: CreateBookRequest) => {
     set({ error: null })
     try {
-      const created = await createBook(req)
+      const created = await getFactory().books.createBook(req)
       set((state) => ({ books: [...state.books, created] }))
       return created
     } catch (err: unknown) {
@@ -183,7 +170,7 @@ export const useBooksStore = create<BooksState & BooksActions>((set, get) => ({
           : state.currentBook,
     }))
     try {
-      const updated = await updateBook(bookId, req)
+      const updated = await getFactory().books.updateBook(bookId, req)
       set((state) => ({
         books: state.books.map((b) => (b.id === bookId ? updated : b)),
         currentBook:
@@ -212,7 +199,7 @@ export const useBooksStore = create<BooksState & BooksActions>((set, get) => ({
         state.currentBook?.id === bookId ? null : state.currentBook,
     }))
     try {
-      await deleteBook(bookId)
+      await getFactory().books.deleteBook(bookId)
     } catch (err: unknown) {
       set({
         books: previous,
@@ -238,9 +225,9 @@ export const useBooksStore = create<BooksState & BooksActions>((set, get) => ({
           : state.currentBook,
     }))
     try {
-      const result = await closeBook(bookId, req)
+      const result = await getFactory().books.closeBook(bookId, req)
       // Refresh the book detail to get accurate data from the server
-      const updated = await getBook(bookId)
+      const updated = await getFactory().books.getBook(bookId)
       set((state) => ({
         books: state.books.map((b) => (b.id === bookId ? updated : b)),
         currentBook:
@@ -273,9 +260,9 @@ export const useBooksStore = create<BooksState & BooksActions>((set, get) => ({
           : state.currentBook,
     }))
     try {
-      const result = await reopenBook(bookId)
+      const result = await getFactory().books.reopenBook(bookId)
       // Refresh the book detail to get accurate data from the server
-      const updated = await getBook(bookId)
+      const updated = await getFactory().books.getBook(bookId)
       set((state) => ({
         books: state.books.map((b) => (b.id === bookId ? updated : b)),
         currentBook:
@@ -296,10 +283,10 @@ export const useBooksStore = create<BooksState & BooksActions>((set, get) => ({
   addShare: async (bookId: string, req: AddShareRequest) => {
     set({ error: null })
     try {
-      const result = await addShare(bookId, req)
+      const result = await getFactory().books.addShare(bookId, req)
       // Refresh the book detail to reflect the new share
       if (get().currentBook?.id === bookId || get().books.some((b) => b.id === bookId)) {
-        const updated = await getBook(bookId)
+        const updated = await getFactory().books.getBook(bookId)
         set((state) => ({
           books: state.books.map((b) => (b.id === bookId ? updated : b)),
           currentBook:
@@ -317,10 +304,10 @@ export const useBooksStore = create<BooksState & BooksActions>((set, get) => ({
   updateShare: async (bookId: string, userId: string, req: UpdateShareRequest) => {
     set({ error: null })
     try {
-      const result = await updateShare(bookId, userId, req)
+      const result = await getFactory().books.updateShare(bookId, userId, req)
       // Refresh the book detail to reflect the updated permission
       if (get().currentBook?.id === bookId || get().books.some((b) => b.id === bookId)) {
-        const updated = await getBook(bookId)
+        const updated = await getFactory().books.getBook(bookId)
         set((state) => ({
           books: state.books.map((b) => (b.id === bookId ? updated : b)),
           currentBook:
@@ -338,10 +325,10 @@ export const useBooksStore = create<BooksState & BooksActions>((set, get) => ({
   removeShare: async (bookId: string, userId: string) => {
     set({ error: null })
     try {
-      await removeShare(bookId, userId)
+      await getFactory().books.removeShare(bookId, userId)
       // Refresh the book detail to reflect the removed share
       if (get().currentBook?.id === bookId || get().books.some((b) => b.id === bookId)) {
-        const updated = await getBook(bookId)
+        const updated = await getFactory().books.getBook(bookId)
         set((state) => ({
           books: state.books.map((b) => (b.id === bookId ? updated : b)),
           currentBook:

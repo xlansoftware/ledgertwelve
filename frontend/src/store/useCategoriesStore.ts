@@ -1,20 +1,13 @@
 import { create } from "zustand"
 import type { CategoryDto } from "@/types"
-import {
-  getCategories,
-  createCategory,
-  updateCategory,
-  deleteCategory,
-  reassignCategories,
-  reorderCategories,
-} from "@/services"
+import { getFactory } from "@/features/offline"
 import type {
   CreateCategoryRequest,
   UpdateCategoryRequest,
   DeleteCategoryParams,
   ReassignCategoriesRequest,
   ReorderCategoriesRequest,
-} from "@/services"
+} from "@/features/offline/interfaces/ICategoriesService"
 
 // ---------------------------------------------------------------------------
 // State
@@ -63,7 +56,7 @@ export const useCategoriesStore = create<CategoriesState & CategoriesActions>((s
   fetchCategories: async () => {
     set({ isLoading: true, error: null })
     try {
-      const data = await getCategories()
+      const data = await getFactory().categories.getCategories()
       set({ categories: data, isLoading: false })
       return data
     } catch (err: unknown) {
@@ -76,7 +69,7 @@ export const useCategoriesStore = create<CategoriesState & CategoriesActions>((s
   createCategory: async (req: CreateCategoryRequest) => {
     set({ error: null })
     try {
-      const created = await createCategory(req)
+      const created = await getFactory().categories.createCategory(req)
       set((state) => ({ categories: [...state.categories, created] }))
       return created
     } catch (err: unknown) {
@@ -96,7 +89,7 @@ export const useCategoriesStore = create<CategoriesState & CategoriesActions>((s
       ),
     }))
     try {
-      const updated = await updateCategory(categoryId, req)
+      const updated = await getFactory().categories.updateCategory(categoryId, req)
       set((state) => ({
         categories: state.categories.map((c) => (c.id === categoryId ? updated : c)),
       }))
@@ -116,7 +109,7 @@ export const useCategoriesStore = create<CategoriesState & CategoriesActions>((s
       categories: state.categories.filter((c) => c.id !== categoryId),
     }))
     try {
-      await deleteCategory(categoryId, params)
+      await getFactory().categories.deleteCategory(categoryId, params)
     } catch (err: unknown) {
       set({ categories: previous, error: err instanceof Error ? err.message : "Failed to delete category" })
       throw err
@@ -126,7 +119,7 @@ export const useCategoriesStore = create<CategoriesState & CategoriesActions>((s
   reassignCategories: async (req: ReassignCategoriesRequest) => {
     set({ error: null })
     try {
-      await reassignCategories(req)
+      await getFactory().categories.reassignCategories(req)
       // Refresh the full list since the reassignment may have changed categories
       await get().fetchCategories()
     } catch (err: unknown) {
@@ -139,7 +132,7 @@ export const useCategoriesStore = create<CategoriesState & CategoriesActions>((s
   reorderCategories: async (req: ReorderCategoriesRequest) => {
     set({ error: null })
     try {
-      await reorderCategories(req)
+      await getFactory().categories.reorderCategories(req)
       // Refresh the full list to reflect the new order
       await get().fetchCategories()
     } catch (err: unknown) {

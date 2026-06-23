@@ -21,7 +21,7 @@ import {
   ComboboxItem,
 } from "@/components/ui/combobox"
 import { useCategoriesStore } from "@/store"
-import { closeBook } from "@/services"
+import { getFactory } from "@/features/offline"
 import { toast } from "sonner"
 
 export interface CloseBookDialogProps {
@@ -54,7 +54,7 @@ export default function CloseBookDialog({
     setError(null)
 
     try {
-      await closeBook(bookId, { closingCategoryName })
+      await getFactory().books.closeBook(bookId, { closingCategoryName })
       toast.success(`Book "${bookName}" closed`)
       onSuccess()
       onOpenChange(false)

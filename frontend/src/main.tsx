@@ -13,15 +13,17 @@ import { ConfirmDialogProvider } from '@/components/common/dialog/ConfirmDialogC
 import { initializeApp } from '@/lib/init';
 import { Loader2 } from 'lucide-react';
 import { ThemeProvider } from '@/components/common/theme/theme-context';
+import { createOfflineFactory, createOnlineFactory, setFactory } from '@/features/offline';
 
 // ---------------------------------------------------------------------------
 // Entry point — phases:
 //   1. Show loading spinner immediately
-//   2. Start MSW worker
-//   3. Check for existing session via whoami()
-//   4. If authenticated, fetch reference data (books, categories, users)
-//   5. Render the real app (or error screen on failure)
-//   6. Unauthenticated users are redirected to /login by the auth guard
+//   2. Check for offline mode — skip MSW, skip session check
+//   3. Otherwise start MSW worker
+//   4. Check for existing session via whoami()
+//   5. If authenticated, fetch reference data (books, categories, users)
+//   6. Render the real app (or error screen on failure)
+//   7. Unauthenticated users are redirected to /login by the auth guard
 // ---------------------------------------------------------------------------
 
 function renderApp(root: Root) {
@@ -68,7 +70,27 @@ async function main() {
   // Phase 1 — spinner
   renderLoading(root)
 
-  // Phase 2 — Start MSW
+  // Phase 2 — Check for offline mode
+  const mode = localStorage.getItem('ledger12.mode')
+  if (mode === 'offline') {
+    // Offline bootstrap: skip MSW, skip session check, create offline factory
+    const factory = createOfflineFactory()
+    setFactory(factory)
+    useAuthStore.getState()._setLocal('local')
+
+    try {
+      await initializeApp()
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to load application data'
+      renderError(root, message)
+      return
+    }
+
+    renderApp(root)
+    return
+  }
+
+  // Phase 3 — Start MSW (online mode only)
   try {
     await worker.start()
   } catch (err) {
@@ -77,14 +99,18 @@ async function main() {
     return
   }
 
-  // Phase 3 — Check for existing session
+  // Phase 4 — Create online factory
+  const onlineFactory = createOnlineFactory()
+  setFactory(onlineFactory)
+
+  // Phase 5 — Check for existing session
   try {
     await useAuthStore.getState().checkSession()
   } catch {
     // Not authenticated — will redirect to /login via auth guard
   }
 
-  // Phase 4 — If authenticated, fetch reference data
+  // Phase 6 — If authenticated, fetch reference data
   const authState = useAuthStore.getState().state
   if (authState.status === 'authenticated' || authState.status === 'local') {
     try {
@@ -96,7 +122,7 @@ async function main() {
     }
   }
 
-  // Phase 5 — render the app
+  // Phase 7 — render the app
   renderApp(root)
 }
 
