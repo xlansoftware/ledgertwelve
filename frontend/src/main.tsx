@@ -13,7 +13,7 @@ import { ConfirmDialogProvider } from '@/components/common/dialog/ConfirmDialogC
 import { initializeApp } from '@/lib/init';
 import { Loader2 } from 'lucide-react';
 import { ThemeProvider } from '@/components/common/theme/theme-context';
-import { createOfflineFactory, createOnlineFactory, setFactory } from '@/features/offline';
+import { createOfflineFactory, createOnlineFactory, seedOfflineData, setFactory } from '@/features/offline';
 
 // ---------------------------------------------------------------------------
 // Entry point — phases:
@@ -77,6 +77,9 @@ async function main() {
     const factory = createOfflineFactory()
     setFactory(factory)
     useAuthStore.getState()._setLocal('local')
+
+    // Seed default data (Main book and default categories) if the database is empty
+    await seedOfflineData()
 
     try {
       await initializeApp()

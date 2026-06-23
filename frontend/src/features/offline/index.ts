@@ -2,7 +2,7 @@
 // Offline feature — barrel export
 // ---------------------------------------------------------------------------
 
-export { setFactory, getFactory, createOnlineFactory, createOfflineFactory, isOfflineMode, isOnlineMode } from "./factory"
+export { setFactory, getFactory, createOnlineFactory, createOfflineFactory, seedOfflineData, isOfflineMode, isOnlineMode } from "./factory"
 export type { ServiceFactory } from "./factory"
 
 export { OfflineUserStore } from "./offline/OfflineUserStore"
