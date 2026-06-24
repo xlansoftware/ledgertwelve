@@ -209,11 +209,14 @@ function convertValue(
 /**
  * Convert raw string rows to typed rows using the provided column mapping.
  * Unmapped columns are dropped. Each row is an object keyed by target field names.
+ * When invertAmount is true, the `amount` (and `originalAmount`) values are
+ * multiplied by -1 after parsing.
  */
 export function convert(
   rawRows: Record<string, string>[],
   mapping: Record<string, string | null>,
   _entityType: ImportEntityType,
+  invertAmount: boolean = false,
 ): ConversionResult {
   const convertedRows: Record<string, unknown>[] = []
   const warnings: { row: number; field: string; message: string }[] = []
@@ -238,6 +241,16 @@ export function convert(
           field: targetField,
           message: result.warning,
         })
+      }
+    }
+
+    // Invert amount if requested
+    if (invertAmount) {
+      if (typeof convertedRow.amount === "number") {
+        convertedRow.amount = (convertedRow.amount as number) * -1
+      }
+      if (typeof convertedRow.originalAmount === "number") {
+        convertedRow.originalAmount = (convertedRow.originalAmount as number) * -1
       }
     }
 

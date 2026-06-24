@@ -101,7 +101,7 @@ export function useImport() {
       const rows = fileInfo.parsedRows
 
       // Convert rows to typed values
-      const { convertedRows } = convert(rows, mapping, entityType)
+      const { convertedRows } = convert(rows, mapping, entityType, store.invertAmount)
 
       store.setConvertedRows(convertedRows)
 

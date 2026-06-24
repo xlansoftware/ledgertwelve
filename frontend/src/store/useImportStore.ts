@@ -32,6 +32,8 @@ interface ImportState {
   bookId: string | null
   /** Whether to clear existing data before importing */
   clearExisting: boolean
+  /** Whether to invert (multiply by -1) the amount column when importing */
+  invertAmount: boolean
   /** Parsed file info */
   fileInfo: ParsedFileInfo | null
   /** Source column → target field mapping (null = ignored) */
@@ -57,6 +59,7 @@ interface ImportActions {
   setEntityType: (entityType: ImportEntityType | null) => void
   setBookId: (bookId: string | null) => void
   setClearExisting: (clear: boolean) => void
+  setInvertAmount: (invert: boolean) => void
   setFileInfo: (info: ParsedFileInfo | null) => void
   setMapping: (mapping: Record<string, string | null>) => void
   setConvertedRows: (rows: Record<string, unknown>[]) => void
@@ -80,6 +83,7 @@ const initialState: ImportState = {
   entityType: null,
   bookId: null,
   clearExisting: false,
+  invertAmount: false,
   fileInfo: null,
   mapping: {},
   convertedRows: [],
@@ -103,6 +107,8 @@ export const useImportStore = create<ImportState & ImportActions>((set, get) => 
   setBookId: (bookId) => set({ bookId }),
 
   setClearExisting: (clear) => set({ clearExisting: clear }),
+
+  setInvertAmount: (invert) => set({ invertAmount: invert }),
 
   setFileInfo: (info) => set({ fileInfo: info, error: null }),
 

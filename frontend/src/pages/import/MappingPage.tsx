@@ -127,6 +127,7 @@ export default function MappingPage() {
       fileInfo.parsedRows,
       localMapping,
       entityType,
+      store.invertAmount,
     )
     store.setConvertedRows(convertedRows)
 

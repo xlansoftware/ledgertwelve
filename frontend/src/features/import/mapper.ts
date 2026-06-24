@@ -12,7 +12,7 @@ import type { ImportEntityType } from "@/types"
 
 const ALIASES: Record<string, string[]> = {
   // Common fields
-  dateTime: ["date", "datetime", "date time", "transaction date", "posting date", "date_posted", "value date", "trans date", "tx date"],
+  dateTime: ["date", "datetime", "date time", "transaction date", "posting date", "date_posted", "value date", "trans date", "tx date", "dateutc"],
   amount: ["amount", "value", "sum", "price", "total", "debit", "credit", "transaction amount", "tx amount", "net amount"],
   note: ["note", "description", "memo", "details", "comment", "remarks", "narration", "notes"],
   id: ["id", "transaction id", "tx id", "reference", "ref", "identifier", "record id"],

@@ -331,6 +331,27 @@ export default function ImportPage() {
             </div>
           )}
 
+          {/* Invert amount checkbox (transactions only) */}
+          {store.entityType === "transactions" && (
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={store.invertAmount}
+                onChange={() => store.setInvertAmount(!store.invertAmount)}
+                className="mt-0.5 size-4 accent-primary"
+              />
+              <div>
+                <span className="text-sm font-medium">
+                  Invert the sign of the amount
+                </span>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Multiplies all amount values by -1 before importing. Use this
+                  if your file exports expenses as positive numbers.
+                </p>
+              </div>
+            </label>
+          )}
+
           {/* clearExisting checkbox (not for backup) */}
           {store.entityType !== "backup" && (
             <label className="flex items-start gap-3 cursor-pointer">
