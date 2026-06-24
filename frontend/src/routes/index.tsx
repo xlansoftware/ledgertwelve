@@ -15,6 +15,9 @@ import InsightDailyPage from "@/pages/insight-daily/InsightDailyPage";
 import InsightMonthlyPage from "@/pages/insight-monthly/InsightMonthlyPage";
 import CategoriesPage from "@/pages/category/CategoriesPage";
 import ExportPage from "@/pages/export/ExportPage";
+import ImportPage from "@/pages/import/ImportPage";
+import MappingPage from "@/pages/import/MappingPage";
+import PreviewPage from "@/pages/import/PreviewPage";
 
 const router = createBrowserRouter([
   {
@@ -63,6 +66,14 @@ const router = createBrowserRouter([
       {
         path: "export",
         element: <ExportPage />,
+      },
+      {
+        path: "import",
+        children: [
+          { index: true, element: <ImportPage /> },
+          { path: "mapping", element: <MappingPage /> },
+          { path: "preview", element: <PreviewPage /> },
+        ],
       },
       {
         path: "insight",

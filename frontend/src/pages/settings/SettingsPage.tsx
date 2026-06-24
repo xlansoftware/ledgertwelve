@@ -122,6 +122,25 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
+        <Card>
+          <CardHeader>
+            <CardTitle>Import</CardTitle>
+            <CardDescription>
+              Import transactions, categories, or books from a CSV, XLSX, or JSON file.
+              Restore data from a backup.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4 md:flex-row md:items-center md:justify-start">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate("/import")}
+            >
+              Import Data…
+            </Button>
+          </CardContent>
+        </Card>
+
       </div>
     </div>
   );

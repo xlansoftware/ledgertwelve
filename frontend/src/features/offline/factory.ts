@@ -9,6 +9,7 @@ import type { ITransactionsService } from "@/features/offline/interfaces/ITransa
 import type { IReportsService } from "@/features/offline/interfaces/IReportsService"
 import type { IUsersService } from "@/features/offline/interfaces/IUsersService"
 import type { IExportsService } from "@/features/offline/interfaces/IExportsService"
+import type { IImportService } from "@/features/offline/interfaces/IImportService"
 
 import { OnlineBooksService } from "@/features/offline/online/OnlineBooksService"
 import { OnlineCategoriesService } from "@/features/offline/online/OnlineCategoriesService"
@@ -16,6 +17,7 @@ import { OnlineTransactionsService } from "@/features/offline/online/OnlineTrans
 import { OnlineReportsService } from "@/features/offline/online/OnlineReportsService"
 import { OnlineUsersService } from "@/features/offline/online/OnlineUsersService"
 import { OnlineExportsService } from "@/features/offline/online/OnlineExportsService"
+import { OnlineImportService } from "@/features/offline/online/OnlineImportService"
 
 import { OfflineBooksService } from "@/features/offline/offline/OfflineBooksService"
 import { OfflineCategoriesService } from "@/features/offline/offline/OfflineCategoriesService"
@@ -23,6 +25,7 @@ import { OfflineTransactionsService } from "@/features/offline/offline/OfflineTr
 import { OfflineReportsService } from "@/features/offline/offline/OfflineReportsService"
 import { OfflineUsersService } from "@/features/offline/offline/OfflineUsersService"
 import { OfflineExportsService } from "@/features/offline/offline/OfflineExportsService"
+import { OfflineImportService } from "@/features/offline/offline/OfflineImportService"
 import { OfflineUserStore } from "@/features/offline/offline/OfflineUserStore"
 import * as db from "@/features/offline/offline/db"
 import type { BookDto, CategoryDto } from "@/types"
@@ -38,6 +41,7 @@ export interface ServiceFactory {
   reports: IReportsService
   users: IUsersService
   exports: IExportsService
+  imports: IImportService
 }
 
 // ---------------------------------------------------------------------------
@@ -76,6 +80,7 @@ export function createOnlineFactory(): ServiceFactory {
     reports: new OnlineReportsService(),
     users: new OnlineUsersService(),
     exports: new OnlineExportsService(),
+    imports: new OnlineImportService(),
   }
   return factory
 }
@@ -98,6 +103,7 @@ export function createOfflineFactory(): ServiceFactory {
     reports: new OfflineReportsService(),
     users: new OfflineUsersService(userStore),
     exports: new OfflineExportsService(),
+    imports: new OfflineImportService(),
   }
 
   // Register the factory so that offline services can access it via getFactory()

@@ -1897,4 +1897,148 @@ export const handlers = [
 
     return HttpResponse.json({ error: 'Export not ready' }, { status: 404 })
   }),
+
+  // ---- Import ----
+  http.post('/api/v1/imports', async ({ request }) => {
+    const auth = requireAuth(request)
+    if (auth.error) return auth.response
+
+    const body = (await request.json()) as {
+      preview?: boolean
+      entityType?: string
+      rows?: Record<string, unknown>[]
+      data?: Record<string, unknown>
+    }
+
+    const entityType = body.entityType
+
+    if (!entityType) {
+      return HttpResponse.json({ error: 'entityType is required' }, { status: 400 })
+    }
+
+    if (!['transactions', 'categories', 'books', 'backup'].includes(entityType)) {
+      return HttpResponse.json(
+        { error: `Unknown entityType: "${entityType}". Must be transactions, categories, books, or backup.` },
+        { status: 400 },
+      )
+    }
+
+    // Preview mode validation
+    if (entityType !== 'backup') {
+      if (!body.rows) {
+        return HttpResponse.json(
+          { error: `rows array is required for ${entityType} entityType` },
+          { status: 400 },
+        )
+      }
+    } else {
+      if (!body.data) {
+        return HttpResponse.json(
+          { error: 'data field is required for backup entityType' },
+          { status: 400 },
+        )
+      }
+
+      // Version check for backup
+      const version = body.data.version as number | undefined
+      if (version === undefined) {
+        return HttpResponse.json(
+          { error: 'Backup data is missing version field' },
+          { status: 400 },
+        )
+      }
+      if (version !== 1) {
+        return HttpResponse.json(
+          { error: `Unsupported backup version: ${version}. This app supports version 1.` },
+          { status: 400 },
+        )
+      }
+
+      // Schema validation
+      const bks = body.data.books
+      const cats = body.data.categories
+      const txs = body.data.transactions
+      if (!Array.isArray(bks) || !Array.isArray(cats) || !Array.isArray(txs)) {
+        return HttpResponse.json(
+          { error: "Backup data is malformed: missing 'books', 'categories', or 'transactions' array" },
+          { status: 400 },
+        )
+      }
+    }
+
+    const rows = body.rows || []
+    const issues: {
+      row: number | null
+      field: string | null
+      message: string
+      severity: 'error' | 'warning'
+    }[] = []
+    let errors = 0
+    let warnings = 0
+
+    // Light simulation: check for 'error' values
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i]
+      if (row.amount === 'error' || row.amount === undefined) {
+        issues.push({
+          row: i + 1,
+          field: 'amount',
+          message: 'Amount is required and must be a number',
+          severity: 'error',
+        })
+        errors++
+      }
+    }
+
+    // Simulated counts based on request size
+    const validCount = rows.length - errors
+    const created = Math.floor(validCount * 0.9)
+    const updated = validCount - created
+
+    if (entityType !== 'backup') {
+      return HttpResponse.json({
+        data: {
+          created,
+          updated,
+          deleted: 0,
+          errors,
+          warnings,
+          issues,
+        },
+      })
+    }
+
+    // Backup response
+    const bks = body.data!.books as Record<string, unknown>[]
+    const cats = body.data!.categories as Record<string, unknown>[]
+
+    return HttpResponse.json({
+      data: {
+        books: {
+          created: bks.filter((b: Record<string, unknown>) => b.name !== 'Main').length,
+          updated: bks.filter((b: Record<string, unknown>) => b.name === 'Main').length,
+          deleted: 0,
+          errors: 0,
+          warnings: 0,
+          issues: [],
+        },
+        categories: {
+          created: cats.length,
+          updated: 0,
+          deleted: 0,
+          errors: 0,
+          warnings: 0,
+          issues: [],
+        },
+        transactions: {
+          created,
+          updated,
+          deleted: 0,
+          errors,
+          warnings,
+          issues,
+        },
+      },
+    })
+  }),
 ]

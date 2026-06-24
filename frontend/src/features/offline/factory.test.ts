@@ -146,13 +146,14 @@ describe("factory", () => {
 
   describe("setFactory / getFactory", () => {
     it("setFactory stores the factory and getFactory returns it", () => {
-      const factory = {
+      const factory: ServiceFactory = {
         books: { type: "custom" } as unknown as ServiceFactory["books"],
         categories: { type: "custom" } as unknown as ServiceFactory["categories"],
         transactions: { type: "custom" } as unknown as ServiceFactory["transactions"],
         reports: { type: "custom" } as unknown as ServiceFactory["reports"],
         users: { type: "custom" } as unknown as ServiceFactory["users"],
         exports: { type: "custom" } as unknown as ServiceFactory["exports"],
+        imports: { type: "custom" } as unknown as ServiceFactory["imports"],
       }
       setFactory(factory)
       expect(getFactory()).toBe(factory)

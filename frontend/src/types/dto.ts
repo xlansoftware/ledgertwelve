@@ -96,3 +96,51 @@ export interface AverageReportDto {
   average: number
   count: number
 }
+
+// ---------------------------------------------------------------------------
+// Import DTOs
+// ---------------------------------------------------------------------------
+
+export type ImportEntityType = "transactions" | "categories" | "books" | "backup"
+
+export type ImportSeverity = "error" | "warning"
+
+export interface ImportIssue {
+  row: number | null
+  field: string | null
+  message: string
+  severity: ImportSeverity
+}
+
+export interface ImportResultItem {
+  created: number
+  updated: number
+  deleted: number
+  errors: number
+  warnings: number
+  issues: ImportIssue[]
+}
+
+export interface ImportResult {
+  // Single entity response
+  created?: number
+  updated?: number
+  deleted?: number
+  errors?: number
+  warnings?: number
+  issues?: ImportIssue[]
+  // Backup nested response
+  books?: ImportResultItem
+  categories?: ImportResultItem
+  transactions?: ImportResultItem
+}
+
+export interface ImportRequest {
+  preview: boolean
+  entityType: ImportEntityType
+  bookId?: string
+  clearExisting?: boolean
+  mapping?: Record<string, string | null>
+  rows?: Record<string, unknown>[]
+  data?: Record<string, unknown>
+}

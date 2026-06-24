@@ -33,7 +33,7 @@ export default function CategoryEditor({ category }: Props) {
     }, 500);
 
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setTimeoutId(id);
+    setTimeoutId(id as unknown as number);
 
     return () => clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps

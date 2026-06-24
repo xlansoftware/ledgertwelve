@@ -4,7 +4,7 @@
 // ---------------------------------------------------------------------------
 
 import { useEffect } from "react"
-import { useSearchParams } from "react-router-dom"
+import { useSearchParams, useNavigate } from "react-router-dom"
 import { useExport } from "./useExport"
 import { ExportProgress } from "./components/ExportProgress"
 import { useBooksStore } from "@/store"
@@ -32,6 +32,7 @@ const FORMATS: { value: ExportFormat; label: string }[] = [
 ]
 
 export default function ExportPage() {
+  const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const preset = searchParams.get("preset")
 
@@ -271,6 +272,17 @@ export default function ExportPage() {
           >
             {isBackup ? "Start Backup" : "Export"}
           </Button>
+
+          {/* Import link */}
+          <div className="pt-4 text-center">
+            <Button
+              variant="link"
+              size="sm"
+              onClick={() => navigate("/import")}
+            >
+              Import data instead?
+            </Button>
+          </div>
         </div>
       ) : (
         <div className="space-y-6">
