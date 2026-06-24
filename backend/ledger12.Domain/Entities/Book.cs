@@ -5,7 +5,7 @@ namespace ledger12.Domain.Entities;
 public class Book
 {
     public Guid Id { get; private set; }
-    public string Name { get; private set; }
+    public string Name { get; private set; } = null!;
     public string? Currency { get; private set; }
     public BookStatus Status { get; private set; }
     public Guid OwnerId { get; private set; }

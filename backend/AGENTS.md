@@ -215,6 +215,7 @@ cd backend && dotnet ef database update \
 - Never catch generic `Exception` in business logic. Let `ExceptionMiddleware` handle it.
 - Use `NotFoundException` for missing entities, `DomainException` for rule violations.
 - Connection strings and secrets go in `appsettings.Development.json` (git-ignored) or environment variables — never hardcoded.
+- **The build must produce zero warnings (CS, NU, or any other category). Every warning must be resolved before committing — never suppress warnings with `#pragma warning disable` unless explicitly instructed.**
 
 ---
 

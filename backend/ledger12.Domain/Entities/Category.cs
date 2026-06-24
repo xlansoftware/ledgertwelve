@@ -3,7 +3,7 @@ namespace ledger12.Domain.Entities;
 public class Category
 {
     public Guid Id { get; private set; }
-    public string Name { get; private set; }
+    public string Name { get; private set; } = null!;
     public bool Recurring { get; private set; }
     public string? Color { get; private set; }
     public string? Icon { get; private set; }

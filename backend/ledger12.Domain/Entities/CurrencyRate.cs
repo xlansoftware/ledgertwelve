@@ -2,8 +2,8 @@ namespace ledger12.Domain.Entities;
 
 public class CurrencyRate
 {
-    public string FromCurrency { get; private set; }
-    public string ToCurrency { get; private set; }
+    public string FromCurrency { get; private set; } = null!;
+    public string ToCurrency { get; private set; } = null!;
     public decimal Rate { get; private set; }
     public DateTimeOffset UpdatedAt { get; private set; }
 
