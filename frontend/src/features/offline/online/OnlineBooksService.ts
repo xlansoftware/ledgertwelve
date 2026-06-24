@@ -4,7 +4,7 @@
 
 import * as booksService from "@/services/booksService"
 import type { IBooksService, CreateBookRequest, UpdateBookRequest, CloseBookRequest, AddShareRequest, UpdateShareRequest, GetBookStatsParams } from "@/features/offline/interfaces/IBooksService"
-import type { BookDto, BookStatsDto, CloseBookResponse, ReopenBookResponse, ShareResponse } from "@/types"
+import type { BookDto, BookStatsDto, CloseBookResponse, ReopenBookResponse, ShareResponse, GlobalShareResponse } from "@/types"
 
 export class OnlineBooksService implements IBooksService {
   async getBooks(): Promise<BookDto[]> {
@@ -37,6 +37,14 @@ export class OnlineBooksService implements IBooksService {
 
   async removeShare(bookId: string, userId: string): Promise<void> {
     return booksService.removeShare(bookId, userId)
+  }
+
+  async addGlobalShare(email: string): Promise<GlobalShareResponse> {
+    return booksService.addGlobalShare(email)
+  }
+
+  async removeGlobalShare(userId: string): Promise<void> {
+    return booksService.removeGlobalShare(userId)
   }
 
   async getCurrentBook(): Promise<BookDto> {

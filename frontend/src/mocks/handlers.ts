@@ -995,6 +995,69 @@ export const handlers = [
     return HttpResponse.json({ data: { removed: true } })
   }),
 
+  // ---- Global Shares ----
+  http.post('/api/v1/shares', async ({ request }) => {
+    const auth = requireAuth(request)
+    if (auth.error) return auth.response
+    const user = auth.user!
+    const body = (await request.json()) as { email?: string }
+    if (!body.email) {
+      return HttpResponse.json({ error: 'Email required' }, { status: 400 })
+    }
+    const targetUser = users.find(u => u.email === body.email)
+    if (!targetUser) {
+      return HttpResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+    if (targetUser.id === user.id) {
+      return HttpResponse.json({ error: 'Cannot share with yourself' }, { status: 400 })
+    }
+    // Check if already shared on any owned book
+    const ownedBooks = books.filter(b => b.ownerId === user.id)
+    const alreadyShared = ownedBooks.some(b => b.sharedWith.some(s => s.userId === targetUser.id))
+    if (alreadyShared) {
+      return HttpResponse.json({ error: 'Already shared with this user' }, { status: 409 })
+    }
+    // Propagate to all owned books
+    let affectedBooks = 0
+    for (const book of ownedBooks) {
+      book.sharedWith.push({ userId: targetUser.id, permission: 'edit' })
+      affectedBooks++
+    }
+    return HttpResponse.json(
+      {
+        data: {
+          userId: targetUser.id,
+          email: targetUser.email,
+          affectedBooks,
+        },
+      },
+      { status: 201 },
+    )
+  }),
+
+  http.delete('/api/v1/shares/:userId', ({ request, params }) => {
+    const auth = requireAuth(request)
+    if (auth.error) return auth.response
+    const user = auth.user!
+    const { userId } = params
+    // Find and remove from all owned books
+    const ownedBooks = books.filter(b => b.ownerId === user.id)
+    let found = false
+    let affectedBooks = 0
+    for (const book of ownedBooks) {
+      const idx = book.sharedWith.findIndex(s => s.userId === userId)
+      if (idx !== -1) {
+        book.sharedWith.splice(idx, 1)
+        found = true
+        affectedBooks++
+      }
+    }
+    if (!found) {
+      return HttpResponse.json({ error: 'Share not found' }, { status: 404 })
+    }
+    return HttpResponse.json({ data: { removed: true, affectedBooks } })
+  }),
+
   // ---- Book Stats ----
   http.get('/api/v1/books/:bookId/stats', ({ request, params }) => {
     const auth = requireAuth(request)

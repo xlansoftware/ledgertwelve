@@ -8,6 +8,7 @@ import type {
   CloseBookResponse,
   ReopenBookResponse,
   ShareResponse,
+  GlobalShareResponse,
 } from "@/types"
 
 export interface CreateBookRequest {
@@ -46,6 +47,10 @@ export interface IBooksService {
   addShare(bookId: string, req: AddShareRequest): Promise<ShareResponse>
   updateShare(bookId: string, userId: string, req: UpdateShareRequest): Promise<ShareResponse>
   removeShare(bookId: string, userId: string): Promise<void>
+  /** Add a global share: grant edit access to all owned books. */
+  addGlobalShare(email: string): Promise<GlobalShareResponse>
+  /** Remove a global share: revoke access from all owned books. */
+  removeGlobalShare(userId: string): Promise<void>
   getCurrentBook(): Promise<BookDto>
   setCurrentBook(bookId: string): Promise<BookDto>
   getBookStats(bookId: string, params?: GetBookStatsParams): Promise<BookStatsDto>

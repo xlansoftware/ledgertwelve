@@ -16,6 +16,8 @@ import {
   removeShare,
   closeBook,
   reopenBook,
+  addGlobalShare,
+  removeGlobalShare,
 } from "./booksService"
 import { createTransaction } from "./transactionsService"
 import { login } from "./authService"
@@ -208,6 +210,49 @@ describe("booksService", () => {
     it("deletes an empty book", async () => {
       const created = await createBook({ name: "Temp Book" })
       await expect(deleteBook(created.id)).resolves.toBeUndefined()
+    })
+  })
+
+  describe("addGlobalShare", () => {
+    it("adds a global share and returns userId, email, affectedBooks", async () => {
+      const result = await addGlobalShare("friend@example.com")
+      expect(result).toMatchObject({
+        userId: "usr_2",
+        email: "friend@example.com",
+        affectedBooks: expect.any(Number),
+      })
+    })
+
+    it("throws 404 for unknown email", async () => {
+      await expect(addGlobalShare("unknown@example.com")).rejects.toThrow(
+        /User not found/i,
+      )
+    })
+
+    it("throws 400 for self-share", async () => {
+      await expect(addGlobalShare("john@example.com")).rejects.toThrow(
+        /Cannot share with yourself/i,
+      )
+    })
+
+    it("throws 409 for existing share", async () => {
+      await expect(addGlobalShare("friend@example.com")).rejects.toThrow(
+        /Already shared/i,
+      )
+    })
+  })
+
+  describe("removeGlobalShare", () => {
+    it("removes a global share successfully", async () => {
+      await expect(
+        removeGlobalShare("usr_2"),
+      ).resolves.toBeUndefined()
+    })
+
+    it("throws 404 for non-shared user", async () => {
+      await expect(
+        removeGlobalShare("usr_nonexistent"),
+      ).rejects.toThrow(/Share not found/i)
     })
   })
 

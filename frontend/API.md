@@ -666,6 +666,89 @@ Remove sharing.
 
 ---
 
+# Global Sharing
+
+Global shares grant a user `edit` permission to **all books** owned by the current user — both existing books at the time the share is created, and any books created in the future. This avoids per-book permission management.
+
+Later, per-book sharing with granular permissions (`view` / `edit`) will be added as a follow-up.
+
+The share is always `edit` permission. `view` permission will be added at a later stage.
+
+---
+
+# POST /api/v1/shares
+
+### Purpose
+
+Create a global share: adds the user with `edit` permission to every book the current user owns (existing books at the time of the call, and implicitly all future books).
+
+### Request
+
+```json
+{
+  "email": "friend@example.com"
+}
+```
+
+### Response (201)
+
+```json
+{
+  "data": {
+    "userId": "usr_2",
+    "email": "friend@example.com",
+    "affectedBooks": 3
+  }
+}
+```
+
+### Errors
+
+```json
+// 400 — Cannot share with yourself
+{ "error": "Cannot share with yourself" }
+
+// 404 — User not found (email doesn't match any registered user)
+{ "error": "User not found" }
+
+// 409 — Already shared
+{ "error": "Already shared with this user" }
+```
+
+### Notes
+
+- "All books" means the set of books where `ownerId` equals the current user's ID. Books the user was shared into by someone else are not affected.
+- When a new book is created, all currently shared users receive `edit` access to it automatically (server-side logic).
+- The `affectedBooks` field is informational — the frontend does not display it.
+
+---
+
+# DELETE /api/v1/shares/{userId}
+
+### Purpose
+
+Removes a user from every book the current user owns.
+
+### Response (200)
+
+```json
+{
+  "data": {
+    "removed": true,
+    "affectedBooks": 3
+  }
+}
+```
+
+### Errors
+
+```json
+// 404 — Share not found (the user is not currently shared)
+{ "error": "Share not found" }
+```
+
+---
+
 # GET /api/v1/rates/exchange
 
 ### Purpose

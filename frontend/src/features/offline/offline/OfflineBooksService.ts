@@ -6,7 +6,7 @@
 // Close book creates a balancing transaction via the factory's transactions service.
 // ---------------------------------------------------------------------------
 
-import type { BookDto, BookStatsDto, CloseBookResponse, ReopenBookResponse, ShareResponse } from "@/types"
+import type { BookDto, BookStatsDto, CloseBookResponse, ReopenBookResponse, ShareResponse, GlobalShareResponse } from "@/types"
 import type { IBooksService, CreateBookRequest, UpdateBookRequest, CloseBookRequest, AddShareRequest, UpdateShareRequest, GetBookStatsParams } from "@/features/offline/interfaces/IBooksService"
 import * as db from "./db"
 import { getFactory } from "@/features/offline/factory"
@@ -123,6 +123,14 @@ export class OfflineBooksService implements IBooksService {
       throw new Error("Share not found")
     }
     await db.removeSharedUser(bookId, userId)
+  }
+
+  async addGlobalShare(_email: string): Promise<GlobalShareResponse> {
+    throw new Error("Global sharing is not available in offline mode")
+  }
+
+  async removeGlobalShare(_userId: string): Promise<void> {
+    throw new Error("Global sharing is not available in offline mode")
   }
 
   async getCurrentBook(): Promise<BookDto> {

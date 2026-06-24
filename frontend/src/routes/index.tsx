@@ -14,6 +14,7 @@ import EditTransactionPage from "@/pages/edit-transaction/EditTransactionPage";
 import InisghtPage from "@/pages/insight/InisghtPage";
 import InsightDailyPage from "@/pages/insight-daily/InsightDailyPage";
 import InsightMonthlyPage from "@/pages/insight-monthly/InsightMonthlyPage";
+import SharePage from "@/pages/shares/SharePage";
 import CategoriesPage from "@/pages/category/CategoriesPage";
 import ExportPage from "@/pages/export/ExportPage";
 import ImportPage from "@/pages/import/ImportPage";
@@ -63,6 +64,10 @@ const router = createBrowserRouter([
       {
         path: "settings",
         element: <SettingsPage />,
+      },
+      {
+        path: "shares",
+        element: <SharePage />,
       },
       {
         path: "categories",

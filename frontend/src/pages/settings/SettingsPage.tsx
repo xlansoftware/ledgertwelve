@@ -1,4 +1,4 @@
-import { useAuthStore } from "@/store";
+import { useAuthStore, useUsersStore } from "@/store";
 import { useTheme } from "@/components/common/theme/theme-context";
 import { ThemeToggle } from "@/components/common/theme/theme-toggle";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,11 @@ export default function SettingsPage() {
   const { setTheme } = useTheme();
   const authState = useAuthStore((s) => s.state);
   const logout = useAuthStore((s) => s.logout);
+  const sharedUsers = useUsersStore((s) => s.users)
+  const sharedUserCount =
+    authState.status === "authenticated"
+      ? sharedUsers.filter((u) => u.id !== authState.user.id).length
+      : 0
 
   const handleLogout = async () => {
     await logout();
@@ -64,6 +69,26 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
+        {!isOfflineMode() && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Shared Users</CardTitle>
+              <CardDescription>
+                {sharedUserCount} user(s) have access to your books
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate("/shares")}
+              >
+                Manage Shares…
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
         <Card>
           <CardHeader>
             <CardTitle>Categories</CardTitle>
@@ -77,7 +102,7 @@ export default function SettingsPage() {
               size="sm"
               onClick={() => navigate("/categories")}
             >
-              Edit Categories...
+              Edit Categories…
             </Button>
           </CardContent>
         </Card>

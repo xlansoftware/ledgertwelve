@@ -51,6 +51,17 @@ export interface ShareResponse {
   permission: "view" | "edit"
 }
 
+export interface GlobalShareResponse {
+  userId: string
+  email: string
+  affectedBooks: number
+}
+
+export interface GlobalShareRemoveResponse {
+  removed: true
+  affectedBooks: number
+}
+
 export interface FilterRequest {
   period?: 'all' | 'today' | 'thisWeek' | 'thisMonth' | 'thisYear' | 'custom';
   startDate?: string;      // ISO 8601 string, e.g., "2025-05-29"

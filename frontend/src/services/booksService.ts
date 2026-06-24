@@ -5,6 +5,8 @@ import type {
   BookStatsDto,
   DeleteResponse,
   ShareResponse,
+  GlobalShareResponse,
+  GlobalShareRemoveResponse,
   CloseBookResponse,
   ReopenBookResponse,
 } from "@/types"
@@ -121,6 +123,29 @@ export async function updateShare(
 export async function removeShare(bookId: string, userId: string): Promise<void> {
   await request<ApiResponse<{ removed: true }>>(
     `/api/v1/books/${bookId}/shares/${userId}`,
+    { method: "DELETE" },
+  )
+}
+
+// ---------------------------------------------------------------------------
+// POST  /api/v1/shares
+// ---------------------------------------------------------------------------
+
+export async function addGlobalShare(email: string): Promise<GlobalShareResponse> {
+  const res = await request<ApiResponse<GlobalShareResponse>>("/api/v1/shares", {
+    method: "POST",
+    body: { email },
+  })
+  return res.data
+}
+
+// ---------------------------------------------------------------------------
+// DELETE  /api/v1/shares/{userId}
+// ---------------------------------------------------------------------------
+
+export async function removeGlobalShare(userId: string): Promise<void> {
+  await request<ApiResponse<GlobalShareRemoveResponse>>(
+    `/api/v1/shares/${userId}`,
     { method: "DELETE" },
   )
 }
