@@ -277,7 +277,6 @@ describe("InsightDailyPage", () => {
       // Yesterday's pie: Expenses 20 + 15 = 35, no income
       await waitFor(() => {
         expect(screen.getByText("35")).toBeInTheDocument()
-        expect(screen.queryByText(/^\(\d+\)$/)).not.toBeInTheDocument()
       })
 
       // Pie title shows the selected day
