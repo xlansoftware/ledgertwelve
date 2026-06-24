@@ -67,8 +67,8 @@ export default function AddPage() {
     try {
       await createTransaction({
         bookId: currentBook?.id || "default",
-        amount: result.amount,
-        originalAmount: result.originalAmount,
+        amount: result.amount * (-1),
+        originalAmount: result.originalAmount * (-1),
         originalCurrency: result.originalCurrency || undefined,
         exchangeRate: result.exchangeRate,
         categoryName: selectedCategory?.name,
