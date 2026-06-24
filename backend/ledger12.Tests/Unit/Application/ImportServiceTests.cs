@@ -236,4 +236,118 @@ public class ImportServiceTests
 
         await Assert.ThrowsAsync<DomainException>(() => _service.ImportAsync(request, _userId));
     }
+
+    [Fact]
+    public async Task ImportTransactionsAsync_CreatesTransactions_WithCorrectDateCategoryAndAmount_FromCsvData()
+    {
+        // Arrange — rows built from CSV columns:
+        // Id,DateUTC,Value,ExchangeRate,Currency,Category,Notes,User
+        // Value is the original-currency amount (BGN); amount is Value * ExchangeRate (EUR).
+        var rows = new List<Dictionary<string, object?>>
+        {
+            new()
+            {
+                ["id"] = "4",
+                ["dateTime"] = "2025-05-12T10:37:57Z",
+                ["amount"] = 2.04m,
+                ["originalCurrency"] = "BGN",
+                ["originalAmount"] = 4.00m,
+                ["exchangeRate"] = 0.51m,
+                ["categoryName"] = "Groceries",
+                ["note"] = null
+            },
+            new()
+            {
+                ["id"] = "5",
+                ["dateTime"] = "2025-05-12T11:27:59Z",
+                ["amount"] = 2.5347m,
+                ["originalCurrency"] = "BGN",
+                ["originalAmount"] = 4.97m,
+                ["exchangeRate"] = 0.51m,
+                ["categoryName"] = "Groceries",
+                ["note"] = null
+            },
+            new()
+            {
+                ["id"] = "10",
+                ["dateTime"] = "2025-05-13T09:06:20Z",
+                ["amount"] = 9.333m,
+                ["originalCurrency"] = "BGN",
+                ["originalAmount"] = 18.30m,
+                ["exchangeRate"] = 0.51m,
+                ["categoryName"] = "Groceries",
+                ["note"] = null
+            },
+            new()
+            {
+                ["id"] = "12",
+                ["dateTime"] = "2025-05-13T13:07:44Z",
+                ["amount"] = 0.612m,
+                ["originalCurrency"] = "BGN",
+                ["originalAmount"] = 1.20m,
+                ["exchangeRate"] = 0.51m,
+                ["categoryName"] = "Groceries",
+                ["note"] = null
+            },
+            new()
+            {
+                ["id"] = "13",
+                ["dateTime"] = "2025-05-13T13:23:29Z",
+                ["amount"] = 11.1537m,
+                ["originalCurrency"] = "BGN",
+                ["originalAmount"] = 21.87m,
+                ["exchangeRate"] = 0.51m,
+                ["categoryName"] = "Pets",
+                ["note"] = null
+            },
+            new()
+            {
+                ["id"] = "15",
+                ["dateTime"] = "2025-05-13T14:14:42Z",
+                ["amount"] = 10.455m,
+                ["originalCurrency"] = "BGN",
+                ["originalAmount"] = 20.50m,
+                ["exchangeRate"] = 0.51m,
+                ["categoryName"] = "Groceries",
+                ["note"] = null
+            }
+        };
+
+        var request = new ImportRequest(false, "transactions", _bookId.ToString(), null, null, rows, null);
+        _bookRepo.Setup(r => r.HasEditAccessAsync(_bookId, _userId)).ReturnsAsync(true);
+        _transactionRepo.Setup(r => r.AddAsync(It.IsAny<Transaction>())).Returns(Task.CompletedTask);
+
+        // Act
+        var response = await _service.ImportAsync(request, _userId);
+        var result = response.Data as EntityImportResult;
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(6, result.Created);
+        Assert.Equal(0, result.Errors);
+        Assert.Equal(0, result.Warnings);
+
+        // Row 1: 2025-05-12, Groceries, 2.04 EUR (4.00 BGN × 0.51)
+        _transactionRepo.Verify(r => r.AddAsync(It.Is<Transaction>(t =>
+            t.DateTime == DateTimeOffset.Parse("2025-05-12T10:37:57Z") &&
+            t.CategoryName == "Groceries" &&
+            t.Amount == 2.04m &&
+            t.OriginalCurrency == "BGN" &&
+            t.OriginalAmount == 4.00m &&
+            t.ExchangeRate == 0.51m
+        )), Times.Once);
+
+        // Row 5: 2025-05-13, Pets, 11.1537 EUR (21.87 BGN × 0.51)
+        _transactionRepo.Verify(r => r.AddAsync(It.Is<Transaction>(t =>
+            t.DateTime == DateTimeOffset.Parse("2025-05-13T13:23:29Z") &&
+            t.CategoryName == "Pets" &&
+            t.Amount == 11.1537m &&
+            t.OriginalCurrency == "BGN" &&
+            t.OriginalAmount == 21.87m &&
+            t.ExchangeRate == 0.51m
+        )), Times.Once);
+
+        // All 6 AddAsync calls
+        _transactionRepo.Verify(r => r.AddAsync(It.IsAny<Transaction>()), Times.Exactly(6));
+    }
 }
