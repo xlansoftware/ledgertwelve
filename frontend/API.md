@@ -1376,3 +1376,227 @@ Content-Disposition: attachment; filename="transactions-Main-2026-06-24.xlsx"
 ```
 
 ---
+
+# Import
+
+Imports parse and mapping happen client-side. The server receives already-mapped, typed data and performs validation, upsert, and creation.
+
+---
+
+# POST /api/v1/imports
+
+### Purpose
+
+Import data into the ledger. Supports three entity types (`transactions`, `categories`, `books`) plus a special `backup` mode for restoring a full JSON backup.
+
+### Modes
+
+| Mode | Behavior |
+|------|----------|
+| `preview: true` | Validates all rows and returns counts + per-row issues **without committing**. Used to show the user what will happen before they confirm. |
+| `preview: false` | Validates and commits. Successful rows are created or updated. Failed rows are skipped and reported in the response. The operation is **not** all-or-nothing. |
+
+### Request (single entity type)
+
+```json
+{
+  "preview": true,
+  "entityType": "transactions",
+  "bookId": "book_main",
+  "clearExisting": false,
+  "mapping": {
+    "Date": "dateTime",
+    "Value": "amount",
+    "Description": "note"
+  },
+  "rows": [
+    { "dateTime": "2026-06-01T00:00:00Z", "amount": -100, "note": "Lunch" },
+    { "dateTime": "2026-06-02T00:00:00Z", "amount": -50, "note": "Coffee" }
+  ]
+}
+```
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `preview` | yes | `true` to validate only; `false` to commit. |
+| `entityType` | yes | `"transactions"`, `"categories"`, `"books"`, or `"backup"`. |
+| `bookId` | conditional | Required for `entityType: "transactions"`. The fallback book when no row has a `bookId` field. Ignored for other entity types. |
+| `clearExisting` | no | Default `false`. If `true`, deletes all existing records of the given entity type (for transactions: scoped to `bookId`) before creating new rows. Ignored in preview mode — the preview response includes the `deleted` count to show impact. |
+| `mapping` | conditional | Required for `transactions`/`categories`/`books`. Source column name → target field name. Used for building richer error messages. Not used for `backup`. |
+| `rows` | conditional | Required for `transactions`/`categories`/`books`. Array of objects where keys are **target field names** and values are already typed (dates as ISO 8601 strings, amounts as numbers). Not used for `backup`. |
+| `data` | conditional | Required for `backup`. The full backup JSON object (`exportedAt`, `version`, `books`, `categories`, `transactions`). Not used for other entity types. |
+
+### Upsert logic
+
+- If a row contains an `id` field with a value that matches an existing record, that record is **updated**. Otherwise a new record is **created**.
+- If no `id` field is present in the mapping, all rows are treated as creates.
+- Per-row behavior: a row with an empty/null `id` is always a create, even if other rows in the same import have IDs.
+
+### `clearExisting` behavior
+
+- For `entityType: "transactions"`: deletes all transactions in `bookId` before importing.
+- For `entityType: "categories"`: deletes all user categories before importing.
+- For `entityType: "books"`: deletes all user books except Main. Deleting Main is **not allowed** — it is silently preserved.
+- For `entityType: "backup"`: clears transactions and categories only. **Books are never cleared** during backup restore — they are merged by ID.
+- In preview mode, the `deleted` count reflects what **would be** deleted — nothing is actually removed.
+
+### Validation rules
+
+#### Transactions
+
+| Field | Required | Rules |
+|-------|----------|-------|
+| `amount` | **yes** | Must be a number. |
+| `dateTime` | no | Must be a valid ISO 8601 date string. Defaults to current date/time if missing or invalid. |
+| `bookId` | no | Must reference an existing, visible book. Falls back to the top-level `bookId` parameter. |
+| `categoryName` | no | If provided, must match an existing category name. |
+| `originalCurrency` | no | If set, `originalAmount` and `exchangeRate` must also be set. |
+| `originalAmount` | no | Required if `originalCurrency` is set. |
+| `exchangeRate` | no | Required if `originalCurrency` is set. Must be a positive number. |
+| `note` | no | Free text. |
+| `id` | no | Controls upsert vs create. Empty/null treated as create. |
+
+#### Categories
+
+| Field | Required | Rules |
+|-------|----------|-------|
+| `name` | **yes** | Must be a non-empty string. |
+| `recurring` | no | Boolean. Defaults to `false`. |
+| `color` | no | Hex color string (e.g., `"#FF5733"`). |
+| `icon` | no | Icon name string. |
+| `id` | no | Controls upsert vs create. |
+
+#### Books
+
+| Field | Required | Rules |
+|-------|----------|-------|
+| `name` | **yes** | Must be a non-empty string. |
+| `currency` | no | Currency code. Defaults to `null` if missing. |
+| `status` | no | `"open"` or `"closed"`. Defaults to `"open"`. |
+| `id` | no | Controls upsert vs create. |
+
+#### Backup
+
+- `version` must be present and must match a supported version (currently `1`).
+- For unsupported versions: import is blocked with an error.
+- `books`, `categories`, `transactions` arrays are validated in order.
+- If a transaction references a category or book that fails validation, the transaction is skipped.
+
+### Issue format
+
+```json
+{
+  "row": 14,
+  "field": "categoryName",
+  "message": "Category \"Bogus\" not found",
+  "severity": "error"
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `row` | 1-based index of the problematic row in the request. `null` for top-level issues (e.g., invalid book, unsupported version). |
+| `field` | The target field name that failed validation. `null` for general row-level issues. |
+| `message` | Human-readable description. |
+| `severity` | `"error"` (row is skipped) or `"warning"` (row is still processed). |
+
+### Response (single entity type)
+
+```json
+{
+  "data": {
+    "created": 139,
+    "updated": 0,
+    "deleted": 0,
+    "errors": 3,
+    "warnings": 2,
+    "issues": [
+      { "row": 14, "field": "categoryName", "message": "Category \"Bogus\" not found", "severity": "error" },
+      { "row": 52, "field": "dateTime", "message": "Invalid date: \"yesterday\"", "severity": "error" },
+      { "row": 201, "field": "amount", "message": "Amount is required", "severity": "error" },
+      { "row": 7, "field": null, "message": "Column \"Extra Col\" was ignored", "severity": "warning" },
+      { "row": 88, "field": null, "message": "Exchange rate missing — only original currency was set", "severity": "warning" }
+    ]
+  }
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `created` | Number of new records created. In preview mode, number that **would be** created. |
+| `updated` | Number of existing records updated (via `id` match). |
+| `deleted` | Only populated when `clearExisting: true`. Number of records that were/would-be deleted before import. Always 0 in non-clear imports. |
+| `errors` | Number of rows skipped due to validation failures. |
+| `warnings` | Number of non-fatal issues (rows still processed). |
+| `issues` | Per-row detail for every error and warning. |
+
+### Response (backup)
+
+```json
+{
+  "data": {
+    "books": {
+      "created": 1,
+      "updated": 1,
+      "deleted": 0,
+      "errors": 0,
+      "warnings": 0,
+      "issues": []
+    },
+    "categories": {
+      "created": 3,
+      "updated": 9,
+      "deleted": 0,
+      "errors": 0,
+      "warnings": 0,
+      "issues": []
+    },
+    "transactions": {
+      "created": 120,
+      "updated": 227,
+      "deleted": 0,
+      "errors": 3,
+      "warnings": 2,
+      "issues": [ ... ]
+    }
+  }
+}
+```
+
+Each entity key contains the same `created`/`updated`/`deleted`/`errors`/`warnings`/`issues` shape as the single-entity response. Order of processing: `books` → `categories` → `transactions`.
+
+### Errors
+
+```json
+// 400 — Missing required fields
+{ "error": "entityType is required" }
+
+// 400 — Invalid entity type
+{ "error": "Unknown entityType: \"pets\". Must be transactions, categories, books, or backup." }
+
+// 400 — Missing data for backup
+{ "error": "data field is required for backup entityType" }
+
+// 400 — Unsupported backup version
+{ "error": "Unsupported backup version: 2. This app supports version 1." }
+
+// 400 — Invalid backup schema
+{ "error": "Backup data is malformed: missing 'books' array" }
+
+// 400 — Missing rows
+{ "error": "rows array is required for transactions entityType" }
+
+// 400 — Missing bookId for transactions
+{ "error": "bookId is required for transaction imports" }
+
+// 401 — Unauthenticated
+{ "error": "Unauthorized" }
+```
+
+### Notes
+
+- Import is **partial-success** by design. Rows that pass validation are committed; rows that fail are skipped. The response tells you which rows failed and why.
+- Clearing existing data with `clearExisting: true` **always preserves the Main book**.
+- Books are never cleared during backup restore — they are always merged by ID.
+- Row indices in issues are 1-based (matching spreadsheet row numbering).
+- The `mapping` field is metadata only — it does not affect processing. All transformation from source column names to target field names happens client-side.
