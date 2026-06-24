@@ -1,8 +1,8 @@
+import type { DeleteCategoryResponse } from "@/features/offline/interfaces/ICategoriesService"
 import { request } from "./api"
 import type {
   ApiResponse,
   CategoryDto,
-  DeleteResponse,
   BulkReassignResponse,
   ReorderCategoriesResponse,
 } from "@/types"
@@ -70,8 +70,8 @@ export interface DeleteCategoryParams {
 export async function deleteCategory(
   categoryId: string,
   params?: DeleteCategoryParams,
-): Promise<DeleteResponse & { reassignedTransactions: number }> {
-  const res = await request<ApiResponse<DeleteResponse & { reassignedTransactions: number }>>(
+): Promise<DeleteCategoryResponse> {
+  const res = await request<ApiResponse<DeleteCategoryResponse>>(
     `/api/v1/categories/${categoryId}`,
     { method: "DELETE", params: { replacementCategoryName: params?.replacementCategoryName } },
   )

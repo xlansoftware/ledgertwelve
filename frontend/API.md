@@ -200,9 +200,20 @@ Returns all users the current user has interacted with — the current user them
   "recurring": false,
   "color": "#FF5733",
   "icon": "utensils",
+  "order": 1,
   "createdAt": "2026-01-01T10:00:00Z"
 }
 ```
+
+| Field | Type | Always | Notes |
+|-------|------|--------|-------|
+| `id` | string | yes | |
+| `name` | string | yes | |
+| `recurring` | boolean | no | Default `false`. |
+| `color` | string | no | Hex color (e.g., `#FF5733`). |
+| `icon` | string | no | Icon name. |
+| `order` | number | no | Display order, 1-based. Sorted ascending. |
+| `createdAt` | string | yes | ISO 8601 timestamp. |
 
 ---
 
@@ -228,9 +239,21 @@ Returns all users the current user has interacted with — the current user them
   "status": "open",
   "ownerId": "usr_1",
   "sharedWith": [],
-  "createdAt": "2026-01-01T10:00:00Z"
+  "createdAt": "2026-01-01T10:00:00Z",
+  "closedAt": null
 }
 ```
+
+| Field | Type | Always | Notes |
+|-------|------|--------|-------|
+| `id` | string | yes | |
+| `name` | string | yes | |
+| `currency` | string | no | ISO currency code. |
+| `status` | string | yes | `"open"` or `"closed"`. |
+| `ownerId` | string | yes | User ID of the owner. |
+| `sharedWith` | array | yes | Array of `SharedUserDto`. |
+| `createdAt` | string | yes | ISO 8601 timestamp. |
+| `closedAt` | string\|null | no | ISO 8601 timestamp when closed, or `null` if open. |
 
 ---
 
@@ -254,9 +277,28 @@ Returns all users the current user has interacted with — the current user them
 
   "note": "Lunch",
 
-  "createdAt": "2026-05-01T12:00:00Z"
+  "createdAt": "2026-05-01T12:00:00Z",
+
+  "isBookClosingEntry": false,
+  "closedBookId": null
 }
 ```
+
+| Field | Type | Always | Notes |
+|-------|------|--------|-------|
+| `id` | string | yes | |
+| `bookId` | string | yes | |
+| `userId` | string | yes | User who created the transaction. |
+| `dateTime` | string | yes | ISO 8601 timestamp. |
+| `amount` | number | yes | Negative for expenses, positive for income. |
+| `originalCurrency` | string | no | Required when using multi-currency. |
+| `originalAmount` | number | no | Amount in original currency. |
+| `exchangeRate` | number | no | Rate used for conversion. |
+| `categoryName` | string | no | Category name (not ID). |
+| `note` | string | no | Free text. |
+| `createdAt` | string | yes | ISO 8601 timestamp. |
+| `isBookClosingEntry` | boolean | no | `true` if this is an auto-generated closing transaction. |
+| `closedBookId` | string\|null | no | If this is a closing entry, the ID of the closed book. `null` otherwise. |
 
 ---
 
@@ -632,7 +674,7 @@ Add shared user.
 }
 ```
 
-### Response
+### Response (201)
 
 ```json
 {
@@ -1000,6 +1042,26 @@ Create transaction.
 }
 ```
 
+### Response (201)
+
+```json
+{
+  "data": {
+    "id": "tx_1",
+    "bookId": "book_1",
+    "userId": "usr_1",
+    "dateTime": "2026-05-01T12:00:00Z",
+    "amount": -100,
+    "originalCurrency": "USD",
+    "originalAmount": -110,
+    "exchangeRate": 0.91,
+    "categoryName": "Food",
+    "note": "Lunch",
+    "createdAt": "2026-05-01T12:00:00Z"
+  }
+}
+```
+
 ### Validation
 
 If:
@@ -1068,13 +1130,15 @@ I would implement reports as read-only query endpoints.
 
 # GET /api/v1/reports/totals
 
-### Query
+### Query Parameters
 
-```text
-period=month
-from=2026-01-01
-to=2026-12-31
-```
+| Parameter | Required | Format | Description |
+|-----------|----------|--------|-------------|
+| `period` | no | string | Grouping period: `"day"`, `"week"`, `"month"` (default), or `"year"`. |
+| `from` | no | `YYYY-MM-DD` | Inclusive start date. |
+| `to` | no | `YYYY-MM-DD` | Exclusive end date. |
+
+Only Main book transactions are included.
 
 ### Response
 
@@ -1091,17 +1155,25 @@ to=2026-12-31
 }
 ```
 
+| Field | Description |
+|-------|-------------|
+| `period` | Key depends on `period` param: `YYYY-MM-DD` for day, Monday's date for week, `YYYY-MM` for month, `YYYY` for year |
+| `income` | Sum of positive-amount transactions in the period. |
+| `expense` | Sum of negative-amount transactions in the period. |
+| `net` | `income + expense` (negative = net expense). |
+
 ---
 
 # GET /api/v1/reports/categories
 
-### Query
+### Query Parameters
 
-```text
-period=month
-from=2026-05-01
-to=2026-05-31
-```
+| Parameter | Required | Format | Description |
+|-----------|----------|--------|-------------|
+| `from` | no | `YYYY-MM-DD` | Inclusive start date. |
+| `to` | no | `YYYY-MM-DD` | Exclusive end date. |
+
+If both `from` and `to` are omitted, returns category breakdown across all time.
 
 ### Response
 
@@ -1115,6 +1187,8 @@ to=2026-05-31
   ]
 }
 ```
+
+Only Main book transactions are included in the computation. Amounts are rounded to 2 decimal places.
 
 ---
 

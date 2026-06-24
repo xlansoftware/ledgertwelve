@@ -29,6 +29,10 @@ export interface ReassignCategoriesRequest {
   toCategoryName: string
 }
 
+export type DeleteCategoryResponse = {
+  reassignedTransactions: number
+}
+
 export interface ReorderCategoriesRequest {
   orderedIds: string[]
 }
@@ -37,7 +41,7 @@ export interface ICategoriesService {
   getCategories(): Promise<CategoryDto[]>
   createCategory(req: CreateCategoryRequest): Promise<CategoryDto>
   updateCategory(categoryId: string, req: UpdateCategoryRequest): Promise<CategoryDto>
-  deleteCategory(categoryId: string, params?: DeleteCategoryParams): Promise<{ reassignedTransactions: number }>
+  deleteCategory(categoryId: string, params?: DeleteCategoryParams): Promise<DeleteCategoryResponse>
   reassignCategories(req: ReassignCategoriesRequest): Promise<BulkReassignResponse>
   reorderCategories(req: ReorderCategoriesRequest): Promise<ReorderCategoriesResponse>
 }
