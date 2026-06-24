@@ -374,6 +374,31 @@ public class AccountServiceTests
 ## Quick rule of thumb
 
 - **"Does this know about the database?"** → Infrastructure
-- **"Does this define what the app *can* do?"** → Application
+- **"Does this define what the app *can* do?** → Application
 - **"Is this a business concept (entity, rule, exception)?"** → Domain
 - **"Is this HTTP-specific (route, status code, request body)?"** → API
+
+---
+
+## Database commands
+
+```bash
+# Create a new migration
+# Replace <MigrationName> with a descriptive name (e.g. AddUserAvatar)
+cd backend && dotnet ef migrations add <MigrationName> \
+  --project ledger12.Infrastructure \
+  --startup-project ledger12.API
+
+# Apply pending migrations to the database
+cd backend && dotnet ef database update \
+  --project ledger12.Infrastructure \
+  --startup-project ledger12.API
+
+# Drop the database (irreversible — all data is lost)
+cd backend && dotnet ef database drop \
+  --project ledger12.Infrastructure \
+  --startup-project ledger12.API
+```
+
+> `--project` targets the project with `AppDbContext` (Infrastructure), while `--startup-project` is the entry-point project (API) that provides the connection string and DI configuration.
+

@@ -19,5 +19,5 @@ dotnet ef database update
 dotnet ef migrations add InitialCreate \
   --project backend/ledger12.Infrastructure/ledger12.Infrastructure.csproj \
   --startup-project backend/ledger12.API/ledger12.API.csproj \
-  --output-dir Data/Migrations
+  --output-dir Migrations
 ```
