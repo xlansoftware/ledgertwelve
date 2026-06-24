@@ -124,8 +124,12 @@ beforeEach(() => {
 function getRowNet(button: HTMLElement): number {
   const amountSpan = button.querySelector(".font-mono.tabular-nums")
   if (!amountSpan) return NaN
-  const text = amountSpan.textContent?.replace(/[^0-9.-]/g, "") ?? ""
-  return parseFloat(text)
+  const raw = amountSpan.textContent ?? ""
+  // Bracket format: (55.00) means -55.00
+  const isNegative = raw.startsWith("(") && raw.endsWith(")")
+  const digits = raw.replace(/[^0-9.]/g, "")
+  const val = parseFloat(digits)
+  return isNegative ? -val : val
 }
 
 /** Find a button whose text content matches the given month label. */

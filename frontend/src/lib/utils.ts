@@ -97,14 +97,15 @@ export function formatCurrency(
 ): string {
   // Define the formatting options
   const options: Intl.NumberFormatOptions = {
-    // style: "currency",
-    // currency: "USD",
-    minimumFractionDigits: Math.min(2, fractionDigits), // Set minimum decimal places
-    maximumFractionDigits: fractionDigits, // Set maximum decimal places
+    minimumFractionDigits: Math.min(2, fractionDigits),
+    maximumFractionDigits: fractionDigits,
   };
 
-  // Create a formatter and format the amount
-  return new Intl.NumberFormat("en-US", options).format(amount);
+  // Format with Intl.NumberFormat
+  const formatted = new Intl.NumberFormat("en-US", options).format(Math.abs(amount));
+
+  // Negative amounts displayed in brackets, e.g. -1.00 → (1.00)
+  return amount < 0 ? `(${formatted})` : formatted;
 }
 
 export function formatDate(dateUtc: Date): string {
