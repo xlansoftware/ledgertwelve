@@ -12,16 +12,12 @@ Read this file fully before making any changes.
 - **Frontend** — React 18, Vite, TypeScript, Vitest
 
 ```
-MyApp/
-├── backend/          # .NET solution (ledger12.sln)
-│   ├── ledger12.API/
-│   ├── ledger12.Application/
-│   ├── ledger12.Domain/
-│   └── ledger12.Infrastructure/
-├── frontend/         # Vite + React + TS
-│   └── src/
-├── AGENTS.md
-└── README.md
+└── backend/          # .NET solution (ledger12.sln)
+    ├── API.md
+    ├── ledger12.API/
+    ├── ledger12.Application/
+    ├── ledger12.Domain/
+    └── ledger12.Infrastructure/
 ```
 
 ---
@@ -52,7 +48,6 @@ API contains:
 * middleware
 * filters
 * dependency injection
-* OpenAPI configuration
 
 API should contain no business logic.
 
@@ -118,9 +113,7 @@ Infrastructure implements interfaces defined by Application.
 
 ### Source of truth
 
-`frontend/API.md` is the authoritative API contract.
-
-The frontend is developed first using MSW mocks and may define new endpoints before backend implementation exists.
+`API.md` is the authoritative API contract.
 
 Backend development implements the contract documented in `API.md`.
 
@@ -227,7 +220,7 @@ cd backend && dotnet ef database update \
 
 ## API Implementation Rules
 
-* Implement endpoints exactly as documented in `frontend/API.md`.
+* Implement endpoints exactly as documented in `API.md`.
 * Route names, payload shapes, and status codes come from `API.md`.
 * Do not rename endpoints during implementation.
 * Do not introduce undocumented fields into responses.
@@ -236,7 +229,7 @@ cd backend && dotnet ef database update \
 
 The backend implements the contract.
 
-The frontend/API.md defines the contract.
+The `API.md` defines the contract.
 
 --- 
 
@@ -283,7 +276,7 @@ Avoid:
 - **Never write business logic in a controller** — controllers only call services and return results.
 - **Never write SQL strings directly** — use EF Core LINQ queries or parameterized raw SQL via `FromSqlRaw`.
 
-* Never modify API contracts without updating `frontend/API.md`.
+* Never modify API contracts without updating `API.md`.
 * Never implement undocumented endpoints.
 * Never return Domain entities from controllers.
 * Never place business rules in controllers.

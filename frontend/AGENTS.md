@@ -13,7 +13,6 @@ Read this file fully before making any changes.
 
 ```
 frontend/         # Vite + React + TS
-├── README.md
 ├── API.md
 └── src/
     ├── pages/
