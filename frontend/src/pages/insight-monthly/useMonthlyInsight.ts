@@ -4,6 +4,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import { getFactory } from "@/features/offline"
+import { useBooksStore } from "@/store"
 import type { MonthlyReportRow, CategoryReportRow, AverageReportDto } from "@/types"
 import {
   computeAccumulation,
@@ -95,6 +96,10 @@ export function useMonthlyInsight(): UseMonthlyInsightReturn {
   const currentMonth = now.getMonth() + 1 // 1-indexed
   const currentMonthStr = `${currentYear}-${String(currentMonth).padStart(2, "0")}`
 
+  // ── Current book from store ──
+  const currentBook = useBooksStore((s) => s.currentBook)
+  const bookId = currentBook?.id ?? "book_main"
+
   // ── Date ranges ──
   const yearStart = `${currentYear}-01-01`
   const yearEnd = firstOfMonth(currentYear + (currentMonth === 12 ? 1 : 0), currentMonth === 12 ? 1 : currentMonth + 1)
@@ -130,7 +135,7 @@ export function useMonthlyInsight(): UseMonthlyInsightReturn {
     setIsLoadingMonthly(true)
     setMonthlyError(null)
 
-    getFactory().reports.getMonthlyReport({ from: yearStart, to: yearEnd })
+    getFactory().reports.getMonthlyReport({ from: yearStart, to: yearEnd, bookId })
       .then((data) => {
         setMonthlyRows(data)
         setIsLoadingMonthly(false)
@@ -139,7 +144,7 @@ export function useMonthlyInsight(): UseMonthlyInsightReturn {
         setMonthlyError(err instanceof Error ? err.message : "Failed to load monthly data")
         setIsLoadingMonthly(false)
       })
-  }, [yearStart, yearEnd])
+  }, [yearStart, yearEnd, bookId])
 
   // ── Fetch wide-window average (12-month rolling) ──
   useEffect(() => {
@@ -152,7 +157,7 @@ export function useMonthlyInsight(): UseMonthlyInsightReturn {
     setIsLoadingAverage(true)
     setAverageError(null)
 
-    getFactory().reports.getMonthlyAverage({ from: fromStr, to: toStr })
+    getFactory().reports.getMonthlyAverage({ from: fromStr, to: toStr, bookId })
       .then((data: AverageReportDto) => {
         setAverageChange(data.average)
         setIsLoadingAverage(false)
@@ -163,11 +168,11 @@ export function useMonthlyInsight(): UseMonthlyInsightReturn {
         setIsLoadingAverage(false)
         setAverageError(null) // suppress error — user sees existing chart
       })
-  }, [yearStart, yearEnd, currentYear, currentMonth])
+  }, [yearStart, yearEnd, currentYear, currentMonth, bookId])
 
   // ── Fetch opening balance as of Dec 31 of previous year ──
   useEffect(() => {
-    getFactory().books.getBookStats("book_main", { asOf: previousYearEnd })
+    getFactory().books.getBookStats(bookId, { asOf: previousYearEnd })
       .then((stats) => {
         setOpeningBalance(stats.totalSum)
       })
@@ -175,7 +180,7 @@ export function useMonthlyInsight(): UseMonthlyInsightReturn {
         // Graceful degradation: openingBalance stays null, accumulation falls back to zero
         setOpeningBalance(null)
       })
-  }, [previousYearEnd])
+  }, [previousYearEnd, bookId])
 
   // ── Fetch pie chart categories (for selected month, or current month when null) ──
   useEffect(() => {
@@ -186,7 +191,7 @@ export function useMonthlyInsight(): UseMonthlyInsightReturn {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsLoadingPie(true)
 
-    getFactory().reports.getCategoryReport(range)
+    getFactory().reports.getCategoryReport({ ...range, bookId })
       .then((data) => {
         // Guard against stale responses
         if (fetchRef.current === month) {
@@ -200,7 +205,7 @@ export function useMonthlyInsight(): UseMonthlyInsightReturn {
           setIsLoadingPie(false)
         }
       })
-  }, [selectedMonth, currentMonthStr])
+  }, [selectedMonth, currentMonthStr, bookId])
 
   // ── Split pie data by sign ──
   const { expenses, income } = useMemo(

@@ -315,7 +315,7 @@ export class OfflineExportsService implements IExportsService {
       }
       case "report-daily-total":
       case "report-daily-per-category": {
-        const txs = await this.getMainBookTransactions()
+        const txs = await this.getBookTransactions(bookId)
         if (contentType === "report-daily-per-category") {
           csv = generatePerCategoryReportCsv(txs)
         } else {
@@ -325,7 +325,7 @@ export class OfflineExportsService implements IExportsService {
       }
       case "report-monthly-total":
       case "report-monthly-per-category": {
-        const txs = await this.getMainBookTransactions()
+        const txs = await this.getBookTransactions(bookId)
         if (contentType === "report-monthly-per-category") {
           csv = generatePerCategoryReportCsv(txs)
         } else {
@@ -335,7 +335,7 @@ export class OfflineExportsService implements IExportsService {
       }
       case "report-yearly-total":
       case "report-yearly-per-category": {
-        const txs = await this.getMainBookTransactions()
+        const txs = await this.getBookTransactions(bookId)
         if (contentType === "report-yearly-per-category") {
           csv = generatePerCategoryReportCsv(txs)
         } else {
@@ -380,13 +380,21 @@ export class OfflineExportsService implements IExportsService {
     return new Blob([jsonStr], { type: "application/json" })
   }
 
-  private async getMainBookTransactions(): Promise<TransactionDto[]> {
-    const allBooks = await db.getAll<{ id: string; name: string }>(db.STORES.books)
-    const mainBook = allBooks.find((b) => b.name === "Main")
-    if (!mainBook) {
-      throw new Error("Main book not found")
+  private async getBookTransactions(bookId?: string): Promise<TransactionDto[]> {
+    let targetBookId: string
+
+    if (bookId) {
+      targetBookId = bookId
+    } else {
+      const allBooks = await db.getAll<{ id: string; name: string }>(db.STORES.books)
+      const mainBook = allBooks.find((b) => b.name === "Main")
+      if (!mainBook) {
+        throw new Error("Main book not found")
+      }
+      targetBookId = mainBook.id
     }
-    const allTxs = await db.getAllByIndex<TransactionDto>(db.STORES.transactions, "bookId", mainBook.id)
+
+    const allTxs = await db.getAllByIndex<TransactionDto>(db.STORES.transactions, "bookId", targetBookId)
     return allTxs.filter((tx) => !tx.isBookClosingEntry)
   }
 }

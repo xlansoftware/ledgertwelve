@@ -3,7 +3,6 @@
 //
 // All report endpoints recompute from scratch on every call by pulling
 // relevant transactions from IndexedDB, grouping/summing/averaging in memory.
-// Uses Main book only, per the API contract.
 // ---------------------------------------------------------------------------
 
 import type { TotalsReportRow, CategoryReportRow, DailyReportRow, MonthlyReportRow, AverageReportDto, TransactionDto } from "@/types"
@@ -12,16 +11,24 @@ import * as db from "./db"
 
 export class OfflineReportsService implements IReportsService {
   /**
-   * Get all transactions for the Main book within the given date range.
+   * Get all transactions for a book within the given date range.
+   * Falls back to the Main book if no bookId is provided.
    */
-  private async getMainBookTransactions(from?: string, to?: string): Promise<TransactionDto[]> {
-    const allBooks = await db.getAll<{ id: string; name: string }>(db.STORES.books)
-    const mainBook = allBooks.find((b) => b.name === "Main")
-    if (!mainBook) {
-      throw new Error("Main book not found")
+  private async getBookTransactions(bookId?: string, from?: string, to?: string): Promise<TransactionDto[]> {
+    let targetBookId: string
+
+    if (bookId) {
+      targetBookId = bookId
+    } else {
+      const allBooks = await db.getAll<{ id: string; name: string }>(db.STORES.books)
+      const mainBook = allBooks.find((b) => b.name === "Main")
+      if (!mainBook) {
+        throw new Error("Main book not found")
+      }
+      targetBookId = mainBook.id
     }
 
-    const allTxs = await db.getAllByIndex<TransactionDto>(db.STORES.transactions, "bookId", mainBook.id)
+    const allTxs = await db.getAllByIndex<TransactionDto>(db.STORES.transactions, "bookId", targetBookId)
 
     let filtered = allTxs.filter((tx) => !tx.isBookClosingEntry)
 
@@ -38,8 +45,8 @@ export class OfflineReportsService implements IReportsService {
   }
 
   async getTotals(params: GetTotalsParams = {}): Promise<TotalsReportRow[]> {
-    const { period = "month", from, to } = params
-    const txs = await this.getMainBookTransactions(from, to)
+    const { period = "month", from, to, bookId } = params
+    const txs = await this.getBookTransactions(bookId, from, to)
 
     // Group by period
     const groups = new Map<string, { income: number; expense: number }>()
@@ -83,8 +90,8 @@ export class OfflineReportsService implements IReportsService {
   }
 
   async getCategoryReport(params: GetCategoryReportParams = {}): Promise<CategoryReportRow[]> {
-    const { from, to } = params
-    const txs = await this.getMainBookTransactions(from, to)
+    const { from, to, bookId } = params
+    const txs = await this.getBookTransactions(bookId, from, to)
 
     const groups = new Map<string, number>()
     for (const tx of txs) {
@@ -101,12 +108,12 @@ export class OfflineReportsService implements IReportsService {
   }
 
   async getDailyReport(params: GetDailyReportParams): Promise<DailyReportRow[]> {
-    const { from, to } = params
+    const { from, to, bookId } = params
     if (!from || !to) {
       throw new Error("from and to query parameters are required")
     }
 
-    const txs = await this.getMainBookTransactions(from, to)
+    const txs = await this.getBookTransactions(bookId, from, to)
 
     // Group by date
     const groups = new Map<string, number>()
@@ -125,12 +132,12 @@ export class OfflineReportsService implements IReportsService {
   }
 
   async getMonthlyReport(params: GetMonthlyReportParams): Promise<MonthlyReportRow[]> {
-    const { from, to } = params
+    const { from, to, bookId } = params
     if (!from || !to) {
       throw new Error("from and to query parameters are required")
     }
 
-    const txs = await this.getMainBookTransactions(from, to)
+    const txs = await this.getBookTransactions(bookId, from, to)
 
     // Group by YYYY-MM
     const groups = new Map<string, number>()

@@ -1122,9 +1122,9 @@ Delete transaction.
 
 # Reporting
 
-All reporting uses Main book only.
+All report endpoints accept an optional `bookId` query parameter. Defaults to the Main book if omitted.
 
-I would implement reports as read-only query endpoints.
+Implement reports as read-only query endpoints.
 
 ---
 
@@ -1223,7 +1223,6 @@ Both `from` and `to` are required ISO 8601 date strings.
 - `amount` — net amount for that day (negative = net expense, positive = net income).
 - Sorted ascending by date.
 - Days with no transactions are omitted from the response.
-- Uses Main book only.
 
 ### Errors
 
@@ -1268,7 +1267,6 @@ Both `from` and `to` are required ISO 8601 date strings.
 - `amount` — net amount for that month (negative = net expense, positive = net income).
 - Sorted ascending by period.
 - Months with no transactions are omitted from the response.
-- Uses Main book only.
 
 ### Errors
 
@@ -1294,10 +1292,11 @@ Returns the average daily net amount over a date range. Used to compute the proj
 |-----------|----------|--------|-------------|
 | `from` | yes | `YYYY-MM-DD` | Inclusive start date. |
 | `to` | yes | `YYYY-MM-DD` | Exclusive end date. |
+| `bookId` | no | string | Book ID to report on. Defaults to Main book. |
 
 ### Semantics
 
-Server computes `SUM(amount) / COUNT(days_with_transactions)` for Main-book transactions whose `date` is `>= from` and `< to`. Days with no transactions are not counted — they contribute zero to the sum but do not inflate the divisor.
+Server computes `SUM(amount) / COUNT(days_with_transactions)` for the specified book's transactions whose `date` is `>= from` and `< to`. Days with no transactions are not counted — they contribute zero to the sum but do not inflate the divisor.
 
 ### Response
 
@@ -1343,6 +1342,7 @@ Returns the average monthly net amount over a date range. Used to compute the pr
 |-----------|----------|--------|-------------|
 | `from` | yes | `YYYY-MM-DD` | Inclusive start date. |
 | `to` | yes | `YYYY-MM-DD` | Exclusive end date. |
+| `bookId` | no | string | Book ID to report on. Defaults to Main book. |
 
 ### Semantics
 
@@ -1398,7 +1398,7 @@ Create export job.
 |---|---|---|---|
 | `format` | yes | `"csv"`, `"xlsx"`, `"json"` | Ignored when `contentType = "backup"` — server forces `"json"` |
 | `contentType` | yes | `"categories"`, `"transactions"`, `"books"`, `"report-daily-total"`, `"report-daily-per-category"`, `"report-monthly-total"`, `"report-monthly-per-category"`, `"report-yearly-total"`, `"report-yearly-per-category"`, `"backup"` | |
-| `bookId` | conditional | valid book ID | Required when `contentType = "transactions"`. Ignored when `contentType = "backup"`. Reports use Main book only. |
+| `bookId` | conditional | valid book ID | Required when `contentType = "transactions"`. Ignored when `contentType = "backup"`. For report content types, defaults to Main book if omitted. |
 
 ### Request (categories)
 

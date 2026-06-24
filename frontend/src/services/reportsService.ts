@@ -9,6 +9,7 @@ export interface GetTotalsParams {
   period?: "day" | "week" | "month" | "year"
   from?: string
   to?: string
+  bookId?: string
 }
 
 export async function getTotals(params: GetTotalsParams = {}): Promise<TotalsReportRow[]> {
@@ -17,6 +18,7 @@ export async function getTotals(params: GetTotalsParams = {}): Promise<TotalsRep
       period: params.period,
       from: params.from,
       to: params.to,
+      bookId: params.bookId,
     },
   })
   return res.data
@@ -29,6 +31,7 @@ export async function getTotals(params: GetTotalsParams = {}): Promise<TotalsRep
 export interface GetCategoryReportParams {
   from?: string
   to?: string
+  bookId?: string
 }
 
 export async function getCategoryReport(
@@ -36,7 +39,7 @@ export async function getCategoryReport(
 ): Promise<CategoryReportRow[]> {
   const res = await request<ApiResponse<CategoryReportRow[]>>(
     "/api/v1/reports/categories",
-    { params: { from: params.from, to: params.to } },
+    { params: { from: params.from, to: params.to, bookId: params.bookId } },
   )
   return res.data
 }
@@ -48,6 +51,7 @@ export async function getCategoryReport(
 export interface GetDailyReportParams {
   from: string
   to: string
+  bookId?: string
 }
 
 export async function getDailyReport(
@@ -55,7 +59,7 @@ export async function getDailyReport(
 ): Promise<DailyReportRow[]> {
   const res = await request<ApiResponse<DailyReportRow[]>>(
     "/api/v1/reports/daily",
-    { params: { from: params.from, to: params.to } },
+    { params: { from: params.from, to: params.to, bookId: params.bookId } },
   )
   return res.data
 }
@@ -67,6 +71,7 @@ export async function getDailyReport(
 export interface GetMonthlyReportParams {
   from: string
   to: string
+  bookId?: string
 }
 
 export async function getMonthlyReport(
@@ -74,7 +79,7 @@ export async function getMonthlyReport(
 ): Promise<MonthlyReportRow[]> {
   const res = await request<ApiResponse<MonthlyReportRow[]>>(
     "/api/v1/reports/monthly",
-    { params: { from: params.from, to: params.to } },
+    { params: { from: params.from, to: params.to, bookId: params.bookId } },
   )
   return res.data
 }
@@ -86,6 +91,7 @@ export async function getMonthlyReport(
 export interface GetAverageParams {
   from: string
   to: string
+  bookId?: string
 }
 
 export async function getDailyAverage(
@@ -93,7 +99,7 @@ export async function getDailyAverage(
 ): Promise<AverageReportDto> {
   const res = await request<ApiResponse<AverageReportDto>>(
     "/api/v1/reports/average/daily",
-    { params: { from: params.from, to: params.to } },
+    { params: { from: params.from, to: params.to, bookId: params.bookId } },
   )
   return res.data
 }
@@ -107,7 +113,7 @@ export async function getMonthlyAverage(
 ): Promise<AverageReportDto> {
   const res = await request<ApiResponse<AverageReportDto>>(
     "/api/v1/reports/average/monthly",
-    { params: { from: params.from, to: params.to } },
+    { params: { from: params.from, to: params.to, bookId: params.bookId } },
   )
   return res.data
 }
