@@ -12,7 +12,7 @@ export default function ResponsiveScreens({ screens }: ResponsiveScreensProps) {
       {screens.map((screen, index) => (
         <div
           key={index}
-          className="relative h-full flex-1 min-h-0 overflow-y-auto"
+          className="relative flex-1 overflow-y-auto h-[calc(100dvh-100px)]"
         >
           {screen}
         </div>

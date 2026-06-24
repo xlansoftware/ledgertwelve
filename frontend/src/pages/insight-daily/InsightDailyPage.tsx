@@ -50,7 +50,7 @@ export default function InsightDailyPage() {
   const showPieSkeleton = isLoadingPie && !hasPieData
 
   return (
-    <div className="mx-auto flex w-full max-w-lg flex-col gap-2 px-4">
+    <div className="mx-auto flex w-full max-w-lg flex-col gap-2 px-4 h-full overflow-y-auto">
       <div className="relative -mb-10 z-10">
         <Button variant="outline" onClick={() => navigate("/insight")}><ArrowLeft /></Button>
       </div>
