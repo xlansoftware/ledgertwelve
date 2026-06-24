@@ -1323,6 +1323,22 @@ Check export status.
 
 ---
 
+### CSV / XLSX column format
+
+For human-readable formats (CSV, XLSX), foreign-key ID columns are replaced with their display values:
+
+| Content type | ID column replaced | Display value |
+|---|---|---|
+| `transactions` | `bookId` → `book` | Book name |
+| `transactions` | `userId` → `user` | User email |
+| `books` | `ownerId` → `owner` | Owner email |
+
+The `json` format retains raw IDs (`bookId`, `userId`, `ownerId`) for machine consumption.
+
+Download filenames for CSV/XLSX transaction exports use the **book name** instead of the `bookId`.
+
+---
+
 # GET /api/v1/exports/{jobId}/download
 
 ### Purpose
@@ -1334,7 +1350,7 @@ Download generated file.
 ```http
 200 OK
 Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
-Content-Disposition: attachment; filename="transactions-book_main-2026-06-24.xlsx"
+Content-Disposition: attachment; filename="transactions-Main-2026-06-24.xlsx"
 ```
 
 ### Download filenames
@@ -1342,7 +1358,7 @@ Content-Disposition: attachment; filename="transactions-book_main-2026-06-24.xls
 | contentType | Example filename |
 |---|---|
 | `categories` | `categories-2026-06-24.csv` |
-| `transactions` | `transactions-book_main-2026-06-24.xlsx` |
+| `transactions` | `transactions-Main-2026-06-24.xlsx` (uses book name) |
 | `books` | `books-2026-06-24.json` |
 | `report-daily-total` | `report-daily-total-2026-06-24.csv` |
 | `backup` | `ledger12-backup-2026-06-24.json` |

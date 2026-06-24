@@ -10,6 +10,7 @@ import type { ExportJobDto } from "@/types"
 import type { IExportsService, CreateExportRequest, CreateExportResponse, ContentType, ExportFormat } from "@/features/offline/interfaces/IExportsService"
 import * as db from "./db"
 import type { BookDto, CategoryDto, TransactionDto } from "@/types"
+import { getFactory } from "@/features/offline/factory"
 
 // ---------------------------------------------------------------------------
 // In-memory job store for offline exports
@@ -54,25 +55,29 @@ function generateCategoriesCsv(categories: CategoryDto[]): string {
   return [header, ...rows].join("\n")
 }
 
-function generateBooksCsv(books: BookDto[]): string {
-  const header = toCsvRow(["id", "name", "currency", "status", "ownerId"])
+function generateBooksCsv(books: BookDto[], ownerEmails: Map<string, string>): string {
+  const header = toCsvRow(["id", "name", "currency", "status", "owner"])
   const rows = books.map((b) =>
-    toCsvRow([b.id, b.name, b.currency ?? "", b.status, b.ownerId]),
+    toCsvRow([b.id, b.name, b.currency ?? "", b.status, ownerEmails.get(b.ownerId) ?? b.ownerId]),
   )
   return [header, ...rows].join("\n")
 }
 
-function generateTransactionsCsv(transactions: TransactionDto[]): string {
+function generateTransactionsCsv(
+  transactions: TransactionDto[],
+  bookNames: Map<string, string>,
+  userEmails: Map<string, string>,
+): string {
   const header = toCsvRow([
-    "id", "bookId", "userId", "dateTime", "amount",
+    "id", "book", "user", "dateTime", "amount",
     "originalCurrency", "originalAmount", "exchangeRate",
     "categoryName", "note", "createdAt",
   ])
   const rows = transactions.map((tx) =>
     toCsvRow([
       tx.id,
-      tx.bookId,
-      tx.userId,
+      bookNames.get(tx.bookId) ?? tx.bookId,
+      userEmails.get(tx.userId) ?? tx.userId,
       tx.dateTime,
       tx.amount,
       tx.originalCurrency ?? "",
@@ -147,13 +152,13 @@ function generatePerCategoryReportCsv(txs: TransactionDto[]): string {
 // Filename helper
 // ---------------------------------------------------------------------------
 
-function getExportFilename(contentType: ContentType, format: ExportFormat, bookId?: string): string {
+function getExportFilename(contentType: ContentType, format: ExportFormat, bookName?: string): string {
   const date = new Date().toISOString().slice(0, 10)
   switch (contentType) {
     case "categories":
       return `categories-${date}.${format}`
     case "transactions":
-      return `transactions-${bookId || "unknown"}-${date}.${format}`
+      return `transactions-${bookName || "unknown"}-${date}.${format}`
     case "books":
       return `books-${date}.${format}`
     case "report-daily-total":
@@ -188,7 +193,17 @@ export class OfflineExportsService implements IExportsService {
     // Process the export immediately
     try {
       const blob = await this.generateBlob(contentType, actualFormat, bookId)
-      const filename = getExportFilename(contentType, actualFormat, bookId)
+      // Resolve book name for human-readable filenames
+      let bookName: string | undefined
+      if (bookId && actualFormat !== "json") {
+        try {
+          const book = await getFactory().books.getBook(bookId)
+          bookName = book.name
+        } catch {
+          bookName = bookId
+        }
+      }
+      const filename = getExportFilename(contentType, actualFormat, bookName ?? bookId)
       const downloadUrl = URL.createObjectURL(blob)
 
       const job: OfflineExportJob = {
@@ -268,6 +283,15 @@ export class OfflineExportsService implements IExportsService {
   private async generateCsvBlob(contentType: ContentType, bookId?: string): Promise<Blob> {
     let csv: string
 
+    // Resolve IDs to display names via the ServiceFactory
+    const factory = getFactory()
+    const [allBooks, allUsers] = await Promise.all([
+      factory.books.getBooks(),
+      factory.users.getUsers(),
+    ])
+    const bookNames = new Map(allBooks.map((b) => [b.id, b.name]))
+    const userEmails = new Map(allUsers.map((u) => [u.id, u.email]))
+
     switch (contentType) {
       case "categories": {
         const cats = await db.getAll<CategoryDto>(db.STORES.categories)
@@ -276,13 +300,13 @@ export class OfflineExportsService implements IExportsService {
       }
       case "books": {
         const books = await db.getAll<BookDto>(db.STORES.books)
-        csv = generateBooksCsv(books)
+        csv = generateBooksCsv(books, userEmails)
         break
       }
       case "transactions": {
         if (!bookId) throw new Error("bookId is required for transaction exports")
         const txs = await db.getAllByIndex<TransactionDto>(db.STORES.transactions, "bookId", bookId)
-        csv = generateTransactionsCsv(txs)
+        csv = generateTransactionsCsv(txs, bookNames, userEmails)
         break
       }
       case "backup": {

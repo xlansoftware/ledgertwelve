@@ -400,11 +400,14 @@ function toTransactionDto(tx: Transaction) {
 
 // Generate simple CSV for transactions
 function generateCsv(transactions: Transaction[]): string {
-  const header = 'id,bookId,dateTime,amount,originalCurrency,originalAmount,exchangeRate,categoryName,note,createdAt'
-  const rows = transactions.map(tx =>
-    [
+  const header = 'id,book,user,dateTime,amount,originalCurrency,originalAmount,exchangeRate,categoryName,note,createdAt'
+  const rows = transactions.map(tx => {
+    const book = books.find(b => b.id === tx.bookId)
+    const user = users.find(u => u.id === tx.userId)
+    return [
       tx.id,
-      tx.bookId,
+      book?.name ?? tx.bookId,
+      user?.email ?? tx.userId,
       tx.dateTime.toISOString(),
       tx.amount,
       tx.originalCurrency ?? '',
@@ -413,8 +416,8 @@ function generateCsv(transactions: Transaction[]): string {
       tx.categoryName ?? '',
       tx.note ?? '',
       tx.createdAt.toISOString(),
-    ].join(','),
-  )
+    ].join(',')
+  })
   return [header, ...rows].join('\n')
 }
 
@@ -449,10 +452,11 @@ function generateCategoriesCsv(cats: Category[]): string {
 
 /** Generate CSV for books */
 function generateBooksCsv(bs: Book[]): string {
-  const header = 'id,name,currency,status,ownerId'
-  const rows = bs.map(b =>
-    [b.id, b.name, b.currency ?? '', b.status, b.ownerId].join(','),
-  )
+  const header = 'id,name,currency,status,owner'
+  const rows = bs.map(b => {
+    const owner = users.find(u => u.id === b.ownerId)
+    return [b.id, b.name, b.currency ?? '', b.status, owner?.email ?? b.ownerId].join(',')
+  })
   return [header, ...rows].join('\n')
 }
 
@@ -520,9 +524,16 @@ function generatePerCategoryReportCsv(txs: Transaction[]): string {
 /** Get the content type label for filenames */
 function getExportFilename(contentType: ExportContentType, format: ExportFormat, bookId?: string): string {
   const date = new Date().toISOString().slice(0, 10)
+  // Use book name in filenames for human-readable formats (CSV, XLSX)
+  let displayBook: string | undefined
+  if (bookId) {
+    const book = books.find(b => b.id === bookId)
+    displayBook = book?.name
+  }
+  const bookPart = displayBook ?? bookId ?? 'unknown'
   switch (contentType) {
     case 'categories': return `categories-${date}.${format}`
-    case 'transactions': return `transactions-${bookId || 'unknown'}-${date}.${format}`
+    case 'transactions': return `transactions-${bookPart}-${date}.${format}`
     case 'books': return `books-${date}.${format}`
     case 'report-daily-total': return `report-daily-total-${date}.${format}`
     case 'report-daily-per-category': return `report-daily-per-category-${date}.${format}`
