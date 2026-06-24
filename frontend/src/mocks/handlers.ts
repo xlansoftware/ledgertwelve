@@ -2058,7 +2058,7 @@ export const handlers = [
       severity: 'error' | 'warning'
     }[] = []
     let errors = 0
-    let warnings = 0
+    const warnings = 0
 
     // Light simulation: check for 'error' values
     for (let i = 0; i < rows.length; i++) {
