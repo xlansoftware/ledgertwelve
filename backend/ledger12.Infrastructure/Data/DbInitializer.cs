@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using ledger12.Application.Interfaces;
 using ledger12.Domain.Entities;
 using ledger12.Domain.Enums;
 using ledger12.Infrastructure.Data;
@@ -37,5 +38,8 @@ public static class DbInitializer
             var errors = string.Join(", ", result.Errors.Select(e => e.Description));
             throw new InvalidOperationException($"Failed to seed demo user: {errors}");
         }
+
+        var defaultDataService = serviceProvider.GetRequiredService<IDefaultDataService>();
+        await defaultDataService.EnsureDefaultsAsync(Guid.Parse(user.Id));
     }
 }

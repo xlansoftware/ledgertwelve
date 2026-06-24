@@ -56,6 +56,7 @@ builder.Services.AddScoped<IReportService, ReportService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IImportService, ImportService>();
 builder.Services.AddScoped<IExportService, ExportService>();
+builder.Services.AddScoped<IDefaultDataService, DefaultDataService>();
 
 // ─── Exchange Rate HttpClient ───────────────────────────────────────
 builder.Services.AddHttpClient<IExchangeRateService, ExchangeRateService>();

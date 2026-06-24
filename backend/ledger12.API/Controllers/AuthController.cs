@@ -13,18 +13,18 @@ public class AuthController : ControllerBase
 {
     private readonly SignInManager<AppUser> _signInManager;
     private readonly UserManager<AppUser> _userManager;
-    private readonly IBookRepository _bookRepo;
+    private readonly IDefaultDataService _defaultDataService;
     private readonly ICurrentUserService _currentUser;
 
     public AuthController(
         SignInManager<AppUser> signInManager,
         UserManager<AppUser> userManager,
-        IBookRepository bookRepo,
+        IDefaultDataService defaultDataService,
         ICurrentUserService currentUser)
     {
         _signInManager = signInManager;
         _userManager = userManager;
-        _bookRepo = bookRepo;
+        _defaultDataService = defaultDataService;
         _currentUser = currentUser;
     }
 
@@ -65,10 +65,9 @@ public class AuthController : ControllerBase
             return BadRequest(new { error = errors });
         }
 
-        // Create Main book atomically
+        // Create Main book and default categories atomically
         var userId = Guid.Parse(user.Id);
-        var mainBook = new Domain.Entities.Book("Main", userId, "EUR");
-        await _bookRepo.AddAsync(mainBook);
+        await _defaultDataService.EnsureDefaultsAsync(userId);
 
         await _signInManager.SignInAsync(user, isPersistent: true);
         return CreatedAtAction(nameof(Whoami), null, new AuthResponse(new UserSummary(user.Id, user.Email!)));
