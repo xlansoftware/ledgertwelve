@@ -6,6 +6,7 @@ import LoginPage from "../pages/login/LoginPage";
 import HistoryPage from "@/pages/history/HistoryPage";
 import SettingsPage from "@/pages/settings/SettingsPage";
 import AddPage from "@/pages/add/AddPage";
+import DashboardPage from "@/pages/dashboard/DashboardPage";
 import BookPage from "@/pages/book/BookPage";
 import CreateBookPage from "@/pages/book-create/CreateBookPage";
 import EditBookPage from "@/pages/book-edit/EditBookPage";
@@ -33,6 +34,10 @@ const router = createBrowserRouter([
       {
         // This will be the default child route for the homepage
         index: true, 
+        element: <DashboardPage />,
+      },
+      {
+        path: "add",
         element: <AddPage />,
       },
       {
