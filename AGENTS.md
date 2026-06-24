@@ -9,11 +9,10 @@ Read this file first.
 ## Repository structure
 
 ```text
-MyApp/
+ledgertwelve/
 ├── AGENTS.md
 ├── frontend/
-│   ├── AGENTS.md
-│   └── API.md
+│   └── AGENTS.md
 └── backend/
     └── AGENTS.md
 ```
