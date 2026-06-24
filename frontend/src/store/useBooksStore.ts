@@ -13,11 +13,34 @@ import type {
 // State
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Derive the "main" book ID from the books list:
+ * - If there's a book named "Main", use its id.
+ * - Otherwise, if there's only one book, use its id.
+ * - Otherwise return null.
+ */
+function deriveMainBookId(books: BookDto[]): string | null {
+  const main = books.find((b) => b.name === "Main")
+  if (main) return main.id
+  if (books.length === 1) return books[0].id
+  return null
+}
+
+// ---------------------------------------------------------------------------
+// State
+// ---------------------------------------------------------------------------
+
 interface BooksState {
   /** The list of books visible to the current user. */
   books: BookDto[]
   /** A single book for the detail view. */
   currentBook: BookDto | null
+  /** The ID of the primary book (named "Main", or the only book). */
+  mainBookId: string | null
   /** Whether a fetch is in progress. */
   isLoading: boolean
   /** Human-readable error message, or null. */
@@ -70,6 +93,7 @@ export const useBooksStore = create<BooksState & BooksActions>((set, get) => ({
   // -- State --
   books: [],
   currentBook: null,
+  mainBookId: null,
   isLoading: false,
   error: null,
 
@@ -79,7 +103,8 @@ export const useBooksStore = create<BooksState & BooksActions>((set, get) => ({
     set({ isLoading: true, error: null })
     try {
       const data = await getFactory().books.getBooks()
-      set({ books: data, isLoading: false })
+      const mainBookId = deriveMainBookId(data)
+      set({ books: data, mainBookId, isLoading: false })
       // Also fetch the persisted current book selection
       try {
         const current = await getFactory().books.getCurrentBook()
@@ -146,7 +171,10 @@ export const useBooksStore = create<BooksState & BooksActions>((set, get) => ({
     set({ error: null })
     try {
       const created = await getFactory().books.createBook(req)
-      set((state) => ({ books: [...state.books, created] }))
+      set((state) => {
+        const books = [...state.books, created]
+        return { books, mainBookId: deriveMainBookId(books) }
+      })
       return created
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to create book"
@@ -171,16 +199,21 @@ export const useBooksStore = create<BooksState & BooksActions>((set, get) => ({
     }))
     try {
       const updated = await getFactory().books.updateBook(bookId, req)
-      set((state) => ({
-        books: state.books.map((b) => (b.id === bookId ? updated : b)),
-        currentBook:
-          state.currentBook?.id === bookId ? updated : state.currentBook,
-      }))
+      set((state) => {
+        const books = state.books.map((b) => (b.id === bookId ? updated : b))
+        return {
+          books,
+          mainBookId: deriveMainBookId(books),
+          currentBook:
+            state.currentBook?.id === bookId ? updated : state.currentBook,
+        }
+      })
       return updated
     } catch (err: unknown) {
       // Revert on failure
       set({
         books: previous,
+        mainBookId: deriveMainBookId(previous),
         currentBook: previousCurrent,
         error: err instanceof Error ? err.message : "Failed to update book",
       })
@@ -195,6 +228,7 @@ export const useBooksStore = create<BooksState & BooksActions>((set, get) => ({
     // Optimistic removal
     set((state) => ({
       books: state.books.filter((b) => b.id !== bookId),
+      mainBookId: deriveMainBookId(state.books.filter((b) => b.id !== bookId)),
       currentBook:
         state.currentBook?.id === bookId ? null : state.currentBook,
     }))
@@ -203,6 +237,7 @@ export const useBooksStore = create<BooksState & BooksActions>((set, get) => ({
     } catch (err: unknown) {
       set({
         books: previous,
+        mainBookId: deriveMainBookId(previous),
         currentBook: previousCurrent,
         error: err instanceof Error ? err.message : "Failed to delete book",
       })
@@ -228,16 +263,16 @@ export const useBooksStore = create<BooksState & BooksActions>((set, get) => ({
       const result = await getFactory().books.closeBook(bookId, req)
       // Refresh the book detail to get accurate data from the server
       const updated = await getFactory().books.getBook(bookId)
-      set((state) => ({
-        books: state.books.map((b) => (b.id === bookId ? updated : b)),
-        currentBook:
-          state.currentBook?.id === bookId ? updated : state.currentBook,
-      }))
+      set((state) => {
+        const books = state.books.map((b) => (b.id === bookId ? updated : b))
+        return { books, mainBookId: deriveMainBookId(books), currentBook: state.currentBook?.id === bookId ? updated : state.currentBook }
+      })
       return result
     } catch (err: unknown) {
       // Revert on failure
       set({
         books: previous,
+        mainBookId: deriveMainBookId(previous),
         currentBook: previousCurrent,
         error: err instanceof Error ? err.message : "Failed to close book",
       })
@@ -263,16 +298,16 @@ export const useBooksStore = create<BooksState & BooksActions>((set, get) => ({
       const result = await getFactory().books.reopenBook(bookId)
       // Refresh the book detail to get accurate data from the server
       const updated = await getFactory().books.getBook(bookId)
-      set((state) => ({
-        books: state.books.map((b) => (b.id === bookId ? updated : b)),
-        currentBook:
-          state.currentBook?.id === bookId ? updated : state.currentBook,
-      }))
+      set((state) => {
+        const books = state.books.map((b) => (b.id === bookId ? updated : b))
+        return { books, mainBookId: deriveMainBookId(books), currentBook: state.currentBook?.id === bookId ? updated : state.currentBook }
+      })
       return result
     } catch (err: unknown) {
       // Revert on failure
       set({
         books: previous,
+        mainBookId: deriveMainBookId(previous),
         currentBook: previousCurrent,
         error: err instanceof Error ? err.message : "Failed to reopen book",
       })
@@ -287,11 +322,10 @@ export const useBooksStore = create<BooksState & BooksActions>((set, get) => ({
       // Refresh the book detail to reflect the new share
       if (get().currentBook?.id === bookId || get().books.some((b) => b.id === bookId)) {
         const updated = await getFactory().books.getBook(bookId)
-        set((state) => ({
-          books: state.books.map((b) => (b.id === bookId ? updated : b)),
-          currentBook:
-            state.currentBook?.id === bookId ? updated : state.currentBook,
-        }))
+        set((state) => {
+          const books = state.books.map((b) => (b.id === bookId ? updated : b))
+          return { books, mainBookId: deriveMainBookId(books), currentBook: state.currentBook?.id === bookId ? updated : state.currentBook }
+        })
       }
       return result
     } catch (err: unknown) {
@@ -308,11 +342,10 @@ export const useBooksStore = create<BooksState & BooksActions>((set, get) => ({
       // Refresh the book detail to reflect the updated permission
       if (get().currentBook?.id === bookId || get().books.some((b) => b.id === bookId)) {
         const updated = await getFactory().books.getBook(bookId)
-        set((state) => ({
-          books: state.books.map((b) => (b.id === bookId ? updated : b)),
-          currentBook:
-            state.currentBook?.id === bookId ? updated : state.currentBook,
-        }))
+        set((state) => {
+          const books = state.books.map((b) => (b.id === bookId ? updated : b))
+          return { books, mainBookId: deriveMainBookId(books), currentBook: state.currentBook?.id === bookId ? updated : state.currentBook }
+        })
       }
       return result
     } catch (err: unknown) {
@@ -329,11 +362,10 @@ export const useBooksStore = create<BooksState & BooksActions>((set, get) => ({
       // Refresh the book detail to reflect the removed share
       if (get().currentBook?.id === bookId || get().books.some((b) => b.id === bookId)) {
         const updated = await getFactory().books.getBook(bookId)
-        set((state) => ({
-          books: state.books.map((b) => (b.id === bookId ? updated : b)),
-          currentBook:
-            state.currentBook?.id === bookId ? updated : state.currentBook,
-        }))
+        set((state) => {
+          const books = state.books.map((b) => (b.id === bookId ? updated : b))
+          return { books, mainBookId: deriveMainBookId(books), currentBook: state.currentBook?.id === bookId ? updated : state.currentBook }
+        })
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to remove share"

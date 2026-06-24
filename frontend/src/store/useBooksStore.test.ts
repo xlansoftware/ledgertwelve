@@ -61,6 +61,7 @@ beforeEach(() => {
   useBooksStore.setState({
     books: [],
     currentBook: null,
+    mainBookId: null,
     isLoading: false,
     error: null,
   })
@@ -194,5 +195,44 @@ describe("useBooksStore — fetchBooks", () => {
     expect(state.currentBook).toEqual(existing) // unchanged
     expect(state.isLoading).toBe(false)
     expect(state.error).toBe("Failed to load books")
+  })
+
+  it("sets mainBookId from a book named Main", async () => {
+    const books = [
+      makeBook({ id: "book_main", name: "Main" }),
+      makeBook({ id: "book_vacation", name: "Vacation 2026" }),
+    ]
+    vi.mocked(booksService.getBooks).mockResolvedValueOnce(books)
+    vi.mocked(booksService.getCurrentBook).mockResolvedValueOnce(books[0])
+
+    await useBooksStore.getState().fetchBooks()
+
+    const state = useBooksStore.getState()
+    expect(state.mainBookId).toBe("book_main")
+  })
+
+  it("sets mainBookId from the only book when no book named Main exists", async () => {
+    const books = [makeBook({ id: "book_only", name: "Solo Ledger" })]
+    vi.mocked(booksService.getBooks).mockResolvedValueOnce(books)
+    vi.mocked(booksService.getCurrentBook).mockResolvedValueOnce(books[0])
+
+    await useBooksStore.getState().fetchBooks()
+
+    const state = useBooksStore.getState()
+    expect(state.mainBookId).toBe("book_only")
+  })
+
+  it("sets mainBookId to null when multiple books exist and none is named Main", async () => {
+    const books = [
+      makeBook({ id: "book_a", name: "Personal" }),
+      makeBook({ id: "book_b", name: "Business" }),
+    ]
+    vi.mocked(booksService.getBooks).mockResolvedValueOnce(books)
+    vi.mocked(booksService.getCurrentBook).mockResolvedValueOnce(books[0])
+
+    await useBooksStore.getState().fetchBooks()
+
+    const state = useBooksStore.getState()
+    expect(state.mainBookId).toBeNull()
   })
 })

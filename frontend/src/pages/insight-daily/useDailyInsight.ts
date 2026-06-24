@@ -4,6 +4,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import { getFactory } from "@/features/offline"
+import { useBooksStore } from "@/store/useBooksStore"
 import type { DailyReportRow, CategoryReportRow, AverageReportDto } from "@/types"
 import {
   computeAccumulation,
@@ -214,10 +215,13 @@ export function useDailyInsight(todayStr?: string): UseDailyInsightReturn {
   }, [today, todayDate])
 
   // ── Fetch opening balance as of last day of previous month ──
+  const mainBookId = useBooksStore((s) => s.mainBookId)
+
   useEffect(() => {
+    const bookId = mainBookId ?? "book_main"
     const asOf = lastDayOfPreviousMonth(todayDate)
 
-    getFactory().books.getBookStats("book_main", { asOf })
+    getFactory().books.getBookStats(bookId, { asOf })
       .then((stats) => {
         setOpeningBalance(stats.totalSum)
       })

@@ -4,6 +4,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import { getFactory } from "@/features/offline"
+import { useBooksStore } from "@/store/useBooksStore"
 import type { MonthlyReportRow, CategoryReportRow, AverageReportDto } from "@/types"
 import {
   computeAccumulation,
@@ -165,9 +166,12 @@ export function useMonthlyInsight(): UseMonthlyInsightReturn {
       })
   }, [yearStart, yearEnd, currentYear, currentMonth])
 
+  const mainBookId = useBooksStore((s) => s.mainBookId)
+
   // ── Fetch opening balance as of Dec 31 of previous year ──
   useEffect(() => {
-    getFactory().books.getBookStats("book_main", { asOf: previousYearEnd })
+    const bookId = mainBookId ?? "book_main"
+    getFactory().books.getBookStats(bookId, { asOf: previousYearEnd })
       .then((stats) => {
         setOpeningBalance(stats.totalSum)
       })
