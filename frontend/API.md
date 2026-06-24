@@ -530,7 +530,10 @@ Create book.
     "id": "book_123",
     "name": "Vacation 2026",
     "currency": "EUR",
-    "status": "open"
+    "status": "open",
+    "ownerId": "usr_1",
+    "sharedWith": [],
+    "createdAt": "2026-06-24T10:00:00Z"
   }
 }
 ```

@@ -863,25 +863,46 @@ export const handlers = [
     if (!body.name) {
       return HttpResponse.json({ error: 'Name required' }, { status: 400 })
     }
+
+    // Per the API contract: when a new book is created, all globally
+    // shared users (those with edit permission on every owned book)
+    // automatically receive edit access to the new book.
+    const ownedBooks = books.filter(b => b.ownerId === user.id)
+    const globalShareUserIds = new Set<string>()
+    if (ownedBooks.length > 0) {
+      for (const book of ownedBooks) {
+        for (const share of book.sharedWith) {
+          if (share.permission === 'edit') {
+            globalShareUserIds.add(share.userId)
+          }
+        }
+      }
+      // Only keep users that appear on ALL owned books with edit permission
+      for (const userId of globalShareUserIds) {
+        const appearsOnAll = ownedBooks.every(b =>
+          b.sharedWith.some(s => s.userId === userId && s.permission === 'edit'),
+        )
+        if (!appearsOnAll) {
+          globalShareUserIds.delete(userId)
+        }
+      }
+    }
+
     const newBook: Book = {
       id: nextBookId(),
       name: body.name,
       currency: body.currency,
       status: 'open',
       ownerId: user.id,
-      sharedWith: [],
+      sharedWith: Array.from(globalShareUserIds).map(userId => ({
+        userId,
+        permission: 'edit' as const,
+      })),
       createdAt: new Date(),
     }
     books.push(newBook)
     return HttpResponse.json(
-      {
-        data: {
-          id: newBook.id,
-          name: newBook.name,
-          currency: newBook.currency,
-          status: newBook.status,
-        },
-      },
+      { data: toBookDto(newBook) },
       { status: 201 },
     )
   }),
