@@ -15,6 +15,7 @@ class MockOnlineCategoriesClass { type = "online_categories" }
 class MockOnlineTransactionsClass { type = "online_transactions" }
 class MockOnlineReportsClass { type = "online_reports" }
 class MockOnlineUsersClass { type = "online_users" }
+class MockOnlineExportsClass { type = "online_exports" }
 
 class MockOfflineBooksClass {
   type = "offline_books"
@@ -32,6 +33,8 @@ class MockOfflineTransactionsClass {
   }
 }
 class MockOfflineReportsClass { type = "offline_reports" }
+class MockOfflineExportsClass { type = "offline_exports" }
+
 class MockOfflineUsersClass {
   type = "offline_users"
   userStore: MockUserStoreClass
@@ -49,12 +52,14 @@ vi.mock("@/features/offline/online/OnlineCategoriesService", () => ({ OnlineCate
 vi.mock("@/features/offline/online/OnlineTransactionsService", () => ({ OnlineTransactionsService: MockOnlineTransactionsClass }))
 vi.mock("@/features/offline/online/OnlineReportsService", () => ({ OnlineReportsService: MockOnlineReportsClass }))
 vi.mock("@/features/offline/online/OnlineUsersService", () => ({ OnlineUsersService: MockOnlineUsersClass }))
+vi.mock("@/features/offline/online/OnlineExportsService", () => ({ OnlineExportsService: MockOnlineExportsClass }))
 
 vi.mock("@/features/offline/offline/OfflineBooksService", () => ({ OfflineBooksService: MockOfflineBooksClass }))
 vi.mock("@/features/offline/offline/OfflineCategoriesService", () => ({ OfflineCategoriesService: MockOfflineCategoriesClass }))
 vi.mock("@/features/offline/offline/OfflineTransactionsService", () => ({ OfflineTransactionsService: MockOfflineTransactionsClass }))
 vi.mock("@/features/offline/offline/OfflineReportsService", () => ({ OfflineReportsService: MockOfflineReportsClass }))
 vi.mock("@/features/offline/offline/OfflineUsersService", () => ({ OfflineUsersService: MockOfflineUsersClass }))
+vi.mock("@/features/offline/offline/OfflineExportsService", () => ({ OfflineExportsService: MockOfflineExportsClass }))
 vi.mock("@/features/offline/offline/OfflineUserStore", () => ({ OfflineUserStore: MockUserStoreClass }))
 
 const MockDb = {
@@ -99,6 +104,7 @@ describe("factory", () => {
       expect(factory.transactions).toBeInstanceOf(MockOnlineTransactionsClass)
       expect(factory.reports).toBeInstanceOf(MockOnlineReportsClass)
       expect(factory.users).toBeInstanceOf(MockOnlineUsersClass)
+      expect(factory.exports).toBeInstanceOf(MockOnlineExportsClass)
     })
   })
 
@@ -115,6 +121,7 @@ describe("factory", () => {
       expect(factory.transactions).toBeInstanceOf(MockOfflineTransactionsClass)
       expect(factory.reports).toBeInstanceOf(MockOfflineReportsClass)
       expect(factory.users).toBeInstanceOf(MockOfflineUsersClass)
+      expect(factory.exports).toBeInstanceOf(MockOfflineExportsClass)
     })
 
     it("registers the factory via setFactory so getFactory returns it", () => {
@@ -145,6 +152,7 @@ describe("factory", () => {
         transactions: { type: "custom" } as unknown as ServiceFactory["transactions"],
         reports: { type: "custom" } as unknown as ServiceFactory["reports"],
         users: { type: "custom" } as unknown as ServiceFactory["users"],
+        exports: { type: "custom" } as unknown as ServiceFactory["exports"],
       }
       setFactory(factory)
       expect(getFactory()).toBe(factory)
@@ -161,6 +169,7 @@ describe("factory", () => {
         transactions: expect.any(Object),
         reports: expect.any(Object),
         users: expect.any(Object),
+        exports: expect.any(Object),
       })
     })
   })

@@ -1232,18 +1232,42 @@ Exports should be asynchronous because XLSX generation can become expensive.
 
 Create export job.
 
-### Request
+### Validation
+
+| Field | Required | Valid values | Notes |
+|---|---|---|---|
+| `format` | yes | `"csv"`, `"xlsx"`, `"json"` | Ignored when `contentType = "backup"` — server forces `"json"` |
+| `contentType` | yes | `"categories"`, `"transactions"`, `"books"`, `"report-daily-total"`, `"report-daily-per-category"`, `"report-monthly-total"`, `"report-monthly-per-category"`, `"report-yearly-total"`, `"report-yearly-per-category"`, `"backup"` | |
+| `bookId` | conditional | valid book ID | Required when `contentType = "transactions"`. Ignored when `contentType = "backup"`. Reports use Main book only. |
+
+### Request (categories)
+
+```json
+{
+  "format": "csv",
+  "contentType": "categories"
+}
+```
+
+### Request (transactions)
 
 ```json
 {
   "format": "xlsx",
-  "bookId": "book_main",
-  "from": "2026-01-01",
-  "to": "2026-12-31"
+  "contentType": "transactions",
+  "bookId": "book_main"
 }
 ```
 
-### Response
+### Request (backup)
+
+```json
+{
+  "contentType": "backup"
+}
+```
+
+### Response (201)
 
 ```json
 {
@@ -1285,19 +1309,54 @@ Check export status.
 }
 ```
 
+### Response (failed)
+
+```json
+{
+  "data": {
+    "jobId": "exp_123",
+    "status": "failed",
+    "errorMessage": "Failed to generate XLSX: insufficient memory"
+  }
+}
+```
+
 ---
 
 # GET /api/v1/exports/{jobId}/download
 
 ### Purpose
 
-Download generated CSV/XLSX.
+Download generated file.
 
 ### Response
 
 ```http
 200 OK
 Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+Content-Disposition: attachment; filename="transactions-book_main-2026-06-24.xlsx"
+```
+
+### Download filenames
+
+| contentType | Example filename |
+|---|---|
+| `categories` | `categories-2026-06-24.csv` |
+| `transactions` | `transactions-book_main-2026-06-24.xlsx` |
+| `books` | `books-2026-06-24.json` |
+| `report-daily-total` | `report-daily-total-2026-06-24.csv` |
+| `backup` | `ledger12-backup-2026-06-24.json` |
+
+### JSON backup shape
+
+```json
+{
+  "exportedAt": "2026-06-24T12:00:00Z",
+  "version": 1,
+  "books": [ ... ],
+  "categories": [ ... ],
+  "transactions": [ ... ]
+}
 ```
 
 ---

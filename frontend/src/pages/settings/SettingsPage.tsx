@@ -97,6 +97,31 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
+        <Card>
+          <CardHeader>
+            <CardTitle>Export / Backup</CardTitle>
+            <CardDescription>
+              Export your data or create a full backup.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4 md:flex-row md:items-center md:justify-start">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate("/export")}
+            >
+              Export Data…
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate("/export?preset=backup")}
+            >
+              Backup…
+            </Button>
+          </CardContent>
+        </Card>
+
       </div>
     </div>
   );

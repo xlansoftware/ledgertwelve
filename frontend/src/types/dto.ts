@@ -52,8 +52,9 @@ export interface TransactionDto {
 
 export interface ExportJobDto {
   jobId: string
-  status: "pending" | "processing" | "completed"
+  status: "pending" | "processing" | "completed" | "failed"
   downloadUrl?: string
+  errorMessage?: string
 }
 
 // Report DTOs

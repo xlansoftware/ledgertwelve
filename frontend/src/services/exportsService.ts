@@ -1,21 +1,45 @@
+// ---------------------------------------------------------------------------
+// HTTP service — exports API
+// POST  /api/v1/exports
+// GET   /api/v1/exports/{jobId}
+// GET   /api/v1/exports/{jobId}/download
+// ---------------------------------------------------------------------------
+
 import { request } from "./api"
 import type { ApiResponse, ExportJobDto } from "@/types"
 
 // ---------------------------------------------------------------------------
-// POST  /api/v1/exports
+// Types
 // ---------------------------------------------------------------------------
 
+export type ContentType =
+  | "categories"
+  | "transactions"
+  | "books"
+  | "report-daily-total"
+  | "report-daily-per-category"
+  | "report-monthly-total"
+  | "report-monthly-per-category"
+  | "report-yearly-total"
+  | "report-yearly-per-category"
+  | "backup"
+
+export type ExportFormat = "csv" | "xlsx" | "json"
+
 export interface CreateExportRequest {
-  format: "csv" | "xlsx"
-  bookId: string
-  from?: string
-  to?: string
+  format?: ExportFormat
+  contentType: ContentType
+  bookId?: string
 }
 
 export interface CreateExportResponse {
   jobId: string
   status: "pending"
 }
+
+// ---------------------------------------------------------------------------
+// POST  /api/v1/exports
+// ---------------------------------------------------------------------------
 
 export async function createExport(req: CreateExportRequest): Promise<CreateExportResponse> {
   const res = await request<ApiResponse<CreateExportResponse>>("/api/v1/exports", {

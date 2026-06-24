@@ -8,18 +8,21 @@ import type { ICategoriesService } from "@/features/offline/interfaces/ICategori
 import type { ITransactionsService } from "@/features/offline/interfaces/ITransactionsService"
 import type { IReportsService } from "@/features/offline/interfaces/IReportsService"
 import type { IUsersService } from "@/features/offline/interfaces/IUsersService"
+import type { IExportsService } from "@/features/offline/interfaces/IExportsService"
 
 import { OnlineBooksService } from "@/features/offline/online/OnlineBooksService"
 import { OnlineCategoriesService } from "@/features/offline/online/OnlineCategoriesService"
 import { OnlineTransactionsService } from "@/features/offline/online/OnlineTransactionsService"
 import { OnlineReportsService } from "@/features/offline/online/OnlineReportsService"
 import { OnlineUsersService } from "@/features/offline/online/OnlineUsersService"
+import { OnlineExportsService } from "@/features/offline/online/OnlineExportsService"
 
 import { OfflineBooksService } from "@/features/offline/offline/OfflineBooksService"
 import { OfflineCategoriesService } from "@/features/offline/offline/OfflineCategoriesService"
 import { OfflineTransactionsService } from "@/features/offline/offline/OfflineTransactionsService"
 import { OfflineReportsService } from "@/features/offline/offline/OfflineReportsService"
 import { OfflineUsersService } from "@/features/offline/offline/OfflineUsersService"
+import { OfflineExportsService } from "@/features/offline/offline/OfflineExportsService"
 import { OfflineUserStore } from "@/features/offline/offline/OfflineUserStore"
 import * as db from "@/features/offline/offline/db"
 import type { BookDto, CategoryDto } from "@/types"
@@ -34,6 +37,7 @@ export interface ServiceFactory {
   transactions: ITransactionsService
   reports: IReportsService
   users: IUsersService
+  exports: IExportsService
 }
 
 // ---------------------------------------------------------------------------
@@ -71,6 +75,7 @@ export function createOnlineFactory(): ServiceFactory {
     transactions: new OnlineTransactionsService(),
     reports: new OnlineReportsService(),
     users: new OnlineUsersService(),
+    exports: new OnlineExportsService(),
   }
   return factory
 }
@@ -92,6 +97,7 @@ export function createOfflineFactory(): ServiceFactory {
     transactions: new OfflineTransactionsService(userStore),
     reports: new OfflineReportsService(),
     users: new OfflineUsersService(userStore),
+    exports: new OfflineExportsService(),
   }
 
   // Register the factory so that offline services can access it via getFactory()

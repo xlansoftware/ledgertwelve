@@ -12,12 +12,10 @@ describe("exportsService", () => {
   })
 
   describe("createExport", () => {
-    it("creates an export job with pending status", async () => {
+    it("creates an export job with pending status (categories)", async () => {
       const result = await createExport({
         format: "csv",
-        bookId: "book_main",
-        from: "2026-01-01",
-        to: "2026-12-31",
+        contentType: "categories",
       })
       expect(result).toMatchObject({
         jobId: expect.stringMatching(/^exp_/),
@@ -25,19 +23,60 @@ describe("exportsService", () => {
       })
     })
 
+    it("creates an export job with pending status (transactions)", async () => {
+      const result = await createExport({
+        format: "xlsx",
+        contentType: "transactions",
+        bookId: "book_main",
+      })
+      expect(result).toMatchObject({
+        jobId: expect.stringMatching(/^exp_/),
+        status: "pending",
+      })
+    })
+
+    it("creates an export job with pending status (backup)", async () => {
+      const result = await createExport({
+        contentType: "backup",
+      })
+      expect(result).toMatchObject({
+        jobId: expect.stringMatching(/^exp_/),
+        status: "pending",
+      })
+    })
+
+    it("throws with invalid contentType", async () => {
+      await expect(
+        createExport({
+          format: "csv",
+          contentType: "invalid" as "categories",
+        }),
+      ).rejects.toThrow(/Invalid or missing contentType/i)
+    })
+
     it("throws with invalid format", async () => {
       await expect(
         createExport({
           format: "pdf" as "csv",
-          bookId: "book_main",
+          contentType: "categories",
         }),
-      ).rejects.toThrow(/Format must be csv or xlsx/i)
+      ).rejects.toThrow(/Format must be csv/i)
+    })
+
+    it("throws when bookId is missing for transactions", async () => {
+      await expect(
+        createExport({
+          format: "csv",
+          contentType: "transactions",
+        }),
+      ).rejects.toThrow(/bookId is required/i)
     })
 
     it("throws for non-existent book", async () => {
       await expect(
         createExport({
           format: "csv",
+          contentType: "transactions",
           bookId: "book_invalid",
         }),
       ).rejects.toThrow(/Book not found/i)
@@ -48,7 +87,7 @@ describe("exportsService", () => {
     it("returns export job status", async () => {
       const created = await createExport({
         format: "xlsx",
-        bookId: "book_main",
+        contentType: "categories",
       })
       const result = await getExportJob(created.jobId)
       expect(result).toMatchObject({
@@ -66,7 +105,7 @@ describe("exportsService", () => {
     it("eventually completes the export job", async () => {
       const created = await createExport({
         format: "csv",
-        bookId: "book_main",
+        contentType: "categories",
       })
 
       // Wait for the async processing to finish (mock uses 50ms timeout)
@@ -82,7 +121,7 @@ describe("exportsService", () => {
     it("provides downloadUrl when completed", async () => {
       const created = await createExport({
         format: "csv",
-        bookId: "book_main",
+        contentType: "categories",
       })
 
       await vi.waitFor(
@@ -98,10 +137,10 @@ describe("exportsService", () => {
   })
 
   describe("downloadExport", () => {
-    it("downloads completed export as a Blob", async () => {
+    it("downloads completed categories export as a Blob", async () => {
       const created = await createExport({
         format: "csv",
-        bookId: "book_main",
+        contentType: "categories",
       })
 
       // Wait for completion

@@ -326,12 +326,12 @@ const currentBookSelection = new Map<string, string>()
 // Export jobs
 interface ExportJob {
   id: string
-  format: 'csv' | 'xlsx'
-  bookId: string
-  from?: string
-  to?: string
-  status: 'pending' | 'processing' | 'completed'
+  format: ExportFormat
+  contentType: ExportContentType
+  bookId?: string
+  status: 'pending' | 'processing' | 'completed' | 'failed'
   downloadUrl?: string
+  errorMessage?: string
   createdAt: Date
 }
 
@@ -421,6 +421,135 @@ function generateCsv(transactions: Transaction[]): string {
 // ---------------------------------------------------------------------------
 // Handlers
 // ---------------------------------------------------------------------------
+
+// ---- Export helper functions ----
+
+type ExportContentType =
+  | 'categories'
+  | 'transactions'
+  | 'books'
+  | 'report-daily-total'
+  | 'report-daily-per-category'
+  | 'report-monthly-total'
+  | 'report-monthly-per-category'
+  | 'report-yearly-total'
+  | 'report-yearly-per-category'
+  | 'backup'
+
+type ExportFormat = 'csv' | 'xlsx' | 'json'
+
+/** Generate CSV for categories */
+function generateCategoriesCsv(cats: Category[]): string {
+  const header = 'id,name,recurring,color,icon'
+  const rows = cats.map(c =>
+    [c.id, c.name, c.recurring, c.color, c.icon].join(','),
+  )
+  return [header, ...rows].join('\n')
+}
+
+/** Generate CSV for books */
+function generateBooksCsv(bs: Book[]): string {
+  const header = 'id,name,currency,status,ownerId'
+  const rows = bs.map(b =>
+    [b.id, b.name, b.currency ?? '', b.status, b.ownerId].join(','),
+  )
+  return [header, ...rows].join('\n')
+}
+
+/** Generate CSV for daily report */
+function generateDailyReportCsv(txs: Transaction[]): string {
+  const groups = new Map<string, number>()
+  for (const tx of txs) {
+    const key = tx.dateTime.toISOString().slice(0, 10)
+    const current = groups.get(key) || 0
+    groups.set(key, current + tx.amount)
+  }
+  const header = 'date,amount'
+  const rows = Array.from(groups.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([date, amount]) => `${date},${Math.round(amount * 100) / 100}`)
+  return [header, ...rows].join('\n')
+}
+
+/** Generate CSV for monthly report */
+function generateMonthlyReportCsv(txs: Transaction[]): string {
+  const groups = new Map<string, number>()
+  for (const tx of txs) {
+    const d = tx.dateTime
+    const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`
+    const current = groups.get(key) || 0
+    groups.set(key, current + tx.amount)
+  }
+  const header = 'period,amount'
+  const rows = Array.from(groups.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([period, amount]) => `${period},${Math.round(amount * 100) / 100}`)
+  return [header, ...rows].join('\n')
+}
+
+/** Generate CSV for yearly report */
+function generateYearlyReportCsv(txs: Transaction[]): string {
+  const groups = new Map<string, number>()
+  for (const tx of txs) {
+    const key = tx.dateTime.getUTCFullYear().toString()
+    const current = groups.get(key) || 0
+    groups.set(key, current + tx.amount)
+  }
+  const header = 'year,amount'
+  const rows = Array.from(groups.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([year, amount]) => `${year},${Math.round(amount * 100) / 100}`)
+  return [header, ...rows].join('\n')
+}
+
+/** Generate per-category report CSV */
+function generatePerCategoryReportCsv(txs: Transaction[]): string {
+  const groups = new Map<string, number>()
+  for (const tx of txs) {
+    const cat = tx.categoryName || 'Uncategorized'
+    const current = groups.get(cat) || 0
+    groups.set(cat, current + tx.amount)
+  }
+  const header = 'category,amount'
+  const rows = Array.from(groups.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([cat, amount]) => `${cat},${Math.round(amount * 100) / 100}`)
+  return [header, ...rows].join('\n')
+}
+
+/** Get the content type label for filenames */
+function getExportFilename(contentType: ExportContentType, format: ExportFormat, bookId?: string): string {
+  const date = new Date().toISOString().slice(0, 10)
+  switch (contentType) {
+    case 'categories': return `categories-${date}.${format}`
+    case 'transactions': return `transactions-${bookId || 'unknown'}-${date}.${format}`
+    case 'books': return `books-${date}.${format}`
+    case 'report-daily-total': return `report-daily-total-${date}.${format}`
+    case 'report-daily-per-category': return `report-daily-per-category-${date}.${format}`
+    case 'report-monthly-total': return `report-monthly-total-${date}.${format}`
+    case 'report-monthly-per-category': return `report-monthly-per-category-${date}.${format}`
+    case 'report-yearly-total': return `report-yearly-total-${date}.${format}`
+    case 'report-yearly-per-category': return `report-yearly-per-category-${date}.${format}`
+    case 'backup': return `ledger12-backup-${date}.${format}`
+  }
+}
+
+/** Build the main book's transactions */
+function getMainBookTransactions(): Transaction[] {
+  const mainBook = books.find(b => b.ownerId === currentUser?.id && b.name === 'Main')
+  if (!mainBook) return []
+  return transactions.filter(tx => tx.bookId === mainBook.id)
+}
+
+const VALID_CONTENT_TYPES: ExportContentType[] = [
+  'categories', 'transactions', 'books',
+  'report-daily-total', 'report-daily-per-category',
+  'report-monthly-total', 'report-monthly-per-category',
+  'report-yearly-total', 'report-yearly-per-category',
+  'backup',
+]
+
+const VALID_FORMATS: ExportFormat[] = ['csv', 'xlsx', 'json']
 
 export const handlers = [
   // ---- Auth ----
@@ -1486,24 +1615,41 @@ export const handlers = [
     const auth = requireAuth(request)
     if (auth.error) return auth.response
     const user = auth.user!
-    const body = (await request.json()) as { format?: string; bookId?: string; from?: string; to?: string }
-    if (!body.format || !['csv', 'xlsx'].includes(body.format)) {
-      return HttpResponse.json({ error: 'Format must be csv or xlsx' }, { status: 400 })
+    const body = (await request.json()) as {
+      format?: string
+      contentType?: string
+      bookId?: string
     }
-    // Book must be visible
-    const book = books.find(
-      b => b.id === body.bookId && (b.ownerId === user.id || b.sharedWith.some(s => s.userId === user.id)),
-    )
-    if (!book) {
-      return HttpResponse.json({ error: 'Book not found' }, { status: 404 })
+
+    const contentType = body.contentType as ExportContentType
+    if (!contentType || !VALID_CONTENT_TYPES.includes(contentType)) {
+      return HttpResponse.json({ error: 'Invalid or missing contentType' }, { status: 400 })
+    }
+
+    // Format validation (skip for backup)
+    const format = contentType === 'backup' ? 'json' : (body.format as ExportFormat)
+    if (contentType !== 'backup' && (!format || !VALID_FORMATS.includes(format))) {
+      return HttpResponse.json({ error: 'Format must be csv, xlsx, or json' }, { status: 400 })
+    }
+
+    // Book validation (only for transactions)
+    if (contentType === 'transactions') {
+      if (!body.bookId) {
+        return HttpResponse.json({ error: 'bookId is required for transaction exports' }, { status: 400 })
+      }
+      const book = books.find(
+        b => b.id === body.bookId && (b.ownerId === user.id || b.sharedWith.some(s => s.userId === user.id)),
+      )
+      if (!book) {
+        return HttpResponse.json({ error: 'Book not found' }, { status: 404 })
+      }
     }
 
     const job: ExportJob = {
       id: nextExportJobId(),
-      format: body.format as 'csv' | 'xlsx',
-      bookId: body.bookId!,
-      from: body.from,
-      to: body.to,
+      format,
+      contentType,
+      bookId: body.bookId,
       status: 'pending',
       createdAt: new Date(),
     }
@@ -1515,7 +1661,9 @@ export const handlers = [
       job.downloadUrl = `/api/v1/exports/${job.id}/download`
     }, 50)
 
-    return HttpResponse.json({ data: { jobId: job.id, status: 'pending' } }, { status: 202 })
+    return HttpResponse.json({
+      data: { jobId: job.id, status: 'pending' },
+    }, { status: 201 })
   }),
 
   http.get('/api/v1/exports/:jobId', ({ request, params }) => {
@@ -1526,13 +1674,17 @@ export const handlers = [
     if (!job) {
       return HttpResponse.json({ error: 'Export job not found' }, { status: 404 })
     }
-    return HttpResponse.json({
-      data: {
-        jobId: job.id,
-        status: job.status,
-        downloadUrl: job.downloadUrl,
-      },
-    })
+    const data: Record<string, unknown> = {
+      jobId: job.id,
+      status: job.status,
+    }
+    if (job.status === 'completed') {
+      data.downloadUrl = job.downloadUrl
+    }
+    if (job.status === 'failed') {
+      data.errorMessage = job.errorMessage
+    }
+    return HttpResponse.json({ data })
   }),
 
   http.get('/api/v1/exports/:jobId/download', ({ request, params }) => {
@@ -1543,36 +1695,195 @@ export const handlers = [
     if (!job || job.status !== 'completed') {
       return HttpResponse.json({ error: 'Export not ready' }, { status: 404 })
     }
-    // Determine which transactions to include
-    let txs = transactions.filter(tx => tx.bookId === job.bookId)
-    if (job.from) {
-      const fromDate = new Date(job.from)
-      txs = txs.filter(tx => tx.dateTime >= fromDate)
-    }
-    if (job.to) {
-      const toDate = new Date(job.to)
-      txs = txs.filter(tx => tx.dateTime < toDate)
+
+    const { contentType, format, bookId } = job
+    const filename = getExportFilename(contentType, format, bookId)
+    const userCategories = categories.filter(c => c.userId === currentUser?.id)
+
+    // Content type-specific generation
+    if (format === 'json') {
+      // JSON generation
+      let jsonData: unknown
+
+      if (contentType === 'backup') {
+        const allBooks = books.filter(b => b.ownerId === currentUser?.id || b.sharedWith.some(s => s.userId === currentUser?.id))
+        jsonData = {
+          exportedAt: new Date().toISOString(),
+          version: 1,
+          books: allBooks.map(b => ({
+            id: b.id,
+            name: b.name,
+            currency: b.currency,
+            status: b.status,
+            ownerId: b.ownerId,
+            sharedWith: b.sharedWith,
+            createdAt: b.createdAt.toISOString(),
+          })),
+          categories: userCategories.map(c => ({
+            id: c.id,
+            name: c.name,
+            recurring: c.recurring,
+            color: c.color,
+            icon: c.icon,
+            createdAt: c.createdAt.toISOString(),
+          })),
+          transactions: transactions
+            .filter(tx => tx.userId === currentUser?.id)
+            .map(toTransactionDto),
+        }
+      } else if (contentType === 'categories') {
+        jsonData = userCategories.map(c => ({
+          id: c.id,
+          name: c.name,
+          recurring: c.recurring,
+          color: c.color,
+          icon: c.icon,
+          createdAt: c.createdAt.toISOString(),
+        }))
+      } else if (contentType === 'transactions' && bookId) {
+        jsonData = transactions
+          .filter(tx => tx.bookId === bookId)
+          .map(toTransactionDto)
+      } else if (contentType === 'books') {
+        const visibleBooks = books.filter(b => b.ownerId === currentUser?.id || b.sharedWith.some(s => s.userId === currentUser?.id))
+        jsonData = visibleBooks.map(toBookDto)
+      } else {
+        jsonData = { error: 'JSON not supported for this content type' }
+      }
+
+      const jsonStr = JSON.stringify(jsonData, null, 2)
+      return new HttpResponse(jsonStr, {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Disposition': `attachment; filename="${filename}"`,
+        },
+      })
     }
 
-    if (job.format === 'csv') {
-      const csv = generateCsv(txs)
+    // CSV / XLSX generation
+    if (contentType === 'categories') {
+      const csv = generateCategoriesCsv(userCategories)
       return new HttpResponse(csv, {
         status: 200,
         headers: {
           'Content-Type': 'text/csv',
-          'Content-Disposition': `attachment; filename="export-${job.id}.csv"`,
-        },
-      })
-    } else {
-      // For XLSX we return a minimal valid ZIP header as a dummy binary
-      const dummyXlsx = new Uint8Array([0x50, 0x4b, 0x03, 0x04])
-      return new HttpResponse(dummyXlsx, {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-          'Content-Disposition': `attachment; filename="export-${job.id}.xlsx"`,
+          'Content-Disposition': `attachment; filename="${filename}"`,
         },
       })
     }
+
+    if (contentType === 'books') {
+      const visibleBooks = books.filter(b => b.ownerId === currentUser?.id || b.sharedWith.some(s => s.userId === currentUser?.id))
+      const csv = generateBooksCsv(visibleBooks)
+      return new HttpResponse(csv, {
+        status: 200,
+        headers: {
+          'Content-Type': 'text/csv',
+          'Content-Disposition': `attachment; filename="${filename}"`,
+        },
+      })
+    }
+
+    if (contentType === 'transactions' && bookId) {
+      const txs = transactions.filter(tx => tx.bookId === bookId)
+      if (format === 'csv') {
+        const csv = generateCsv(txs)
+        return new HttpResponse(csv, {
+          status: 200,
+          headers: {
+            'Content-Type': 'text/csv',
+            'Content-Disposition': `attachment; filename="${filename}"`,
+          },
+        })
+      } else {
+        // XLSX dummy
+        const dummyXlsx = new Uint8Array([0x50, 0x4b, 0x03, 0x04])
+        return new HttpResponse(dummyXlsx, {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition': `attachment; filename="${filename}"`,
+          },
+        })
+      }
+    }
+
+    // Report content types — use Main book only
+    const mainBookTxs = getMainBookTransactions()
+
+    if (
+      contentType === 'report-daily-total' ||
+      contentType === 'report-daily-per-category'
+    ) {
+      if (contentType === 'report-daily-per-category') {
+        const csv = generatePerCategoryReportCsv(mainBookTxs)
+        return new HttpResponse(csv, {
+          status: 200,
+          headers: {
+            'Content-Type': 'text/csv',
+            'Content-Disposition': `attachment; filename="${filename}"`,
+          },
+        })
+      }
+      const csv = generateDailyReportCsv(mainBookTxs)
+      return new HttpResponse(csv, {
+        status: 200,
+        headers: {
+          'Content-Type': 'text/csv',
+          'Content-Disposition': `attachment; filename="${filename}"`,
+        },
+      })
+    }
+
+    if (
+      contentType === 'report-monthly-total' ||
+      contentType === 'report-monthly-per-category'
+    ) {
+      if (contentType === 'report-monthly-per-category') {
+        const csv = generatePerCategoryReportCsv(mainBookTxs)
+        return new HttpResponse(csv, {
+          status: 200,
+          headers: {
+            'Content-Type': 'text/csv',
+            'Content-Disposition': `attachment; filename="${filename}"`,
+          },
+        })
+      }
+      const csv = generateMonthlyReportCsv(mainBookTxs)
+      return new HttpResponse(csv, {
+        status: 200,
+        headers: {
+          'Content-Type': 'text/csv',
+          'Content-Disposition': `attachment; filename="${filename}"`,
+        },
+      })
+    }
+
+    if (
+      contentType === 'report-yearly-total' ||
+      contentType === 'report-yearly-per-category'
+    ) {
+      if (contentType === 'report-yearly-per-category') {
+        const csv = generatePerCategoryReportCsv(mainBookTxs)
+        return new HttpResponse(csv, {
+          status: 200,
+          headers: {
+            'Content-Type': 'text/csv',
+            'Content-Disposition': `attachment; filename="${filename}"`,
+          },
+        })
+      }
+      const csv = generateYearlyReportCsv(mainBookTxs)
+      return new HttpResponse(csv, {
+        status: 200,
+        headers: {
+          'Content-Type': 'text/csv',
+          'Content-Disposition': `attachment; filename="${filename}"`,
+        },
+      })
+    }
+
+    return HttpResponse.json({ error: 'Export not ready' }, { status: 404 })
   }),
 ]
