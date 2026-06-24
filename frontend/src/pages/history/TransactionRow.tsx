@@ -1,8 +1,7 @@
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { iconMap } from "@/lib/getIcon";
 import { formatCurrency, formatDate, invertColor } from "@/lib/utils";
-import { useCategoriesStore } from "@/store";
+import { useCategoriesStore, useUsersStore } from "@/store";
 import type { TransactionDto } from "@/types";
 import TransactionRowMenu from "./TransactionRowMenu";
 import { MoreHorizontal } from "lucide-react";
@@ -32,6 +31,7 @@ function explainTransactionValue(transaction: TransactionDto) {
 export default function TransactionRow({
   transaction,
 }: TransactionRowProps) {
+  const users = useUsersStore((s) => s.users)
   const categories = useCategoriesStore((s) => s.categories);
   const transactionCategory = categories.find((c) => c.name === transaction.categoryName);
   const category = transactionCategory;
@@ -72,11 +72,10 @@ export default function TransactionRow({
                 <div>
                   <div className="flex items-center gap-2">
                     <div className="font-medium">{title}</div>
-                    <Badge variant="secondary">{0}</Badge>
                   </div>
                   <div className="flex flex-wrap gap-x-2 text-sm text-muted-foreground overflow-hidden">
                     <div className="truncate overflow-hidden text-ellipsis whitespace-nowrap">
-                      {transaction.userId}
+                      {users.find((u) => u.id === transaction.userId || u.email === transaction.userId)?.email}
                     </div>
                     <div className="truncate overflow-hidden text-ellipsis whitespace-nowrap">
                       {formatDate(new Date(transaction.dateTime))}

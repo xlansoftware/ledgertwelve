@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text.Json;
 using ledger12.Application.DTOs;
 using ledger12.Application.Interfaces;
@@ -55,6 +56,7 @@ public class ImportService : IImportService
 
     private async Task<ImportResponse> ImportTransactionsAsync(ImportRequest request, Guid userId)
     {
+        Debugger.Launch();
         var bookId = Guid.Parse(request.BookId!);
         var visible = await _bookRepo.HasEditAccessAsync(bookId, userId);
         if (!visible) throw new NotFoundException("Book", bookId);
