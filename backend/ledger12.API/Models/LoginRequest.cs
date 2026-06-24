@@ -1,3 +1,4 @@
 namespace ledger12.API.Models;
 
-public record LoginRequest(string User, string Password);
+// This empty file intentionally left blank.
+// LoginRequest is now in ledger12.Application.DTOs.

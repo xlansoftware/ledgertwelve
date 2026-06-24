@@ -1,8 +1,9 @@
-using ledger12.Application.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using ledger12.Domain.Entities;
+using ledger12.Domain.Enums;
+using ledger12.Infrastructure.Data;
 using Microsoft.Extensions.DependencyInjection;
-using ledger12.Domain;
 
 namespace ledger12.Infrastructure.Data;
 
@@ -10,15 +11,9 @@ public static class DbInitializer
 {
     public static async Task SeedAsync(IServiceProvider serviceProvider)
     {
-        await SeedBookAsync(serviceProvider);
         await SeedUserAsync(serviceProvider);
         await SeedCategoriesAsync(serviceProvider);
-        await SeedTransactionsAsync(serviceProvider);
-    }
-
-    private static async Task SeedBookAsync(IServiceProvider serviceProvider)
-    {
-
+        await SeedMainBookAsync(serviceProvider);
     }
 
     private static async Task SeedUserAsync(IServiceProvider serviceProvider)
@@ -46,131 +41,132 @@ public static class DbInitializer
         }
     }
 
+    private static async Task SeedMainBookAsync(IServiceProvider serviceProvider)
+    {
+        var context = serviceProvider.GetRequiredService<AppDbContext>();
+        var userManager = serviceProvider.GetRequiredService<UserManager<AppUser>>();
+
+        var user = await userManager.FindByEmailAsync("demo@example.com");
+        if (user == null) return;
+
+        var userId = Guid.Parse(user.Id);
+
+        if (await context.Books.AnyAsync(b => b.OwnerId == userId && b.Name == "Main"))
+            return;
+
+        var mainBook = new Book("Main", userId, "EUR");
+        context.Books.Add(mainBook);
+        await context.SaveChangesAsync();
+    }
+
     private static async Task SeedCategoriesAsync(IServiceProvider serviceProvider)
     {
         var context = serviceProvider.GetRequiredService<AppDbContext>();
+        var userManager = serviceProvider.GetRequiredService<UserManager<AppUser>>();
 
-        if (await context.Categories.AnyAsync())
+        var user = await userManager.FindByEmailAsync("demo@example.com");
+        if (user == null) return;
+
+        var userId = Guid.Parse(user.Id);
+
+        if (await context.Categories.AnyAsync(c => c.UserId == userId))
             return;
 
         var categories = new List<Category>
         {
-            new("Groceries",       "#fde68a",  1,  "shopping-cart"),
-            new("Rent / Mortgage", "#fca5a5",  21, "home"),
-            new("Utilities",       "#a5b4fc",  4,  "plug"),
-            new("Transportation",  "#bbf7d0",  6,  "car"),
-            new("Insurance",       "#fcd34d",  17, "shield"),
-            new("Dining Out",      "#FFCAD4",  5,  "utensils"),
-            new("Entertainment",   "#bae6fd",  8,  "film"),
-            new("Health / Medical","#FF595E",  10, "heart"),
-            new("Personal Care",   "#ddd6fe",  11, "smile"),
-            new("Subscriptions",   "#fde2e4",  20, "credit-card"),
-            new("Clothing",        "#e0f2fe",  12, "shirt"),
-            new("Gifts",           "#d9f99d",  14, "gift"),
-            new("Travel",          "#a7f3d0",  13, "plane"),
-            new("Education",       "#fef9c3",  15, "book"),
-            new("Savings",         "#f0abfc",  18, "piggy-bank"),
-            new("Miscellaneous",   "#FDFFB6",  9,  "dots-horizontal"),
-            new("Pets",            "#4d22b2",  2,  "heart"),
-            new("Taxes",           "#e22400",  19, "edit"),
-            new("Maintenance",     "#ad3e00",  3,  "home"),
-            new("Parents",         "#3A86FF",  16, "file"),
-            new("Sport",           "#F72585",  7,  "smile"),
-            new("Kids",            "#FF6B6B",  22, "piggy-bank"),
+            new("Groceries",       userId, "#fde68a",  "shopping-cart", 1),
+            new("Rent / Mortgage", userId, "#fca5a5",  "home",          2),
+            new("Utilities",       userId, "#a5b4fc",  "plug",          3),
+            new("Transportation",  userId, "#bbf7d0",  "car",           4),
+            new("Insurance",       userId, "#fcd34d",  "shield",        5),
+            new("Dining Out",      userId, "#FFCAD4",  "utensils",      6),
+            new("Entertainment",   userId, "#bae6fd",  "film",          7),
+            new("Health / Medical",userId, "#FF595E",  "heart",         8),
+            new("Personal Care",   userId, "#ddd6fe",  "smile",         9),
+            new("Subscriptions",   userId, "#fde2e4",  "credit-card",   10),
+            new("Clothing",        userId, "#e0f2fe",  "shirt",         11),
+            new("Gifts",           userId, "#d9f99d",  "gift",          12),
+            new("Travel",          userId, "#a7f3d0",  "plane",         13),
+            new("Education",       userId, "#fef9c3",  "book",          14),
+            new("Savings",         userId, "#f0abfc",  "piggy-bank",    15),
+            new("Miscellaneous",   userId, "#FDFFB6",  "dots-horizontal", 16),
+            new("Pets",            userId, "#4d22b2",  "heart",         17),
+            new("Taxes",           userId, "#e22400",  "edit",          18),
+            new("Maintenance",     userId, "#ad3e00",  "home",          19),
+            new("Parents",         userId, "#3A86FF",  "file",          20),
+            new("Sport",           userId, "#F72585",  "smile",         21),
+            new("Kids",            userId, "#FF6B6B",  "piggy-bank",    22),
         };
 
         context.Categories.AddRange(categories);
         await context.SaveChangesAsync();
+
+        // Seed deterministic transactions
+        await SeedTransactionsAsync(context, userId);
     }
 
-    private static async Task SeedTransactionsAsync(IServiceProvider serviceProvider)
+    private static async Task SeedTransactionsAsync(AppDbContext context, Guid userId)
     {
-        var repository = serviceProvider.GetRequiredService<ITransactionRepository>();
-
-        // Check if transactions already exist
-        var context = serviceProvider.GetRequiredService<AppDbContext>();
         if (await context.Transactions.AnyAsync())
             return;
 
-        // Deterministic seed data spanning Jan 2025 – Dec 2026
+        var mainBook = await context.Books.FirstAsync(b => b.OwnerId == userId && b.Name == "Main");
+
+        var random = new Random(42);
         for (int year = 2025; year <= 2026; year++)
         {
             for (int month = 1; month <= 12; month++)
             {
-                foreach (var author in new[] { "Alice", "Bob" })
-                {
-                    await AddMonthlyTransaction(repository, author, "Food", FoodAmount(author, year, month), year, month);
-                    await AddMonthlyTransaction(repository, author, "Transport", TransportAmount(author, month), year, month);
-                    await AddMonthlyTransaction(repository, author, "Utilities", UtilitiesAmount(author, month), year, month);
-                    await AddMonthlyTransaction(repository, author, "Entertainment", EntertainmentAmount(author, month), year, month);
+                // Income: salary on 1st
+                var salaryTx = new Transaction(
+                    mainBook.Id, userId,
+                    new DateTimeOffset(year, month, 1, 8, 0, 0, TimeSpan.Zero),
+                    3200m + (year - 2025) * 150,
+                    categoryName: "Savings",
+                    note: "Monthly salary"
+                );
+                context.Transactions.Add(salaryTx);
 
-                    // Salary: only Alice
-                    if (author == "Alice")
-                    {
-                        await AddMonthlyTransaction(repository, author, "Salary", 3200m + (year - 2025) * 150, year, month);
-                    }
+                // Expenses spread through the month
+                var day = 3;
+                foreach (var expense in GetMonthlyExpenses(random, year, month))
+                {
+                    if (day > 28) day = 3;
+                    var tx = new Transaction(
+                        mainBook.Id, userId,
+                        new DateTimeOffset(year, month, day, random.Next(8, 20), random.Next(0, 60), 0, TimeSpan.Zero),
+                        -expense.Amount,
+                        categoryName: expense.Category,
+                        note: expense.Note
+                    );
+                    context.Transactions.Add(tx);
+                    day += random.Next(1, 4);
                 }
             }
         }
+
+        await context.SaveChangesAsync();
     }
 
-    private static async Task AddMonthlyTransaction(
-        ITransactionRepository repository,
-        string author,
-        string category,
-        decimal value,
-        int year,
-        int month)
+    private static List<(decimal Amount, string Category, string Note)> GetMonthlyExpenses(Random rng, int year, int month)
     {
-        // Place the transaction on the 15th of the month
-        var date = new DateTimeOffset(year, month, 15, 12, 0, 0, TimeSpan.Zero);
+        var isSummer = month >= 6 && month <= 8;
+        var isWinter = month == 12 || month == 1 || month == 2;
 
-        var transaction = new Transaction(
-            value: value,
-            category: category,
-            author: author,
-            date: date,
-            book: null
-        );
-
-        await repository.AddAsync(transaction);
-    }
-
-    // ─── Amount helpers with seasonal / trending patterns ───────────────
-
-    private static decimal FoodAmount(string author, int year, int month)
-    {
-        // Base amount: slowly increasing over time (inflation)
-        decimal b = author == "Alice" ? 350m : 250m;
-        // 1.5% annual increase
-        decimal trend = b * (0.015m * (year - 2025));
-        // slight summer lift (+5% in Jun, Jul, Aug)
-        decimal seasonal = month >= 6 && month <= 8 ? b * 0.05m : 0;
-        return Math.Round(b + trend + seasonal, 2);
-    }
-
-    private static decimal TransportAmount(string author, int month)
-    {
-        // Constant base
-        decimal b = author == "Alice" ? 75m : 60m;
-        // Higher in summer (more trips)
-        decimal seasonal = month >= 6 && month <= 8 ? b * 0.20m : 0;
-        return Math.Round(b + seasonal, 2);
-    }
-
-    private static decimal UtilitiesAmount(string author, int month)
-    {
-        decimal b = author == "Alice" ? 120m : 90m;
-        // Higher in winter (heating)
-        decimal seasonal = month == 12 || month == 1 || month == 2 ? b * 0.50m : 0;
-        return Math.Round(b + seasonal, 2);
-    }
-
-    private static decimal EntertainmentAmount(string author, int month)
-    {
-        decimal b = author == "Alice" ? 50m : 40m;
-        // Much higher in summer (activities, holidays)
-        decimal seasonal = month >= 6 && month <= 8 ? b * 0.80m : 0;
-        return Math.Round(b + seasonal, 2);
+        return new()
+        {
+            (rng.Next(250, 450), "Groceries", "Weekly groceries"),
+            (rng.Next(200, 350), "Groceries", "Weekly groceries"),
+            (rng.Next(180, 300), "Groceries", "Weekly groceries"),
+            (rng.Next(1200, 1500), "Rent / Mortgage", "Monthly rent"),
+            (isWinter ? rng.Next(150, 220) : rng.Next(70, 110), "Utilities", "Utilities bill"),
+            (isSummer ? rng.Next(60, 100) : rng.Next(50, 80), "Transportation", "Fuel / transit"),
+            (rng.Next(40, 80), "Dining Out", "Restaurant"),
+            (isSummer ? rng.Next(60, 120) : rng.Next(30, 60), "Entertainment", "Movies / activities"),
+            (rng.Next(20, 50), "Subscriptions", "Netflix / Spotify"),
+            (rng.Next(30, 100), "Miscellaneous", "Random purchases"),
+            (rng.Next(20, 60), "Personal Care", "Personal care items"),
+            (rng.Next(100, 300), "Insurance", "Health insurance"),
+        };
     }
 }
