@@ -6,6 +6,7 @@
   "scripts": {
     "pi": "agentignore run pi",
     "dev": "vite --host 0.0.0.0",
+    "dev:proxy": "VITE_DISABLE_MSW=true vite --host 0.0.0.0",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",

@@ -93,13 +93,15 @@ async function main() {
     return
   }
 
-  // Phase 3 — Start MSW (online mode only)
-  try {
-    await worker.start()
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'Failed to start application'
-    renderError(root, message)
-    return
+  // Phase 3 — Start MSW (online mode only, unless disabled via env var)
+  if (import.meta.env.VITE_DISABLE_MSW !== 'true') {
+    try {
+      await worker.start()
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to start application'
+      renderError(root, message)
+      return
+    }
   }
 
   // Phase 4 — Create online factory
