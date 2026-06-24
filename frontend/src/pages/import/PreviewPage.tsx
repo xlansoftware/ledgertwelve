@@ -103,26 +103,14 @@ export default function PreviewPage() {
     }
 
     runPreview()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []) // Run once on mount
 
   // ---------------------------------------------------------------------------
   // Import handler
   // ---------------------------------------------------------------------------
 
-  const handleImport = useCallback(async () => {
-    if (store.clearExisting) {
-      setShowClearConfirm(true)
-      return
-    }
-    await doImport()
-  }, [store.clearExisting])
-
-  const handleConfirmClear = useCallback(async () => {
-    setShowClearConfirm(false)
-    await doImport()
-  }, [])
-
-  const doImport = async () => {
+  const doImport = useCallback(async () => {
     setIsImporting(true)
     setImportError(null)
     store.setStep("importing")
@@ -149,7 +137,20 @@ export default function PreviewPage() {
     } finally {
       setIsImporting(false)
     }
-  }
+  }, [entityType, store])
+
+  const handleImport = useCallback(async () => {
+    if (store.clearExisting) {
+      setShowClearConfirm(true)
+      return
+    }
+    await doImport()
+  }, [doImport, store.clearExisting])
+
+  const handleConfirmClear = useCallback(async () => {
+    setShowClearConfirm(false)
+    await doImport()
+  }, [doImport])
 
   // ---------------------------------------------------------------------------
   // Loading state
@@ -194,7 +195,7 @@ export default function PreviewPage() {
   // ---------------------------------------------------------------------------
 
   if (importCompleted) {
-    return renderCompletion()
+    return renderCompletion(store.importResult)
   }
 
   // ---------------------------------------------------------------------------
@@ -289,7 +290,7 @@ export default function PreviewPage() {
               <Button
                 size="sm"
                 onClick={handleImport}
-                disabled={isImporting || result.errors === undefined || result.errors > 0}
+                disabled={isImporting}
               >
                 {isImporting ? (
                   <>
@@ -340,7 +341,7 @@ export default function PreviewPage() {
   // DONE: Completion state
   // ---------------------------------------------------------------------------
 
-  function renderCompletion() {
+  function renderCompletion(result: ImportResult | null) {
     const hasErrors = result && (
       entityType !== "backup"
         ? (result.errors ?? 0) > 0

@@ -78,6 +78,7 @@ export default function MappingPage() {
 
   // Initialize local mapping from store
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLocalMapping({ ...store.mapping })
   }, [store.mapping])
 

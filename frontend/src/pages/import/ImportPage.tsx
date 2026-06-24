@@ -292,7 +292,7 @@ export default function ImportPage() {
               <CardContent>
                 <Select
                   value={store.fileInfo.selectedSheet ?? store.fileInfo.sheetNames[0]}
-                  onValueChange={(_val) => {
+                  onValueChange={() => {
                     // Re-parse with new sheet — for now show info
                     store.setError("Sheet selection requires re-uploading the file. Please select the correct sheet first.")
                   }}
