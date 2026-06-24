@@ -240,78 +240,77 @@ public class ImportServiceTests
     [Fact]
     public async Task ImportTransactionsAsync_CreatesTransactions_WithCorrectDateCategoryAndAmount_FromCsvData()
     {
-        // Arrange — rows built from CSV columns:
-        // Id,DateUTC,Value,ExchangeRate,Currency,Category,Notes,User
+        // Arrange — JSON string matching what the frontend sends.
+        // Columns: Id,DateUTC,Value,ExchangeRate,Currency,Category,Notes,User
         // Value is the original-currency amount (BGN); amount is Value * ExchangeRate (EUR).
-        var rows = new List<Dictionary<string, object?>>
-        {
-            new()
+        // We deserialize through System.Text.Json so values arrive as JsonElement
+        // (the real deserialization path), not as native .NET types.
+        var json = """
+        [
             {
-                ["id"] = "4",
-                ["dateTime"] = "2025-05-12T10:37:57Z",
-                ["amount"] = 2.04m,
-                ["originalCurrency"] = "BGN",
-                ["originalAmount"] = 4.00m,
-                ["exchangeRate"] = 0.51m,
-                ["categoryName"] = "Groceries",
-                ["note"] = null
+                "id": "4",
+                "dateTime": "2025-05-12T10:37:57Z",
+                "amount": 2.04,
+                "originalCurrency": "BGN",
+                "originalAmount": 4.00,
+                "exchangeRate": 0.51,
+                "categoryName": "Groceries",
+                "note": null
             },
-            new()
             {
-                ["id"] = "5",
-                ["dateTime"] = "2025-05-12T11:27:59Z",
-                ["amount"] = 2.5347m,
-                ["originalCurrency"] = "BGN",
-                ["originalAmount"] = 4.97m,
-                ["exchangeRate"] = 0.51m,
-                ["categoryName"] = "Groceries",
-                ["note"] = null
+                "id": "5",
+                "dateTime": "2025-05-12T11:27:59Z",
+                "amount": 2.5347,
+                "originalCurrency": "BGN",
+                "originalAmount": 4.97,
+                "exchangeRate": 0.51,
+                "categoryName": "Groceries",
+                "note": null
             },
-            new()
             {
-                ["id"] = "10",
-                ["dateTime"] = "2025-05-13T09:06:20Z",
-                ["amount"] = 9.333m,
-                ["originalCurrency"] = "BGN",
-                ["originalAmount"] = 18.30m,
-                ["exchangeRate"] = 0.51m,
-                ["categoryName"] = "Groceries",
-                ["note"] = null
+                "id": "10",
+                "dateTime": "2025-05-13T09:06:20Z",
+                "amount": 9.333,
+                "originalCurrency": "BGN",
+                "originalAmount": 18.30,
+                "exchangeRate": 0.51,
+                "categoryName": "Groceries",
+                "note": null
             },
-            new()
             {
-                ["id"] = "12",
-                ["dateTime"] = "2025-05-13T13:07:44Z",
-                ["amount"] = 0.612m,
-                ["originalCurrency"] = "BGN",
-                ["originalAmount"] = 1.20m,
-                ["exchangeRate"] = 0.51m,
-                ["categoryName"] = "Groceries",
-                ["note"] = null
+                "id": "12",
+                "dateTime": "2025-05-13T13:07:44Z",
+                "amount": 0.612,
+                "originalCurrency": "BGN",
+                "originalAmount": 1.20,
+                "exchangeRate": 0.51,
+                "categoryName": "Groceries",
+                "note": null
             },
-            new()
             {
-                ["id"] = "13",
-                ["dateTime"] = "2025-05-13T13:23:29Z",
-                ["amount"] = 11.1537m,
-                ["originalCurrency"] = "BGN",
-                ["originalAmount"] = 21.87m,
-                ["exchangeRate"] = 0.51m,
-                ["categoryName"] = "Pets",
-                ["note"] = null
+                "id": "13",
+                "dateTime": "2025-05-13T13:23:29Z",
+                "amount": 11.1537,
+                "originalCurrency": "BGN",
+                "originalAmount": 21.87,
+                "exchangeRate": 0.51,
+                "categoryName": "Pets",
+                "note": null
             },
-            new()
             {
-                ["id"] = "15",
-                ["dateTime"] = "2025-05-13T14:14:42Z",
-                ["amount"] = 10.455m,
-                ["originalCurrency"] = "BGN",
-                ["originalAmount"] = 20.50m,
-                ["exchangeRate"] = 0.51m,
-                ["categoryName"] = "Groceries",
-                ["note"] = null
+                "id": "15",
+                "dateTime": "2025-05-13T14:14:42Z",
+                "amount": 10.455,
+                "originalCurrency": "BGN",
+                "originalAmount": 20.50,
+                "exchangeRate": 0.51,
+                "categoryName": "Groceries",
+                "note": null
             }
-        };
+        ]
+        """;
+
+        var rows = System.Text.Json.JsonSerializer.Deserialize<List<Dictionary<string, object?>>>(json)!;
 
         var request = new ImportRequest(false, "transactions", _bookId.ToString(), null, null, rows, null);
         _bookRepo.Setup(r => r.HasEditAccessAsync(_bookId, _userId)).ReturnsAsync(true);

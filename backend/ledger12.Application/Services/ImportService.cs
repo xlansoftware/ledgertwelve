@@ -80,10 +80,8 @@ public class ImportService : IImportService
                     continue;
                 }
 
-                DateTimeOffset dateTime;
-                if (row.TryGetValue("dateTime", out var dtObj) && dtObj is string dtStr && DateTimeOffset.TryParse(dtStr, out var parsedDt))
-                    dateTime = parsedDt;
-                else
+                var dtStr = GetRowString(row, "dateTime");
+                if (!DateTimeOffset.TryParse(dtStr, out var dateTime))
                     dateTime = DateTimeOffset.UtcNow;
 
                 var note = GetRowString(row, "note");
