@@ -155,18 +155,18 @@ export function PeriodAreaChart({
         <div className="flex-1 px-3 py-2">
           <h3 className="mb-2 text-sm font-medium text-muted-foreground">{title}</h3>
         </div>
-        <div className="flex flex-col gap-0.5 px-3 py-2 border">
+        <div className="flex flex-col gap-0.5 px-3 py-2 border items-end">
           <span className="text-muted-foreground">
             Average{unitLabel ?? ""}
           </span>
           <span className="text-base font-bold tabular-nums text-foreground">
-            {average !== undefined ? formatCurrency(average) : "—"}
+            {average !== undefined ? formatCurrency(average, 0) : "—"}
           </span>
         </div>
-        <div className="flex flex-col gap-0.5 px-3 py-2 border">
+        <div className="flex flex-col gap-0.5 px-3 py-2 border items-end">
           <span className="text-muted-foreground">Projected End</span>
-          <span className="text-base font-bold tabular-nums text-foreground">
-            {endValue !== null ? formatCurrency(endValue) : "—"}
+          <span className="text-base font-bold tabular-nums text-foreground text-right">
+            {endValue !== null ? formatCurrency(endValue, 0) : "—"}
           </span>
         </div>
       </div>
