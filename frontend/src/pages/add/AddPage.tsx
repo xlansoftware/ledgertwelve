@@ -67,6 +67,7 @@ export default function AddPage() {
     try {
       await createTransaction({
         bookId: currentBook?.id || "default",
+        dateTime: new Date().toISOString(),
         amount: result.amount * (-1),
         originalAmount: result.originalAmount * (-1),
         originalCurrency: result.originalCurrency || undefined,

@@ -289,14 +289,14 @@ Returns all users the current user has interacted with — the current user them
 | `id` | string | yes | |
 | `bookId` | string | yes | |
 | `userId` | string | yes | User who created the transaction. |
-| `dateTime` | string | yes | ISO 8601 timestamp. |
+| `dateTime` | string | yes | **User-supplied** business date of the transaction (when it occurred). Used for reporting, filtering, and sorting. Can differ from when the record was created. |
 | `amount` | number | yes | Negative for expenses, positive for income. |
 | `originalCurrency` | string | no | Required when using multi-currency. |
 | `originalAmount` | number | no | Amount in original currency. |
 | `exchangeRate` | number | no | Rate used for conversion. |
 | `categoryName` | string | no | Category name (not ID). |
 | `note` | string | no | Free text. |
-| `createdAt` | string | yes | ISO 8601 timestamp. |
+| `createdAt` | string | yes | **Server-generated** audit timestamp — when the record was persisted in the database. Not settable by the user. For auditing and conflict resolution, not business reporting. |
 | `isBookClosingEntry` | boolean | no | `true` if this is an auto-generated closing transaction. |
 | `closedBookId` | string\|null | no | If this is a closing entry, the ID of the closed book. `null` otherwise. |
 
