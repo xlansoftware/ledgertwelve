@@ -18,18 +18,7 @@ public static class DbInitializer
 
     private static async Task SeedBookAsync(IServiceProvider serviceProvider)
     {
-        var context = serviceProvider.GetRequiredService<AppDbContext>();
 
-        if (await context.Books.AnyAsync())
-            return;
-
-        var books = new List<Book>
-        {
-            new("Ledger", ""),
-        };
-
-        context.Books.AddRange(books);
-        await context.SaveChangesAsync();
     }
 
     private static async Task SeedUserAsync(IServiceProvider serviceProvider)
