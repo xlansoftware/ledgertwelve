@@ -1398,13 +1398,12 @@ export const handlers = [
     const period = url.searchParams.get('period') || 'month'
     const from = url.searchParams.get('from')
     const to = url.searchParams.get('to')
-    const bookId = url.searchParams.get('bookId')
 
-    // Resolve book: use bookId if provided, else Main book
-    const targetBookId = bookId ?? books.find(b => b.ownerId === user.id && b.name === 'Main')?.id
-    if (!targetBookId) return HttpResponse.json({ error: 'Book not found' }, { status: 500 })
+    // Only Main book transactions
+    const mainBook = books.find(b => b.ownerId === user.id && b.name === 'Main')
+    if (!mainBook) return HttpResponse.json({ error: 'Main book not found' }, { status: 500 })
 
-    let txs = transactions.filter(tx => tx.bookId === targetBookId)
+    let txs = transactions.filter(tx => tx.bookId === mainBook.id)
     if (from) {
       const fromDate = new Date(from)
       txs = txs.filter(tx => tx.dateTime >= fromDate)
@@ -1455,19 +1454,18 @@ export const handlers = [
     const url = new URL(request.url)
     const from = url.searchParams.get('from')
     const to = url.searchParams.get('to')
-    const bookId = url.searchParams.get('bookId')
 
     if (!from || !to) {
       return HttpResponse.json({ error: 'from and to query parameters are required' }, { status: 400 })
     }
 
-    const targetBookId = bookId ?? books.find(b => b.ownerId === user.id && b.name === 'Main')?.id
-    if (!targetBookId) return HttpResponse.json({ error: 'Book not found' }, { status: 500 })
+    const mainBook = books.find(b => b.ownerId === user.id && b.name === 'Main')
+    if (!mainBook) return HttpResponse.json({ error: 'Main book not found' }, { status: 500 })
 
     const fromDate = new Date(from + "T00:00:00.000Z")
     const toDate = new Date(to + "T00:00:00.000Z")
 
-    let txs = transactions.filter(tx => tx.bookId === targetBookId && !tx.isBookClosingEntry)
+    let txs = transactions.filter(tx => tx.bookId === mainBook.id && !tx.isBookClosingEntry)
     txs = txs.filter(tx => tx.dateTime >= fromDate && tx.dateTime < toDate)
 
     // Group by date (YYYY-MM-DD) and sum amounts
@@ -1492,19 +1490,18 @@ export const handlers = [
     const url = new URL(request.url)
     const from = url.searchParams.get('from')
     const to = url.searchParams.get('to')
-    const bookId = url.searchParams.get('bookId')
 
     if (!from || !to) {
       return HttpResponse.json({ error: 'from and to query parameters are required' }, { status: 400 })
     }
 
-    const targetBookId = bookId ?? books.find(b => b.ownerId === user.id && b.name === 'Main')?.id
-    if (!targetBookId) return HttpResponse.json({ error: 'Book not found' }, { status: 500 })
+    const mainBook = books.find(b => b.ownerId === user.id && b.name === 'Main')
+    if (!mainBook) return HttpResponse.json({ error: 'Main book not found' }, { status: 500 })
 
     const fromDate = new Date(from + "T00:00:00.000Z")
     const toDate = new Date(to + "T00:00:00.000Z")
 
-    let txs = transactions.filter(tx => tx.bookId === targetBookId && !tx.isBookClosingEntry)
+    let txs = transactions.filter(tx => tx.bookId === mainBook.id && !tx.isBookClosingEntry)
     txs = txs.filter(tx => tx.dateTime >= fromDate && tx.dateTime < toDate)
 
     // Group by YYYY-MM and sum amounts
@@ -1530,12 +1527,11 @@ export const handlers = [
     const url = new URL(request.url)
     const from = url.searchParams.get('from')
     const to = url.searchParams.get('to')
-    const bookId = url.searchParams.get('bookId')
 
-    const targetBookId = bookId ?? books.find(b => b.ownerId === user.id && b.name === 'Main')?.id
-    if (!targetBookId) return HttpResponse.json({ error: 'Book not found' }, { status: 500 })
+    const mainBook = books.find(b => b.ownerId === user.id && b.name === 'Main')
+    if (!mainBook) return HttpResponse.json({ error: 'Main book not found' }, { status: 500 })
 
-    let txs = transactions.filter(tx => tx.bookId === targetBookId)
+    let txs = transactions.filter(tx => tx.bookId === mainBook.id)
     if (from) txs = txs.filter(tx => tx.dateTime >= new Date(from))
     if (to) txs = txs.filter(tx => tx.dateTime < new Date(to))
 
@@ -1562,19 +1558,18 @@ export const handlers = [
     const url = new URL(request.url)
     const from = url.searchParams.get('from')
     const to = url.searchParams.get('to')
-    const bookId = url.searchParams.get('bookId')
 
     if (!from || !to) {
       return HttpResponse.json({ error: 'from and to query parameters are required' }, { status: 400 })
     }
 
-    const targetBookId = bookId ?? books.find(b => b.ownerId === user.id && b.name === 'Main')?.id
-    if (!targetBookId) return HttpResponse.json({ error: 'Book not found' }, { status: 500 })
+    const mainBook = books.find(b => b.ownerId === user.id && b.name === 'Main')
+    if (!mainBook) return HttpResponse.json({ error: 'Main book not found' }, { status: 500 })
 
     const fromDate = new Date(from + 'T00:00:00.000Z')
     const toDate = new Date(to + 'T00:00:00.000Z')
 
-    let txs = transactions.filter(tx => tx.bookId === targetBookId && !tx.isBookClosingEntry)
+    let txs = transactions.filter(tx => tx.bookId === mainBook.id && !tx.isBookClosingEntry)
     txs = txs.filter(tx => tx.dateTime >= fromDate && tx.dateTime < toDate)
 
     // Group by date and sum
@@ -1601,19 +1596,18 @@ export const handlers = [
     const url = new URL(request.url)
     const from = url.searchParams.get('from')
     const to = url.searchParams.get('to')
-    const bookId = url.searchParams.get('bookId')
 
     if (!from || !to) {
       return HttpResponse.json({ error: 'from and to query parameters are required' }, { status: 400 })
     }
 
-    const targetBookId = bookId ?? books.find(b => b.ownerId === user.id && b.name === 'Main')?.id
-    if (!targetBookId) return HttpResponse.json({ error: 'Book not found' }, { status: 500 })
+    const mainBook = books.find(b => b.ownerId === user.id && b.name === 'Main')
+    if (!mainBook) return HttpResponse.json({ error: 'Main book not found' }, { status: 500 })
 
     const fromDate = new Date(from + 'T00:00:00.000Z')
     const toDate = new Date(to + 'T00:00:00.000Z')
 
-    let txs = transactions.filter(tx => tx.bookId === targetBookId && !tx.isBookClosingEntry)
+    let txs = transactions.filter(tx => tx.bookId === mainBook.id && !tx.isBookClosingEntry)
     txs = txs.filter(tx => tx.dateTime >= fromDate && tx.dateTime < toDate)
 
     // Group by YYYY-MM and sum
@@ -1910,17 +1904,15 @@ export const handlers = [
       }
     }
 
-    // Report content types — use bookId if provided, else Main book
-    const reportBookTxs = bookId
-      ? transactions.filter(tx => tx.bookId === bookId && !tx.isBookClosingEntry)
-      : getMainBookTransactions()
+    // Report content types — use Main book only
+    const mainBookTxs = getMainBookTransactions()
 
     if (
       contentType === 'report-daily-total' ||
       contentType === 'report-daily-per-category'
     ) {
       if (contentType === 'report-daily-per-category') {
-        const csv = generatePerCategoryReportCsv(reportBookTxs)
+        const csv = generatePerCategoryReportCsv(mainBookTxs)
         return new HttpResponse(csv, {
           status: 200,
           headers: {
@@ -1929,7 +1921,7 @@ export const handlers = [
           },
         })
       }
-      const csv = generateDailyReportCsv(reportBookTxs)
+      const csv = generateDailyReportCsv(mainBookTxs)
       return new HttpResponse(csv, {
         status: 200,
         headers: {
@@ -1944,7 +1936,7 @@ export const handlers = [
       contentType === 'report-monthly-per-category'
     ) {
       if (contentType === 'report-monthly-per-category') {
-        const csv = generatePerCategoryReportCsv(reportBookTxs)
+        const csv = generatePerCategoryReportCsv(mainBookTxs)
         return new HttpResponse(csv, {
           status: 200,
           headers: {
@@ -1953,7 +1945,7 @@ export const handlers = [
           },
         })
       }
-      const csv = generateMonthlyReportCsv(reportBookTxs)
+      const csv = generateMonthlyReportCsv(mainBookTxs)
       return new HttpResponse(csv, {
         status: 200,
         headers: {
@@ -1968,7 +1960,7 @@ export const handlers = [
       contentType === 'report-yearly-per-category'
     ) {
       if (contentType === 'report-yearly-per-category') {
-        const csv = generatePerCategoryReportCsv(reportBookTxs)
+        const csv = generatePerCategoryReportCsv(mainBookTxs)
         return new HttpResponse(csv, {
           status: 200,
           headers: {
@@ -1977,7 +1969,7 @@ export const handlers = [
           },
         })
       }
-      const csv = generateYearlyReportCsv(reportBookTxs)
+      const csv = generateYearlyReportCsv(mainBookTxs)
       return new HttpResponse(csv, {
         status: 200,
         headers: {

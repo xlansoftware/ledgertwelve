@@ -4,7 +4,6 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import { getFactory } from "@/features/offline"
-import { useBooksStore } from "@/store"
 import type { DailyReportRow, CategoryReportRow, AverageReportDto } from "@/types"
 import {
   computeAccumulation,
@@ -163,10 +162,6 @@ export function useDailyInsight(todayStr?: string): UseDailyInsightReturn {
   const [isLoadingAverage, setIsLoadingAverage] = useState(true)
   const [averageError, setAverageError] = useState<string | null>(null)
 
-  // ── Current book from store ──
-  const currentBook = useBooksStore((s) => s.currentBook)
-  const bookId = currentBook?.id ?? "book_main"
-
   // ── Opening balance (as of last day of previous month) ──
   const [openingBalance, setOpeningBalance] = useState<number | null>(null)
 
@@ -185,7 +180,7 @@ export function useDailyInsight(todayStr?: string): UseDailyInsightReturn {
     setIsLoadingDaily(true)
     setDailyError(null)
 
-    getFactory().reports.getDailyReport({ from, to: reportTo, bookId })
+    getFactory().reports.getDailyReport({ from, to: reportTo })
       .then((data) => {
         setDailyRows(data)
         setIsLoadingDaily(false)
@@ -194,7 +189,7 @@ export function useDailyInsight(todayStr?: string): UseDailyInsightReturn {
         setDailyError(err instanceof Error ? err.message : "Failed to load daily data")
         setIsLoadingDaily(false)
       })
-  }, [today, todayDate, bookId])
+  }, [today, todayDate])
 
   // ── Fetch wide-window average (365-day rolling) ──
   useEffect(() => {
@@ -205,7 +200,7 @@ export function useDailyInsight(todayStr?: string): UseDailyInsightReturn {
     setIsLoadingAverage(true)
     setAverageError(null)
 
-    getFactory().reports.getDailyAverage({ from, to, bookId })
+    getFactory().reports.getDailyAverage({ from, to })
       .then((data: AverageReportDto) => {
         setAverageChange(data.average)
         setIsLoadingAverage(false)
@@ -216,13 +211,13 @@ export function useDailyInsight(todayStr?: string): UseDailyInsightReturn {
         setIsLoadingAverage(false)
         setAverageError(null) // suppress error — user sees existing chart
       })
-  }, [today, todayDate, bookId])
+  }, [today, todayDate])
 
   // ── Fetch opening balance as of last day of previous month ──
   useEffect(() => {
     const asOf = lastDayOfPreviousMonth(todayDate)
 
-    getFactory().books.getBookStats(bookId, { asOf })
+    getFactory().books.getBookStats("book_main", { asOf })
       .then((stats) => {
         setOpeningBalance(stats.totalSum)
       })
@@ -230,7 +225,7 @@ export function useDailyInsight(todayStr?: string): UseDailyInsightReturn {
         // Graceful degradation: openingBalance stays null, accumulation falls back to zero
         setOpeningBalance(null)
       })
-  }, [todayDate, bookId])
+  }, [todayDate])
 
   // ── Fetch pie chart categories (for selected day, or today when null) ──
   useEffect(() => {
@@ -241,7 +236,7 @@ export function useDailyInsight(todayStr?: string): UseDailyInsightReturn {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsLoadingPie(true)
 
-    getFactory().reports.getCategoryReport({ ...range, bookId })
+    getFactory().reports.getCategoryReport(range)
       .then((data) => {
         // Guard against stale responses
         if (fetchRef.current === date) {
@@ -255,7 +250,7 @@ export function useDailyInsight(todayStr?: string): UseDailyInsightReturn {
           setIsLoadingPie(false)
         }
       })
-  }, [selectedDay, today, bookId])
+  }, [selectedDay, today])
 
   // ── Split pie data by sign ──
   const { expenses, income } = useMemo(

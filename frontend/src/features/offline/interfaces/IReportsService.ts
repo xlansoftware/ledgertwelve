@@ -14,31 +14,26 @@ export interface GetTotalsParams {
   period?: "day" | "week" | "month" | "year"
   from?: string
   to?: string
-  bookId?: string
 }
 
 export interface GetCategoryReportParams {
   from?: string
   to?: string
-  bookId?: string
 }
 
 export interface GetDailyReportParams {
   from: string
   to: string
-  bookId?: string
 }
 
 export interface GetMonthlyReportParams {
   from: string
   to: string
-  bookId?: string
 }
 
 export interface GetAverageParams {
   from: string
   to: string
-  bookId?: string
 }
 
 export interface IReportsService {
