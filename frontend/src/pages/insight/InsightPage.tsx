@@ -2,44 +2,19 @@
 // InsightPage — dashboard with daily, monthly, and yearly spending charts
 // ---------------------------------------------------------------------------
 
-import { useState, useEffect, useRef } from "react"
-import { format } from "date-fns"
+import { useState, useEffect } from "react"
+import { format, parseISO } from "date-fns"
 import { useNavigate } from "react-router-dom"
-import { Skeleton } from "@/components/ui/skeleton"
 import { InsightComponent } from "@/pages/insight/InsightComponent"
 import { Button } from "@/components/ui/button"
 import { ButtonGroup } from "@/components/ui/button-group"
-import { getDailyReport, getMonthlyReport, getCategoryReport } from "@/services/reportsService"
-import type { DailyReportRow, MonthlyReportRow, CategoryReportRow } from "@/types"
+import { useBooksStore } from "@/store"
+import { getTransactions } from "@/services"
+import type { CategoryReportRow, TransactionDto } from "@/types"
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-function dayRange(dateStr: string): { from: string; to: string } {
-  const d = new Date(dateStr + "T00:00:00")
-  const next = new Date(d)
-  next.setDate(next.getDate() + 1)
-  return {
-    from: dateStr,
-    to: next.toISOString().slice(0, 10),
-  }
-}
-
-function monthRange(period: string): { from: string; to: string } {
-  const [yearStr, monthStr] = period.split("-")
-  const year = parseInt(yearStr)
-  const month = parseInt(monthStr)
-  const from = `${year}-${String(month).padStart(2, "0")}-01`
-  const nextMonth = month === 12 ? 1 : month + 1
-  const nextYear = month === 12 ? year + 1 : year
-  const to = `${nextYear}-${String(nextMonth).padStart(2, "0")}-01`
-  return { from, to }
-}
-
-function firstOfMonth(date: Date): string {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-01`
-}
 
 function splitBySign(
   rows: CategoryReportRow[],
@@ -69,170 +44,121 @@ function monthlyFormatPieTitle(selectedMonth: string | null): string {
   return format(d, "MMM yyyy")
 }
 
+/** Extract local "YYYY-MM-DD" from an ISO date-time string. */
+function toLocalDate(iso: string): string {
+  const d = parseISO(iso)
+  return format(d, "yyyy-MM-dd")
+}
+
+/** Extract local "YYYY-MM" from an ISO date-time string. */
+function toLocalMonth(iso: string): string {
+  const d = parseISO(iso)
+  return format(d, "yyyy-MM")
+}
+
+/** Group transactions by category, summing amounts. */
+function groupByCategory(txs: TransactionDto[]): CategoryReportRow[] {
+  const map = new Map<string, number>()
+  for (const tx of txs) {
+    const cat = tx.categoryName || "Uncategorized"
+    map.set(cat, (map.get(cat) ?? 0) + tx.amount)
+  }
+  return Array.from(map.entries()).map(([categoryName, amount]) => ({
+    categoryName,
+    amount: Math.round(amount * 100) / 100,
+  }))
+}
+
+// ---------------------------------------------------------------------------
+// Page size for fetching a full year of transactions at once
+// ---------------------------------------------------------------------------
+
+const LARGE_PAGE_SIZE = 10000
+
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
 export default function InsightPage() {
   const navigate = useNavigate()
+  const mainBookId = useBooksStore((s) => s.mainBookId)
 
   const now = new Date()
-  const todayStr = now.toISOString().slice(0, 10)
-  const thisMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`
   const currentYear = now.getFullYear()
 
-  // ── Daily totals (for fallback detection) ──
-  const [dailyTotals, setDailyTotals] = useState<DailyReportRow[]>([])
-  const [isLoadingDailyTotals, setIsLoadingDailyTotals] = useState(true)
-
-  // ── Monthly totals (for fallback detection) ──
-  const [monthlyTotals, setMonthlyTotals] = useState<MonthlyReportRow[]>([])
-  const [isLoadingMonthlyTotals, setIsLoadingMonthlyTotals] = useState(true)
-
-  // ── Pie data (category breakdown) ──
-  const [dailySelectedDay, setDailySelectedDay] = useState<string | null>(null)
+  // ── Data state ──
   const [dailyCategoryRows, setDailyCategoryRows] = useState<CategoryReportRow[]>([])
-  const [isLoadingDailyPie, setIsLoadingDailyPie] = useState(true)
-
-  const [monthlySelectedMonth, setMonthlySelectedMonth] = useState<string | null>(null)
   const [monthlyCategoryRows, setMonthlyCategoryRows] = useState<CategoryReportRow[]>([])
-  const [isLoadingMonthlyPie, setIsLoadingMonthlyPie] = useState(true)
-
   const [yearlyCategoryRows, setYearlyCategoryRows] = useState<CategoryReportRow[]>([])
-  const [isLoadingYearlyPie, setIsLoadingYearlyPie] = useState(true)
+  const [dailyDay, setDailyDay] = useState<string | null>(null)
+  const [monthlyMonth, setMonthlyMonth] = useState<string | null>(null)
 
-  // Track whether fallback check has been performed (one-time per mount)
-  const dailyFallbackDone = useRef(false)
-  const monthlyFallbackDone = useRef(false)
+  // ── Loading / error ──
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  // ── Fetch daily totals (month-to-date, for fallback) ──
+  // ── Fetch all transactions for the current year, then aggregate ──
   useEffect(() => {
-    setIsLoadingDailyTotals(true)
-    const from = firstOfMonth(now)
-    const tomorrow = new Date(now)
-    tomorrow.setDate(tomorrow.getDate() + 1)
-    const to = tomorrow.toISOString().slice(0, 10)
+    let cancelled = false
 
-    getDailyReport({ from, to })
-      .then((data) => {
-        setDailyTotals(data)
-        setIsLoadingDailyTotals(false)
-      })
-      .catch(() => {
-        setIsLoadingDailyTotals(false)
-      })
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+    async function load() {
+      if (!mainBookId) return
 
-  // ── Fetch monthly totals (year-to-date, for fallback) ──
-  useEffect(() => {
-    setIsLoadingMonthlyTotals(true)
-    const from = `${currentYear}-01-01`
-    const to = `${currentYear + 1}-01-01`
+      setIsLoading(true)
+      setError(null)
 
-    getMonthlyReport({ from, to })
-      .then((data) => {
-        setMonthlyTotals(data)
-        setIsLoadingMonthlyTotals(false)
-      })
-      .catch(() => {
-        setIsLoadingMonthlyTotals(false)
-      })
-  }, [currentYear])
+      try {
+        const from = `${currentYear}-01-01`
+        const to = `${currentYear + 1}-01-01`
 
-  // ── Fetch yearly category data (for "this year" chart) ──
-  useEffect(() => {
-    setIsLoadingYearlyPie(true)
-    const from = `${currentYear}-01-01`
-    const to = `${currentYear + 1}-01-01`
+        const { items: allTxs } = await getTransactions({
+          bookId: mainBookId,
+          from,
+          to,
+          pageSize: LARGE_PAGE_SIZE,
+        })
 
-    getCategoryReport({ from, to })
-      .then((data) => {
-        setYearlyCategoryRows(data)
-        setIsLoadingYearlyPie(false)
-      })
-      .catch(() => {
-        setYearlyCategoryRows([])
-        setIsLoadingYearlyPie(false)
-      })
-  }, [currentYear])
+        if (cancelled) return
 
-  // ── Daily fallback: if today has no transactions, pick most recent day with data ──
-  useEffect(() => {
-    if (dailyFallbackDone.current) return
-    if (isLoadingDailyTotals) return
+        if (allTxs.length === 0) {
+          setDailyCategoryRows([])
+          setMonthlyCategoryRows([])
+          setYearlyCategoryRows([])
+          setDailyDay(null)
+          setMonthlyMonth(null)
+          return
+        }
 
-    const todayHasData = dailyTotals.some(
-      (row) => row.date === todayStr && row.amount !== 0,
-    )
+        // Transactions arrive sorted by dateTime descending (newest first).
+        // The first transaction determines the "last available" day and month.
+        const newest = allTxs[0]
+        const lastDay = toLocalDate(newest.dateTime)
+        const lastMonth = toLocalMonth(newest.dateTime)
 
-    if (!todayHasData) {
-      const fallback = [...dailyTotals]
-        .filter((row) => row.amount !== 0)
-        .sort((a, b) => b.date.localeCompare(a.date))
+        // Partition by period
+        const dailyTxs = allTxs.filter((tx) => toLocalDate(tx.dateTime) === lastDay)
+        const monthlyTxs = allTxs.filter((tx) => toLocalMonth(tx.dateTime) === lastMonth)
 
-      if (fallback.length > 0) {
-        setDailySelectedDay(fallback[0].date)
+        setDailyCategoryRows(groupByCategory(dailyTxs))
+        setMonthlyCategoryRows(groupByCategory(monthlyTxs))
+        setYearlyCategoryRows(groupByCategory(allTxs))
+        setDailyDay(lastDay)
+        setMonthlyMonth(lastMonth)
+      } catch (err: unknown) {
+        if (cancelled) return
+        setError(err instanceof Error ? err.message : "Failed to load transactions")
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false)
+        }
       }
     }
 
-    dailyFallbackDone.current = true
-  }, [isLoadingDailyTotals, dailyTotals, todayStr])
-
-  // ── Monthly fallback: if this month has no transactions, pick most recent month with data ──
-  useEffect(() => {
-    if (monthlyFallbackDone.current) return
-    if (isLoadingMonthlyTotals) return
-
-    const thisMonthHasData = monthlyTotals.some(
-      (row) => row.period === thisMonthStr && row.amount !== 0,
-    )
-
-    if (!thisMonthHasData) {
-      const fallback = [...monthlyTotals]
-        .filter((row) => row.amount !== 0)
-        .sort((a, b) => b.period.localeCompare(a.period))
-
-      if (fallback.length > 0) {
-        setMonthlySelectedMonth(fallback[0].period)
-      }
+    load()
+    return () => {
+      cancelled = true
     }
-
-    monthlyFallbackDone.current = true
-  }, [isLoadingMonthlyTotals, monthlyTotals, thisMonthStr])
-
-  // ── Fetch daily pie data (category breakdown for the effective day) ──
-  useEffect(() => {
-    setIsLoadingDailyPie(true)
-    const date = dailySelectedDay ?? todayStr
-    const range = dayRange(date)
-
-    getCategoryReport(range)
-      .then((data) => {
-        setDailyCategoryRows(data)
-        setIsLoadingDailyPie(false)
-      })
-      .catch(() => {
-        setDailyCategoryRows([])
-        setIsLoadingDailyPie(false)
-      })
-  }, [dailySelectedDay, todayStr])
-
-  // ── Fetch monthly pie data (category breakdown for the effective month) ──
-  useEffect(() => {
-    setIsLoadingMonthlyPie(true)
-    const period = monthlySelectedMonth ?? thisMonthStr
-    const range = monthRange(period)
-
-    getCategoryReport(range)
-      .then((data) => {
-        setMonthlyCategoryRows(data)
-        setIsLoadingMonthlyPie(false)
-      })
-      .catch(() => {
-        setMonthlyCategoryRows([])
-        setIsLoadingMonthlyPie(false)
-      })
-  }, [monthlySelectedMonth, thisMonthStr])
+  }, [mainBookId, currentYear])
 
   // ── Split category data by sign ──
   const { expenses: dailyExpenses, income: dailyIncome } =
@@ -243,20 +169,39 @@ export default function InsightPage() {
     splitBySign(yearlyCategoryRows)
 
   // ── Computed display states ──
-  const dailyPieTitle = dailyFormatPieTitle(dailySelectedDay)
+  const dailyPieTitle = dailyFormatPieTitle(dailyDay)
   const dailyHasPieData =
     Object.keys(dailyExpenses).length > 0 || Object.keys(dailyIncome).length > 0
-  const dailyShowPieSkeleton = isLoadingDailyPie && !dailyHasPieData
 
-  const monthlyPieTitle = monthlyFormatPieTitle(monthlySelectedMonth)
+  const monthlyPieTitle = monthlyFormatPieTitle(monthlyMonth)
   const monthlyHasPieData =
     Object.keys(monthlyExpenses).length > 0 || Object.keys(monthlyIncome).length > 0
-  const monthlyShowPieSkeleton = isLoadingMonthlyPie && !monthlyHasPieData
 
   const yearlyPieTitle = `${currentYear}`
   const yearlyHasPieData =
     Object.keys(yearlyExpenses).length > 0 || Object.keys(yearlyIncome).length > 0
-  const yearlyShowPieSkeleton = isLoadingYearlyPie && !yearlyHasPieData
+
+  // ── Loading state ──
+  if (isLoading) {
+    return (
+      <div className="mx-auto flex w-full max-w-lg flex-col gap-2 px-4 items-stretch">
+        <div className="flex items-center justify-center h-64">
+          <p className="text-muted-foreground">Loading…</p>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Error state ──
+  if (error) {
+    return (
+      <div className="mx-auto flex w-full max-w-lg flex-col gap-2 px-4 items-stretch">
+        <div className="flex items-center justify-center h-64">
+          <p className="text-destructive text-center">{error}</p>
+        </div>
+      </div>
+    )
+  }
 
   // ── Render ──
   return (
@@ -275,12 +220,7 @@ export default function InsightPage() {
 
       {/* ── Daily Insight Card ── */}
       <section>
-        {dailyShowPieSkeleton ? (
-          <div className="flex flex-col items-center gap-4">
-            <Skeleton className="h-56 w-56 rounded-full" />
-            <Skeleton className="h-4 w-32" />
-          </div>
-        ) : dailyHasPieData ? (
+        {dailyHasPieData ? (
           <InsightComponent
             data={dailyExpenses}
             altData={dailyIncome}
@@ -296,12 +236,7 @@ export default function InsightPage() {
 
       {/* ── Monthly Insight Card ── */}
       <section>
-        {monthlyShowPieSkeleton ? (
-          <div className="flex flex-col items-center gap-4">
-            <Skeleton className="h-56 w-56 rounded-full" />
-            <Skeleton className="h-4 w-32" />
-          </div>
-        ) : monthlyHasPieData ? (
+        {monthlyHasPieData ? (
           <InsightComponent
             data={monthlyExpenses}
             altData={monthlyIncome}
@@ -317,12 +252,7 @@ export default function InsightPage() {
 
       {/* ── Yearly Insight Card ── */}
       <section>
-        {yearlyShowPieSkeleton ? (
-          <div className="flex flex-col items-center gap-4">
-            <Skeleton className="h-56 w-56 rounded-full" />
-            <Skeleton className="h-4 w-32" />
-          </div>
-        ) : yearlyHasPieData ? (
+        {yearlyHasPieData ? (
           <InsightComponent
             data={yearlyExpenses}
             altData={yearlyIncome}
