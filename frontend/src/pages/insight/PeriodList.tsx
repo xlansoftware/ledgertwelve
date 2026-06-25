@@ -87,10 +87,10 @@ export function PeriodList({
                 }
               }}
               className={cn(
-                "flex w-full items-center justify-between rounded-lg border border-transparent px-3 py-2.5 text-left text-sm transition-colors hover:bg-accent/50",
-                isSelected && "border-l-primary bg-accent",
+                "flex w-full items-center justify-between border border-transparent px-3 py-2.5 text-left text-sm transition-colors hover:bg-accent/50",
+                isSelected && "border-primary bg-accent",
               )}
-              style={isSelected ? { borderLeftWidth: 3 } : undefined}
+              style={isSelected ? { borderWidth: 1 } : undefined}
             >
               <span
                 className={cn(
@@ -106,11 +106,9 @@ export function PeriodList({
                 )}
                 <span
                   className={cn(
-                    row.amount < 0
-                      ? "text-destructive"
-                      : row.amount > 0
-                        ? "text-green-600 dark:text-green-400"
-                        : "text-muted-foreground",
+                    row.amount > 0
+                      ? "text-green-600 dark:text-green-400"
+                      : "text-muted-foreground",
                   )}
                 >
                   {formatCurrency(row.amount)}

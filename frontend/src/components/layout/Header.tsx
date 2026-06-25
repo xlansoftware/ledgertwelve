@@ -9,7 +9,7 @@ export default function Header() {
   const location = useLocation();
   const currentPath = location.pathname;
   
-  const tint = "#ff0000";
+  const tint = null;
   const isMobile = useMediaQuery("(max-width: 768px)");
   
   return (
