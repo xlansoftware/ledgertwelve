@@ -281,7 +281,7 @@ describe("InsightDailyPage", () => {
 
       // Pie title shows the selected day
       expect(screen.getByText(yesterdayPieTitle)).toBeInTheDocument()
-      expect(yesterdayButton.className).toContain("border-l-primary")
+      expect(yesterdayButton.className).toContain("border-primary")
     })
 
     it("selecting a different day changes the pie chart again", async () => {

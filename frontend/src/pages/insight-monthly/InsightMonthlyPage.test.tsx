@@ -238,7 +238,7 @@ describe("InsightMonthlyPage", () => {
 
       // Pie title shows the selected month
       expect(screen.getByText("Jan 2026")).toBeInTheDocument()
-      expect(janButton.className).toContain("border-l-primary")
+      expect(janButton.className).toContain("border-primary")
     })
 
     it("selecting a different month changes the pie chart again", async () => {
