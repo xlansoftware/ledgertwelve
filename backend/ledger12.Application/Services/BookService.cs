@@ -139,7 +139,7 @@ public class BookService : IBookService
             bookId: mainBook.Id,
             userId: userId,
             dateTime: now,
-            amount: -netBalance,
+            amount: netBalance,
             categoryName: request.ClosingCategoryName,
             note: $"Close {book.Name}",
             isBookClosingEntry: true,

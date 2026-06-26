@@ -74,7 +74,7 @@ export default function CloseBookDialog({
           <DialogTitle>Close "{bookName}"</DialogTitle>
           <DialogDescription>
             Closing this book moves its net balance to the Main book via a
-            balancing transaction. This action cannot be undone.
+            balancing transaction.
           </DialogDescription>
         </DialogHeader>
 

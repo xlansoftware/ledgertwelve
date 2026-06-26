@@ -133,7 +133,7 @@ public class TransactionRepository : ITransactionRepository
         Guid bookId, string? period, DateTimeOffset? from, DateTimeOffset? to)
     {
         var query = _context.Transactions
-            .Where(t => t.BookId == bookId && !t.IsBookClosingEntry);
+            .Where(t => t.BookId == bookId);
 
         if (from.HasValue) query = query.Where(t => t.DateTime >= from.Value);
         if (to.HasValue) query = query.Where(t => t.DateTime < to.Value);
@@ -159,13 +159,13 @@ public class TransactionRepository : ITransactionRepository
         Guid bookId, DateTimeOffset? from, DateTimeOffset? to)
     {
         var query = _context.Transactions
-            .Where(t => t.BookId == bookId && !t.IsBookClosingEntry && t.CategoryName != null);
+            .Where(t => t.BookId == bookId);
 
         if (from.HasValue) query = query.Where(t => t.DateTime >= from.Value);
         if (to.HasValue) query = query.Where(t => t.DateTime < to.Value);
 
         var result = await query
-            .GroupBy(t => t.CategoryName!)
+            .GroupBy(t => t.CategoryName ?? "Unknown")
             .Select(g => new { CategoryName = g.Key, Amount = g.Sum(t => t.Amount) })
             .ToListAsync();
 
@@ -176,7 +176,7 @@ public class TransactionRepository : ITransactionRepository
         Guid bookId, DateTimeOffset from, DateTimeOffset to)
     {
         var transactions = await _context.Transactions
-            .Where(t => t.BookId == bookId && !t.IsBookClosingEntry &&
+            .Where(t => t.BookId == bookId &&
                         t.DateTime >= from && t.DateTime < to)
             .ToListAsync();
 
@@ -192,7 +192,7 @@ public class TransactionRepository : ITransactionRepository
         Guid bookId, DateTimeOffset from, DateTimeOffset to)
     {
         var transactions = await _context.Transactions
-            .Where(t => t.BookId == bookId && !t.IsBookClosingEntry &&
+            .Where(t => t.BookId == bookId &&
                         t.DateTime >= from && t.DateTime < to)
             .ToListAsync();
 
