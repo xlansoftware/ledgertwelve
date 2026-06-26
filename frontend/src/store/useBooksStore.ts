@@ -28,7 +28,8 @@ function deriveMainBookId(books: BookDto[]): string | null {
   if (main) return main.id
   const open = books.find((b) => b.status === "open")
   if (open) return open.id
-  return books[0].id
+  if (books.length > 0) return books[0].id
+  return null;
 }
 
 // ---------------------------------------------------------------------------

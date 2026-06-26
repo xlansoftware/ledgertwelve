@@ -233,6 +233,8 @@ describe("useBooksStore — fetchBooks", () => {
     await useBooksStore.getState().fetchBooks()
 
     const state = useBooksStore.getState()
-    expect(state.mainBookId).toBeNull()
+    // fall back - sekects the first open book
+    // fall back - select any book
+    expect(state.mainBookId).not.toBeNull()
   })
 })

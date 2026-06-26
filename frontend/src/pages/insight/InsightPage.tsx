@@ -9,8 +9,8 @@ import { InsightComponent } from "@/pages/insight/InsightComponent"
 import { Button } from "@/components/ui/button"
 import { ButtonGroup } from "@/components/ui/button-group"
 import { useBooksStore } from "@/store"
-import { getTransactions } from "@/services"
 import type { CategoryReportRow, TransactionDto } from "@/types"
+import { getFactory } from "@/features/offline"
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -111,7 +111,7 @@ export default function InsightPage() {
         const from = `${currentYear}-01-01`
         const to = `${currentYear + 1}-01-01`
 
-        const { items: allTxs } = await getTransactions({
+        const { items: allTxs } = await getFactory().transactions.getTransactions({
           bookId: mainBookId,
           from,
           to,
