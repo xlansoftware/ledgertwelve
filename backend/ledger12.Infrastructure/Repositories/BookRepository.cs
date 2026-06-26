@@ -65,9 +65,18 @@ public class BookRepository : IBookRepository
 
     public async Task<Book?> GetMainBookAsync(Guid userId)
     {
-        return await _context.Books
+        var mainBook = await _context.Books
             .Include(b => b.Shares)
             .FirstOrDefaultAsync(b => b.OwnerId == userId && b.Name == "Main");
+
+        if (mainBook is not null)
+            return mainBook;
+
+        return await _context.Books
+            .Include(b => b.Shares)
+            .Where(b => b.OwnerId == userId && b.Status == BookStatus.Open)
+            .OrderBy(b => b.CreatedAt)
+            .FirstOrDefaultAsync();
     }
 
     public async Task AddAsync(Book book)
