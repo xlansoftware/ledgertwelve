@@ -14,3 +14,4 @@ frontend/dist/
 .env
 
 backend/ledger12.API/data/ledger12.*
+ledger11data/
