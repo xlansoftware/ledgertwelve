@@ -162,7 +162,7 @@ public static class DataMapper
             bookId: bookId,
             userId: userId,
             dateTime: dateTime,
-            amount: amount,
+            amount: amount * (-1),
             originalCurrency: oldTransaction.Currency,
             originalAmount: null,
             exchangeRate: exchangeRate,
