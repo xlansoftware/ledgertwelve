@@ -26,6 +26,18 @@ public class MigrationEngine
         _ctx = new MigrationContext();
     }
 
+    /// <summary>
+    /// Unified description of a space to migrate, whether it has a Spaces row or is an orphan DB file.
+    /// </summary>
+    private sealed record SpaceSource(
+        string? SpaceGuid,       // GUID from Spaces table (null for orphans)
+        string SpaceFileId,      // Lowercase hex file ID
+        string Name,             // Display name
+        string? Currency,
+        string CreatedAt,
+        HashSet<string> MemberUserIds  // User GUIDs that are members of this space
+    );
+
     public async Task<MigrationSummary> RunAsync()
     {
         var summary = new MigrationSummary();
@@ -53,73 +65,112 @@ public class MigrationEngine
 
             await _db.SaveChangesAsync();
 
+            // Build set of migrated user GUIDs (original old IDs)
+            var migratedUserIds = migratedUsers
+                .Select(u => u.Id)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
             // ════════════════════════════════════════════════════════════
-            // Phase 2: Books
+            // Phase 2: Books — migrate from Spaces table + orphan DBs
             // ════════════════════════════════════════════════════════════
             Console.WriteLine("Phase 2/6: Migrating books...");
-            var allSpaces = _reader.ReadSpaces();
-            var allMembers = _reader.ReadSpaceMembers();
 
-            // Determine which spaces to migrate:
-            // - Must have at least one migrated user as a member
-            // - Skip dead spaces (no members, no transactions)
-            var migratedUserIds = migratedUsers.Select(u => u.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            // Discover all spaces to migrate
+            var spacesToMigrate = DiscoverSpaces(migratedUserIds);
 
-            foreach (var oldSpace in allSpaces)
+            foreach (var space in spacesToMigrate)
             {
-                var spaceMembers = allMembers.Where(m =>
-                    m.SpaceId.Equals(oldSpace.Id, StringComparison.OrdinalIgnoreCase)).ToList();
-
-                var migratedMemberIds = spaceMembers
-                    .Select(m => m.UserId)
-                    .Where(id => migratedUserIds.Contains(id))
-                    .ToList();
-
-                // Skip spaces with no migrated members
-                if (migratedMemberIds.Count == 0)
-                {
-                    Console.WriteLine($"  Skipping space '{oldSpace.Name}' ({oldSpace.Id}): no migrated members");
-                    continue;
-                }
-
                 // Determine owner
                 Guid ownerId;
-                if (migratedUserIds.Contains(oldSpace.CreatedByUserId))
+
+                if (space.SpaceGuid is not null)
                 {
-                    // Original creator is a migrated user
-                    ownerId = _ctx.OldUserIdToNewUserId[oldSpace.CreatedByUserId];
+                    // Regular space from Spaces table
+                    var oldSpace = _reader.ReadSpaces()
+                        .First(s => s.Id.Equals(space.SpaceGuid, StringComparison.OrdinalIgnoreCase));
+
+                    if (migratedUserIds.Contains(oldSpace.CreatedByUserId))
+                    {
+                        ownerId = _ctx.OldUserIdToNewUserId[oldSpace.CreatedByUserId];
+                    }
+                    else
+                    {
+                        // Orphan space in Spaces table (no valid creator): assign first migrated member
+                        var firstMemberId = space.MemberUserIds
+                            .First(id => migratedUserIds.Contains(id));
+                        ownerId = _ctx.OldUserIdToNewUserId[firstMemberId];
+                        Console.WriteLine($"  Orphan space '{space.Name}': assigning owner {firstMemberId}");
+                    }
+
+                    var (book, _) = DataMapper.ToBook(oldSpace, ownerId, _ctx);
+                    _db.Books.Add(book);
+                    _bookOwnerMap[book.Id] = ownerId;
+                    Console.WriteLine($"  Book: '{book.Name}' ({book.Id}), owner={ownerId}");
                 }
                 else
                 {
-                    // Orphan space: assign first migrated SpaceMember as owner
-                    var firstMemberId = spaceMembers
-                        .First(m => migratedUserIds.Contains(m.UserId)).UserId;
-                    ownerId = _ctx.OldUserIdToNewUserId[firstMemberId];
-                    Console.WriteLine($"  Orphan space '{oldSpace.Name}': assigning owner {firstMemberId}");
+                    // Orphan DB file — no Spaces row
+                    // Determine owner: most frequent migrated user among transaction authors
+                    var spaceDbPath = Path.Combine(_dataDir, $"space-{space.SpaceFileId}.db");
+                    var transactions = _reader.ReadTransactions(spaceDbPath);
+                    var userFreq = transactions
+                        .Where(t => t.User is not null)
+                        .GroupBy(t => t.User!)
+                        .ToDictionary(g => g.Key, g => g.Count());
+
+                    var bestEmail = userFreq
+                        .Where(kv => _ctx.EmailToUserId.ContainsKey(kv.Key))
+                        .OrderByDescending(kv => kv.Value)
+                        .Select(kv => kv.Key)
+                        .FirstOrDefault();
+
+                    Guid orphanOwnerId;
+                    if (bestEmail is not null && _ctx.EmailToUserId.TryGetValue(bestEmail, out var resolvedOwner))
+                    {
+                        orphanOwnerId = resolvedOwner;
+                    }
+                    else
+                    {
+                        // Fallback: first migrated member (if any)
+                        var fallbackMember = space.MemberUserIds
+                            .FirstOrDefault(id => migratedUserIds.Contains(id));
+                        orphanOwnerId = fallbackMember is not null
+                            ? _ctx.OldUserIdToNewUserId[fallbackMember]
+                            : migratedUserIds.Select(id => _ctx.OldUserIdToNewUserId[id]).First();
+                    }
+
+                    // Create book with generated GUID (no old SpaceGuid to preserve)
+                    var book = new Book(
+                        name: space.Name,
+                        ownerId: orphanOwnerId,
+                        currency: space.Currency
+                    );
+
+                    _db.Books.Add(book);
+                    _bookOwnerMap[book.Id] = orphanOwnerId;
+                    _ctx.SpaceFileIdToBookId[space.SpaceFileId] = book.Id;
+                    Console.WriteLine($"  Book: '{book.Name}' ({book.Id}), owner={orphanOwnerId} (orphan DB)");
                 }
 
-                var (book, spaceFileId) = DataMapper.ToBook(oldSpace, ownerId, _ctx);
-                _db.Books.Add(book);
-                _bookOwnerMap[book.Id] = ownerId;
                 summary.BooksCreated++;
-                Console.WriteLine($"  Book: '{book.Name}' ({book.Id}), owner={ownerId}");
             }
 
             await _db.SaveChangesAsync();
 
             // ════════════════════════════════════════════════════════════
-            // Phase 3: Book Shares
+            // Phase 3: Book Shares (regular spaces only — orphans have no members table)
             // ════════════════════════════════════════════════════════════
             Console.WriteLine("Phase 3/6: Migrating book shares...");
-            var migratedSpaces = allSpaces
-                .Where(s => _ctx.SpaceGuidToBookId.ContainsKey(s.Id))
+            var allMembers = _reader.ReadSpaceMembers();
+            var migratedSpaces = spacesToMigrate
+                .Where(s => s.SpaceGuid is not null)
                 .ToList();
 
-            foreach (var oldSpace in migratedSpaces)
+            foreach (var space in migratedSpaces)
             {
-                var bookId = _ctx.SpaceGuidToBookId[oldSpace.Id];
+                var bookId = _ctx.SpaceGuidToBookId[space.SpaceGuid!];
                 var spaceMembers = allMembers
-                    .Where(m => m.SpaceId.Equals(oldSpace.Id, StringComparison.OrdinalIgnoreCase))
+                    .Where(m => m.SpaceId.Equals(space.SpaceGuid!, StringComparison.OrdinalIgnoreCase))
                     .ToList();
 
                 foreach (var member in spaceMembers)
@@ -141,14 +192,16 @@ public class MigrationEngine
 
             await _db.SaveChangesAsync();
 
+            // Build list of all space sources for categories & transactions (regular + orphan)
+            var allSpaceSources = spacesToMigrate.ToList();
+
             // ════════════════════════════════════════════════════════════
             // Phase 4: Categories
             // ════════════════════════════════════════════════════════════
             Console.WriteLine("Phase 4/6: Migrating categories...");
-            foreach (var oldSpace in migratedSpaces)
+            foreach (var space in allSpaceSources)
             {
-                var spaceFileId = OldDatabaseReader.GetSpaceFileId(oldSpace.Id);
-                var spaceDbPath = OldDatabaseReader.GetSpaceDbPath(_dataDir, oldSpace.Id);
+                var spaceDbPath = Path.Combine(_dataDir, $"space-{space.SpaceFileId}.db");
 
                 if (!File.Exists(spaceDbPath))
                 {
@@ -157,18 +210,25 @@ public class MigrationEngine
                 }
 
                 var oldCategories = _reader.ReadCategories(spaceDbPath);
-                var spaceMembers = allMembers
-                    .Where(m => m.SpaceId.Equals(oldSpace.Id, StringComparison.OrdinalIgnoreCase))
-                    .Where(m => _ctx.OldUserIdToNewUserId.ContainsKey(m.UserId))
-                    .ToList();
 
-                foreach (var member in spaceMembers)
+                // For regular spaces: categories for each member; for orphans: categories for the owner
+                var memberUserIds = space.MemberUserIds
+                    .Where(id => _ctx.OldUserIdToNewUserId.ContainsKey(id))
+                    .Select(id => _ctx.OldUserIdToNewUserId[id])
+                    .ToHashSet();
+
+                if (memberUserIds.Count == 0 && space.SpaceGuid is null)
                 {
-                    var userId = _ctx.OldUserIdToNewUserId[member.UserId];
+                    // Orphan — get owner from the book
+                    var orphanBookId = _ctx.SpaceFileIdToBookId[space.SpaceFileId];
+                    memberUserIds = new HashSet<Guid> { _bookOwnerMap[orphanBookId] };
+                }
 
+                foreach (var userId in memberUserIds)
+                {
                     foreach (var oldCategory in oldCategories)
                     {
-                        var category = DataMapper.ToCategory(oldCategory, userId, spaceFileId, _ctx);
+                        var category = DataMapper.ToCategory(oldCategory, userId, space.SpaceFileId, _ctx);
                         if (category is not null)
                         {
                             _db.Categories.Add(category);
@@ -184,11 +244,19 @@ public class MigrationEngine
             // Phase 5: Transactions
             // ════════════════════════════════════════════════════════════
             Console.WriteLine("Phase 5/6: Migrating transactions...");
-            foreach (var oldSpace in migratedSpaces)
+            foreach (var space in allSpaceSources)
             {
-                var bookId = _ctx.SpaceGuidToBookId[oldSpace.Id];
-                var spaceFileId = OldDatabaseReader.GetSpaceFileId(oldSpace.Id);
-                var spaceDbPath = OldDatabaseReader.GetSpaceDbPath(_dataDir, oldSpace.Id);
+                Guid bookId;
+                if (space.SpaceGuid is not null)
+                {
+                    bookId = _ctx.SpaceGuidToBookId[space.SpaceGuid];
+                }
+                else
+                {
+                    bookId = _ctx.SpaceFileIdToBookId[space.SpaceFileId];
+                }
+
+                var spaceDbPath = Path.Combine(_dataDir, $"space-{space.SpaceFileId}.db");
 
                 if (!File.Exists(spaceDbPath))
                 {
@@ -217,7 +285,7 @@ public class MigrationEngine
                     string? categoryName = null;
                     if (oldTransaction.CategoryId.HasValue)
                     {
-                        var key = (spaceFileId, oldTransaction.CategoryId.Value);
+                        var key = (space.SpaceFileId, oldTransaction.CategoryId.Value);
                         if (_ctx.CategoryIdToName.TryGetValue(key, out var name))
                         {
                             categoryName = name;
@@ -273,6 +341,113 @@ public class MigrationEngine
         }
 
         return summary;
+    }
+
+    // ─── Space discovery ──────────────────────────────────────────
+
+    /// <summary>
+    /// Discovers all spaces to migrate: those from the Spaces table with migrated members,
+    /// plus orphan space DB files (no Spaces row) that have transactions by migrated users.
+    /// </summary>
+    private List<SpaceSource> DiscoverSpaces(HashSet<string> migratedUserIds)
+    {
+        var result = new List<SpaceSource>();
+
+        // 1. Collect all space GUIDs that have a Spaces row
+        var allSpaces = _reader.ReadSpaces();
+        var allMembers = _reader.ReadSpaceMembers();
+        var knownSpaceIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var oldSpace in allSpaces)
+        {
+            knownSpaceIds.Add(oldSpace.Id);
+
+            var spaceMembers = allMembers
+                .Where(m => m.SpaceId.Equals(oldSpace.Id, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            var memberUserIds = spaceMembers
+                .Select(m => m.UserId)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            var migratedMemberIds = memberUserIds
+                .Where(id => migratedUserIds.Contains(id))
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            // Skip spaces with no migrated members
+            if (migratedMemberIds.Count == 0)
+            {
+                Console.WriteLine($"  Skipping space '{oldSpace.Name}' ({oldSpace.Id}): no migrated members");
+                continue;
+            }
+
+            result.Add(new SpaceSource(
+                SpaceGuid: oldSpace.Id,
+                SpaceFileId: OldDatabaseReader.GetSpaceFileId(oldSpace.Id),
+                Name: oldSpace.Name,
+                Currency: oldSpace.Currency,
+                CreatedAt: oldSpace.CreatedAt,
+                MemberUserIds: memberUserIds
+            ));
+
+            Console.WriteLine($"  Queued space: '{oldSpace.Name}' ({oldSpace.Id})");
+        }
+
+        // 2. Discover orphan space DB files (no matching Spaces row)
+        var orphanDbs = Directory.EnumerateFiles(_dataDir, "space-*.db")
+            .Select(f => Path.GetFileNameWithoutExtension(f)!.Substring("space-".Length))
+            .Where(fileId => !knownSpaceIds.Contains(fileId, StringComparer.OrdinalIgnoreCase) &&
+                             !knownSpaceIds.Contains(fileId.ToUpperInvariant()))
+            .ToList();
+
+        foreach (var fileId in orphanDbs)
+        {
+            var spaceDbPath = Path.Combine(_dataDir, $"space-{fileId}.db");
+            var oldTransactions = _reader.ReadTransactions(spaceDbPath);
+
+            if (oldTransactions.Count == 0)
+            {
+                Console.WriteLine($"  Skipping orphan DB space-{fileId}.db: no transactions");
+                continue;
+            }
+
+            // Check if any transaction is by a migrated user
+            var hasMigratedUser = oldTransactions.Any(t =>
+                t.User is not null && _ctx.EmailToUserId.ContainsKey(t.User));
+
+            if (!hasMigratedUser)
+            {
+                Console.WriteLine($"  Skipping orphan DB space-{fileId}.db: no migrated user transactions");
+                continue;
+            }
+
+            // Collect the set of user GUIDs from transactions
+            var txnUserIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var t in oldTransactions)
+            {
+                if (t.User is not null && _ctx.EmailToUserId.TryGetValue(t.User, out var guid))
+                {
+                    txnUserIds.Add(guid.ToString());
+                }
+            }
+
+            // Display the short file ID as a placeholder name.
+            // The user can rename the book after migration via the API.
+            var displayName = $"Migrated ({fileId[..8]})";
+
+            result.Add(new SpaceSource(
+                SpaceGuid: null,
+                SpaceFileId: fileId,
+                Name: displayName,
+                Currency: null,
+                CreatedAt: oldTransactions.Min(t => t.Date) ?? DateTimeOffset.UtcNow.ToString("O"),
+                MemberUserIds: txnUserIds
+            ));
+
+            Console.WriteLine($"  Queued orphan DB: '{displayName}' ({fileId}) — {oldTransactions.Count} transactions");
+        }
+
+        return result;
     }
 
     public MigrationContext Context => _ctx;

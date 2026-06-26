@@ -131,26 +131,23 @@ public class OldDatabaseReader
 
     public IReadOnlyList<OldTransaction> ReadTransactions(string spaceDbPath)
     {
-        return Query(spaceDbPath, "SELECT Id, Value, Date, CategoryId, User, Notes, Currency, ExchangeRate FROM Transactions ORDER BY Id",
+        // Build SELECT dynamically — older schemas lack Currency and ExchangeRate columns
+        var cols = GetColumnNames(spaceDbPath, "Transactions");
+        var selectedCols = string.Join(", ", cols.Select(c => $"\"{c}\""));
+        var sql = $"SELECT {selectedCols} FROM Transactions ORDER BY Id";
+
+        return Query(spaceDbPath, sql,
             r =>
             {
-                // Handle the case where Date column might be missing (not all databases migrated)
-                // Use a more resilient approach for older schema versions
                 var id = r.GetInt32(0);
                 var value = r.GetString(1);
                 var date = r.IsDBNull(2) ? null : r.GetString(2);
                 var categoryId = r.IsDBNull(3) ? (int?)null : r.GetInt32(3);
                 var user = r.IsDBNull(4) ? null : r.GetString(4);
-                string? notes = null;
-                string? currency = null;
-                string? exchangeRate = null;
 
-                if (r.FieldCount > 5 && !r.IsDBNull(5))
-                    notes = r.GetString(5);
-                if (r.FieldCount > 6 && !r.IsDBNull(6))
-                    currency = r.GetString(6);
-                if (r.FieldCount > 7 && !r.IsDBNull(7))
-                    exchangeRate = r.GetString(7);
+                string? notes = r.FieldCount > 5 && !r.IsDBNull(5) ? r.GetString(5) : null;
+                string? currency = r.FieldCount > 6 && !r.IsDBNull(6) ? r.GetString(6) : null;
+                string? exchangeRate = r.FieldCount > 7 && !r.IsDBNull(7) ? r.GetString(7) : null;
 
                 return new OldTransaction(
                     Id: id,
@@ -178,6 +175,21 @@ public class OldDatabaseReader
     }
 
     // ─── Internal ───────────────────────────────────────────────────
+
+    private static List<string> GetColumnNames(string dbPath, string tableName)
+    {
+        var cols = new List<string>();
+        using var connection = new SqliteConnection($"Data Source={dbPath}");
+        connection.Open();
+        using var command = connection.CreateCommand();
+        command.CommandText = $"PRAGMA table_info({tableName})";
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            cols.Add(reader.GetString(1));
+        }
+        return cols;
+    }
 
     private static IReadOnlyList<T> Query<T>(string dbPath, string sql, Func<SqliteDataReader, T> map)
     {
