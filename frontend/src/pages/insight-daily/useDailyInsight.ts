@@ -4,7 +4,6 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import { getFactory } from "@/features/offline"
-import { useBooksStore } from "@/store/useBooksStore"
 import type { DailyReportRow, CategoryReportRow, AverageReportDto } from "@/types"
 import {
   computeAccumulation,
@@ -61,16 +60,6 @@ function dayRange(dateStr: string): { from: string; to: string } {
     from: `${dateStr}`,
     to: `${nextDate}`,
   }
-}
-
-/**
- * Returns "YYYY-MM-DD" for the last day of the month before `date`'s month.
- * Uses JavaScript's Date day-0 trick: new Date(year, month, 0) returns
- * the last day of the previous month.
- */
-function lastDayOfPreviousMonth(date: Date): string {
-  const d = new Date(date.getFullYear(), date.getMonth(), 0)
-  return d.toISOString().slice(0, 10)
 }
 
 /**
