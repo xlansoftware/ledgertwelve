@@ -47,6 +47,10 @@ function firstOfMonth(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-01`
 }
 
+function firstOfMonth2(year: number, month: number): string {
+  return `${year}-${String(month).padStart(2, "0")}-01`
+}
+
 /**
  * Get start and end ISO strings for a single day.
  */
@@ -215,21 +219,24 @@ export function useDailyInsight(todayStr?: string): UseDailyInsightReturn {
   }, [today, todayDate])
 
   // ── Fetch opening balance as of last day of previous month ──
-  const mainBookId = useBooksStore((s) => s.mainBookId)
-
   useEffect(() => {
-    const bookId = mainBookId ?? "book_main"
-    const asOf = lastDayOfPreviousMonth(todayDate)
+    const now = new Date()
+    const currentYear = now.getFullYear()
+    const currentMonth = now.getMonth() + 1 // 1-indexed
 
-    getFactory().books.getBookStats(bookId, { asOf })
-      .then((stats) => {
-        setOpeningBalance(stats.totalSum)
+    const yearStart = `${currentYear}-01-01`
+    const yearEnd = firstOfMonth2(currentYear + (currentMonth === 12 ? 1 : 0), currentMonth === 12 ? 1 : currentMonth + 1)
+
+    getFactory().reports.getMonthlyReport({ from: yearStart, to: yearEnd })
+      .then((data) => {
+        const sum = data.reduce((prev, curr) => prev+curr.amount, 0);
+        setOpeningBalance(sum)
       })
       .catch(() => {
         // Graceful degradation: openingBalance stays null, accumulation falls back to zero
         setOpeningBalance(null)
       })
-  }, [todayDate])
+  }, [])
 
   // ── Fetch pie chart categories (for selected day, or today when null) ──
   useEffect(() => {
