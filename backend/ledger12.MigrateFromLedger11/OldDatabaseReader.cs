@@ -162,6 +162,34 @@ public class OldDatabaseReader
             });
     }
 
+    // ─── Settings: read key-value pairs from space DB ────────────────
+
+    /// <summary>
+    /// Reads the Settings table from a space DB file. Returns a dictionary of key-value pairs.
+    /// If the Settings table does not exist, returns an empty dictionary.
+    /// </summary>
+    public Dictionary<string, string?> ReadSettings(string spaceDbPath)
+    {
+        var result = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
+
+        if (!TableExists(spaceDbPath, "Settings"))
+            return result;
+
+        using var connection = new SqliteConnection($"Data Source={spaceDbPath}");
+        connection.Open();
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT Key, Value FROM Settings";
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            var key = reader.GetString(0);
+            var value = reader.IsDBNull(1) ? null : reader.GetString(1);
+            result[key] = value;
+        }
+
+        return result;
+    }
+
     // ─── Helper: find space DB file for a space GUID ────────────────
 
     public static string GetSpaceDbPath(string dataDir, string spaceGuid)
@@ -175,6 +203,17 @@ public class OldDatabaseReader
     }
 
     // ─── Internal ───────────────────────────────────────────────────
+
+    private static bool TableExists(string dbPath, string tableName)
+    {
+        using var connection = new SqliteConnection($"Data Source={dbPath}");
+        connection.Open();
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name=@name";
+        command.Parameters.AddWithValue("@name", tableName);
+        var count = (long)command.ExecuteScalar()!;
+        return count > 0;
+    }
 
     private static List<string> GetColumnNames(string dbPath, string tableName)
     {

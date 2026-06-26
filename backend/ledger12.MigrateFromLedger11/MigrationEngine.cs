@@ -71,7 +71,7 @@ public class MigrationEngine
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
             // ════════════════════════════════════════════════════════════
-            // Phase 2: Books — migrate from Spaces table + orphan DBs
+            // Phase 2: Books — migrate from Spaces table only (no orphan DBs)
             // ════════════════════════════════════════════════════════════
             Console.WriteLine("Phase 2/6: Migrating books...");
 
@@ -103,6 +103,19 @@ public class MigrationEngine
                     }
 
                     var (book, _) = DataMapper.ToBook(oldSpace, ownerId, _ctx);
+
+                    // Apply space settings: close book if Status is Closed
+                    var spaceDbPath = Path.Combine(_dataDir, $"space-{space.SpaceFileId}.db");
+                    if (File.Exists(spaceDbPath))
+                    {
+                        var settings = _reader.ReadSettings(spaceDbPath);
+                        if (settings.TryGetValue("Status", out var status) &&
+                            string.Equals(status, "Closed", StringComparison.OrdinalIgnoreCase))
+                        {
+                            book.Close(DateTimeOffset.UtcNow);
+                        }
+                    }
+
                     _db.Books.Add(book);
                     _bookOwnerMap[book.Id] = ownerId;
                     Console.WriteLine($"  Book: '{book.Name}' ({book.Id}), owner={ownerId}");
@@ -145,6 +158,17 @@ public class MigrationEngine
                         ownerId: orphanOwnerId,
                         currency: space.Currency
                     );
+
+                    // Apply space settings: close book if Status is Closed
+                    if (File.Exists(spaceDbPath))
+                    {
+                        var settings = _reader.ReadSettings(spaceDbPath);
+                        if (settings.TryGetValue("Status", out var status) &&
+                            string.Equals(status, "Closed", StringComparison.OrdinalIgnoreCase))
+                        {
+                            book.Close(DateTimeOffset.UtcNow);
+                        }
+                    }
 
                     _db.Books.Add(book);
                     _bookOwnerMap[book.Id] = orphanOwnerId;
@@ -346,8 +370,8 @@ public class MigrationEngine
     // ─── Space discovery ──────────────────────────────────────────
 
     /// <summary>
-    /// Discovers all spaces to migrate: those from the Spaces table with migrated members,
-    /// plus orphan space DB files (no Spaces row) that have transactions by migrated users.
+    /// Discovers all spaces to migrate: those from the Spaces table with migrated members.
+    /// Orphan space DB files (no Spaces row) are not migrated.
     /// </summary>
     private List<SpaceSource> DiscoverSpaces(HashSet<string> migratedUserIds)
     {
@@ -391,60 +415,6 @@ public class MigrationEngine
             ));
 
             Console.WriteLine($"  Queued space: '{oldSpace.Name}' ({oldSpace.Id})");
-        }
-
-        // 2. Discover orphan space DB files (no matching Spaces row)
-        var orphanDbs = Directory.EnumerateFiles(_dataDir, "space-*.db")
-            .Select(f => Path.GetFileNameWithoutExtension(f)!.Substring("space-".Length))
-            .Where(fileId => !knownSpaceIds.Contains(fileId, StringComparer.OrdinalIgnoreCase) &&
-                             !knownSpaceIds.Contains(fileId.ToUpperInvariant()))
-            .ToList();
-
-        foreach (var fileId in orphanDbs)
-        {
-            var spaceDbPath = Path.Combine(_dataDir, $"space-{fileId}.db");
-            var oldTransactions = _reader.ReadTransactions(spaceDbPath);
-
-            if (oldTransactions.Count == 0)
-            {
-                Console.WriteLine($"  Skipping orphan DB space-{fileId}.db: no transactions");
-                continue;
-            }
-
-            // Check if any transaction is by a migrated user
-            var hasMigratedUser = oldTransactions.Any(t =>
-                t.User is not null && _ctx.EmailToUserId.ContainsKey(t.User));
-
-            if (!hasMigratedUser)
-            {
-                Console.WriteLine($"  Skipping orphan DB space-{fileId}.db: no migrated user transactions");
-                continue;
-            }
-
-            // Collect the set of user GUIDs from transactions
-            var txnUserIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var t in oldTransactions)
-            {
-                if (t.User is not null && _ctx.EmailToUserId.TryGetValue(t.User, out var guid))
-                {
-                    txnUserIds.Add(guid.ToString());
-                }
-            }
-
-            // Display the short file ID as a placeholder name.
-            // The user can rename the book after migration via the API.
-            var displayName = $"Migrated ({fileId[..8]})";
-
-            result.Add(new SpaceSource(
-                SpaceGuid: null,
-                SpaceFileId: fileId,
-                Name: displayName,
-                Currency: null,
-                CreatedAt: oldTransactions.Min(t => t.Date) ?? DateTimeOffset.UtcNow.ToString("O"),
-                MemberUserIds: txnUserIds
-            ));
-
-            Console.WriteLine($"  Queued orphan DB: '{displayName}' ({fileId}) — {oldTransactions.Count} transactions");
         }
 
         return result;
