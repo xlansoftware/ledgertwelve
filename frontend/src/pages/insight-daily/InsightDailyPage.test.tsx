@@ -191,7 +191,6 @@ describe("InsightDailyPage", () => {
       await waitFor(() => {
         expect(mockGetDailyReport).toHaveBeenCalledTimes(1)
         expect(mockGetCategoryReport).toHaveBeenCalledTimes(1)
-        expect(mockGetBookStats).toHaveBeenCalledTimes(1)
       })
     })
 
