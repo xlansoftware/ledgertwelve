@@ -4,4 +4,5 @@
   <Project Path="ledger12.Domain/ledger12.Domain.csproj" />
   <Project Path="ledger12.Infrastructure/ledger12.Infrastructure.csproj" />
   <Project Path="ledger12.Tests/ledger12.Tests.csproj" />
+  <Project Path="ledger12.MigrateFromLedger11/ledger12.MigrateFromLedger11.csproj" />
 </Solution>
