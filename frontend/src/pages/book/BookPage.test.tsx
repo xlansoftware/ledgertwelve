@@ -14,7 +14,7 @@ const { navigateSpy } = vi.hoisted(() => ({
 }))
 
 // Pre-seed the books store to simulate init having run
-const seedBooks: BookDto[] = [
+const seedOpenBooks: BookDto[] = [
   {
     id: "book_main",
     name: "Main",
@@ -34,6 +34,36 @@ const seedBooks: BookDto[] = [
     createdAt: "2026-03-15T10:00:00Z",
   },
 ]
+
+const closedBooks: BookDto[] = [
+  {
+    id: "book_closed_1",
+    name: "Old Project",
+    currency: "EUR",
+    status: "closed",
+    ownerId: "usr_1",
+    sharedWith: [],
+    createdAt: "2026-01-01T10:00:00Z",
+    closedAt: "2026-06-01T10:00:00Z",
+  },
+  {
+    id: "book_closed_2",
+    name: "Vacation 2025",
+    currency: "USD",
+    status: "closed",
+    ownerId: "usr_1",
+    sharedWith: [],
+    createdAt: "2025-03-15T10:00:00Z",
+    closedAt: "2026-03-15T10:00:00Z",
+  },
+]
+
+// Mock the hook
+const mockUseClosedBookBalances = vi.fn()
+
+vi.mock("@/features/books/hooks/useClosedBookBalances", () => ({
+  useClosedBookBalances: (...args: unknown[]) => mockUseClosedBookBalances(...args),
+}))
 
 vi.mock("react-router-dom", async () => {
   const actual = await vi.importActual("react-router-dom")
@@ -70,9 +100,15 @@ function renderPage() {
 describe("BookPage", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    // Default mock: no closed books, not loading
+    mockUseClosedBookBalances.mockReturnValue({ balances: {}, isLoading: false })
     // Seed the store with books as if initializeApp ran
-    useBooksStore.setState({ books: seedBooks, isLoading: false, error: null, currentBook: seedBooks[0] })
+    useBooksStore.setState({ books: seedOpenBooks, isLoading: false, error: null, currentBook: seedOpenBooks[0] })
   })
+
+  // -----------------------------------------------------------------------
+  // Existing tests (preserved)
+  // -----------------------------------------------------------------------
 
   it("renders book cards with an Edit button for each book", async () => {
     renderPage()
@@ -125,5 +161,206 @@ describe("BookPage", () => {
     }
 
     expect(navigateSpy).toHaveBeenCalledWith("/edit-book/book_vacation")
+  })
+
+  // -----------------------------------------------------------------------
+  // Closed book tests
+  // -----------------------------------------------------------------------
+
+  describe("closed books", () => {
+    it("renders closed books as compact single-row cards", async () => {
+      const allBooks = [...seedOpenBooks, ...closedBooks]
+      useBooksStore.setState({ books: allBooks })
+      mockUseClosedBookBalances.mockReturnValue({
+        balances: { book_closed_1: 1250, book_closed_2: -500 },
+        isLoading: false,
+      })
+
+      renderPage()
+
+      await waitFor(() => {
+        expect(screen.getByText("Old Project")).toBeInTheDocument()
+      })
+
+      expect(screen.getByText("Vacation 2025")).toBeInTheDocument()
+
+      // Closed books should have "Closed" badges
+      const closedBadges = screen.getAllByText("Closed")
+      expect(closedBadges.length).toBe(2)
+    })
+
+    it("shows a separator between open and closed sections", async () => {
+      const allBooks = [...seedOpenBooks, ...closedBooks]
+      useBooksStore.setState({ books: allBooks })
+      mockUseClosedBookBalances.mockReturnValue({
+        balances: { book_closed_1: 1250, book_closed_2: -500 },
+        isLoading: false,
+      })
+
+      renderPage()
+
+      // The separator is the horizontal rule element
+      const separators = document.querySelectorAll('[data-slot="separator"]')
+      expect(separators.length).toBe(1)
+    })
+
+    it("does not show a Select button on closed books", async () => {
+      const allBooks = [...seedOpenBooks, ...closedBooks]
+      useBooksStore.setState({ books: allBooks })
+      mockUseClosedBookBalances.mockReturnValue({
+        balances: { book_closed_1: 1250, book_closed_2: -500 },
+        isLoading: false,
+      })
+
+      renderPage()
+
+      // Open books should have Select buttons
+      const selectButtons = screen.getAllByRole("button", { name: /select|current book/i })
+      // Only 2 open books, so 2 select/current-book buttons
+      expect(selectButtons.length).toBe(2)
+    })
+
+    it("shows Edit button on closed books", async () => {
+      const allBooks = [...seedOpenBooks, ...closedBooks]
+      useBooksStore.setState({ books: allBooks })
+      mockUseClosedBookBalances.mockReturnValue({
+        balances: { book_closed_1: 1250, book_closed_2: -500 },
+        isLoading: false,
+      })
+
+      renderPage()
+
+      // All 4 books should have Edit buttons
+      const editButtons = screen.getAllByRole("button", { name: "Edit" })
+      expect(editButtons.length).toBe(4)
+    })
+
+    it("displays the balance value for closed books", async () => {
+      const allBooks = [...seedOpenBooks, ...closedBooks]
+      useBooksStore.setState({ books: allBooks })
+      mockUseClosedBookBalances.mockReturnValue({
+        balances: { book_closed_1: 1250, book_closed_2: -500 },
+        isLoading: false,
+      })
+
+      renderPage()
+
+      await waitFor(() => {
+        expect(screen.getByText("Old Project")).toBeInTheDocument()
+      })
+
+      // The balance values should be visible
+      expect(screen.getByText("1,250.00")).toBeInTheDocument()
+      // -500 should be displayed as (500.00) with brackets
+      expect(screen.getByText("(500.00)")).toBeInTheDocument()
+    })
+
+    it("displays em dash for balances while loading", async () => {
+      const allBooks = [...seedOpenBooks, ...closedBooks]
+      useBooksStore.setState({ books: allBooks })
+      mockUseClosedBookBalances.mockReturnValue({
+        balances: { book_closed_1: null, book_closed_2: null },
+        isLoading: true,
+      })
+
+      renderPage()
+
+      await waitFor(() => {
+        expect(screen.getByText("Old Project")).toBeInTheDocument()
+      })
+
+      // All closed books should show em dash for balance while loading
+      const emDashes = screen.getAllByText("\u2014")
+      // At least 2 em dashes (one per closed book, plus the currency one from open books)
+      expect(emDashes.length).toBeGreaterThanOrEqual(2)
+    })
+
+    it("sorts closed books by closedAt descending", async () => {
+      // Add a third closed book with a middle closedAt date
+      const thirdClosed: BookDto = {
+        id: "book_closed_3",
+        name: "Summer Trip",
+        currency: "EUR",
+        status: "closed",
+        ownerId: "usr_1",
+        sharedWith: [],
+        createdAt: "2026-02-01T10:00:00Z",
+        closedAt: "2026-04-15T10:00:00Z",
+      }
+      const allBooks = [...seedOpenBooks, ...closedBooks, thirdClosed]
+      useBooksStore.setState({ books: allBooks })
+      mockUseClosedBookBalances.mockReturnValue({
+        balances: { book_closed_1: 100, book_closed_2: 200, book_closed_3: 300 },
+        isLoading: false,
+      })
+
+      renderPage()
+
+      await waitFor(() => {
+        expect(screen.getByText("Summer Trip")).toBeInTheDocument()
+      })
+
+      // Expected order: Old Project (Jun), Summer Trip (Apr), Vacation 2025 (Mar)
+      const cards = screen.getAllByText("Closed")
+      // Walk up to the parent card elements and check text order
+      const cardContents = cards.map((badge) => badge.closest("[class*='card']")?.textContent ?? "")
+      const oldProjectIdx = cardContents.findIndex((c) => c.includes("Old Project"))
+      const summerTripIdx = cardContents.findIndex((c) => c.includes("Summer Trip"))
+      const vacationIdx = cardContents.findIndex((c) => c.includes("Vacation 2025"))
+
+      expect(oldProjectIdx).toBeLessThan(summerTripIdx)
+      expect(summerTripIdx).toBeLessThan(vacationIdx)
+    })
+  })
+
+  describe("edge cases", () => {
+    it("renders no separator when there are no closed books", async () => {
+      renderPage()
+
+      const separators = document.querySelectorAll('[data-slot="separator"]')
+      expect(separators.length).toBe(0)
+    })
+
+    it("renders all books as compact cards when all books are closed", async () => {
+      useBooksStore.setState({ books: closedBooks })
+      mockUseClosedBookBalances.mockReturnValue({
+        balances: { book_closed_1: 1250, book_closed_2: -500 },
+        isLoading: false,
+      })
+
+      renderPage()
+
+      await waitFor(() => {
+        expect(screen.getByText("Old Project")).toBeInTheDocument()
+      })
+
+      expect(screen.getByText("Vacation 2025")).toBeInTheDocument()
+
+      // No separator when there's nothing to separate
+      const separators = document.querySelectorAll('[data-slot="separator"]')
+      expect(separators.length).toBe(0)
+
+      // No Select buttons (all closed)
+      const selectButtons = screen.queryAllByRole("button", { name: /select|current book/i })
+      expect(selectButtons.length).toBe(0)
+    })
+
+    it("shows New book button below all sections", async () => {
+      const allBooks = [...seedOpenBooks, ...closedBooks]
+      useBooksStore.setState({ books: allBooks })
+      mockUseClosedBookBalances.mockReturnValue({
+        balances: { book_closed_1: 1250, book_closed_2: -500 },
+        isLoading: false,
+      })
+
+      renderPage()
+
+      const newBookButton = screen.getByRole("button", { name: "New book" })
+      expect(newBookButton).toBeInTheDocument()
+
+      // Clicking New book navigates to /books/new
+      fireEvent.click(newBookButton)
+      expect(navigateSpy).toHaveBeenCalledWith("/books/new")
+    })
   })
 })

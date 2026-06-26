@@ -788,6 +788,7 @@ export const handlers = [
           permission: s.permission,
         })),
         createdAt: b.createdAt.toISOString(),
+        closedAt: b.closedAt?.toISOString() ?? null,
       })),
     })
   }),
