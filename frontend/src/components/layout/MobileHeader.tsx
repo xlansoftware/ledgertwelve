@@ -1,14 +1,51 @@
 import { cn } from "@/lib/utils";
 import { useLocation, useNavigate } from "react-router-dom";
-
+import type { LucideIcon } from "lucide-react";
 import { BarChart2, Book, ClipboardList, Plus, Settings } from 'lucide-react';
+
+function TabButton({
+  path,
+  label,
+  icon: Icon,
+  currentPath,
+  navigate,
+}: {
+  path: string;
+  label: string;
+  icon: LucideIcon;
+  currentPath: string;
+  navigate: (path: string) => void;
+}) {
+  const isActive = currentPath === path;
+  return (
+    <button
+      aria-label={`${label} Screen`}
+      onClick={() => navigate(path)}
+      className={cn(
+        "flex flex-col items-center justify-center",
+        isActive ? "text-primary border bg-muted" : "text-muted-foreground"
+      )}
+    >
+      <Icon size={20} />
+      <span className="text-xs mt-1">{label}</span>
+    </button>
+  );
+}
 
 export default function MobileHeader() {
   const navigate = useNavigate();
   const location = useLocation();
   const currentPath = location.pathname;
 
-  const tint = "#ff0000";
+  const tint = null;
+
+  const tabs = [
+    { path: "/books", label: "Books", icon: Book },
+    { path: "/", label: "Add", icon: Plus },
+    { path: "/history", label: "History", icon: ClipboardList },
+    { path: "/insight", label: "Insight", icon: BarChart2 },
+    { path: "/settings", label: "Settings", icon: Settings },
+  ] as const;
 
   return (
     <div
@@ -24,61 +61,16 @@ export default function MobileHeader() {
       }
     >
       <div className="grid grid-cols-5 h-full">
-        <button
-          aria-label="Books Screen"
-          onClick={() => navigate("/books")}
-          className={`flex flex-col items-center justify-center ${currentPath === "/books" ? "text-primary" : "text-muted-foreground"
-            }`}
-        >
-          <Book size={20} />
-          <span className="text-xs mt-1">Books</span>
-        </button>
-
-        <button
-          aria-label="Add Screen"
-          onClick={() => navigate("/")}
-          className={`flex flex-col items-center justify-center ${currentPath === "/" ? "text-primary" : "text-muted-foreground"
-            }`}
-        >
-          <Plus size={20} />
-          <span className="text-xs mt-1">Add</span>
-        </button>
-
-        <button
-          aria-label="History Screen"
-          onClick={() => navigate("/history")}
-          className={`flex flex-col items-center justify-center ${currentPath === "/history"
-              ? "text-primary"
-              : "text-muted-foreground"
-            }`}
-        >
-          <ClipboardList size={20} />
-          <span className="text-xs mt-1">History</span>
-        </button>
-
-        <button
-          aria-label="Insights Screen"
-          onClick={() => navigate("/insight")}
-          className={`flex flex-col items-center justify-center ${currentPath === "/insight"
-              ? "text-primary"
-              : "text-muted-foreground"
-            }`}
-        >
-          <BarChart2 size={20} />
-          <span className="text-xs mt-1">Insight</span>
-        </button>
-
-        <button
-          aria-label="Settings Screen"
-          onClick={() => navigate("/settings")}
-          className={`flex flex-col items-center justify-center ${currentPath === "/settings"
-              ? "text-primary"
-              : "text-muted-foreground"
-            }`}
-        >
-          <Settings size={20} />
-          <span className="text-xs mt-1">Settings</span>
-        </button>
+        {tabs.map(({ path, label, icon }) => (
+          <TabButton
+            key={path}
+            path={path}
+            label={label}
+            icon={icon}
+            currentPath={currentPath}
+            navigate={navigate}
+          />
+        ))}
       </div>
     </div>
   );
