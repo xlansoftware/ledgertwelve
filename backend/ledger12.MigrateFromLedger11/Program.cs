@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 // Usage: dotnet run --project ledger12.MigrateFromLedger11 [--connection-string "..." ] [--data-dir "./ledger11data"]
 
 string? connectionString = null;
-var dataDir = "./ledger11data";
+var dataDir = Environment.GetEnvironmentVariable("LEDGER11DATADIR") ?? "/ledger11data";
 
 for (int i = 0; i < args.Length; i++)
 {

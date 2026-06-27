@@ -29,7 +29,7 @@ Then run:
 
 ```bash
 # Step 1: Migrate Ledger11 data into Ledger12
-docker compose --profile migration run --rm migration
+docker compose --profile migration run --rm migration-job
 
 # Step 2: Start the stack
 docker compose up -d

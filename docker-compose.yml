@@ -29,7 +29,7 @@ services:
       - ConnectionStrings__AppDbContextConnection=Data Source=/data/ledger12.db
     volumes:
       - sqlitedata:/data
-      - ./ledger11data:/ledger11data
+      - ./backend/ledger11data:/ledger11data
     restart: no
 
 volumes:
