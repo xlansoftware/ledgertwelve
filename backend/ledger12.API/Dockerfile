@@ -8,6 +8,7 @@ COPY ledger12.Application/ledger12.Application.csproj ledger12.Application/
 COPY ledger12.Domain/ledger12.Domain.csproj ledger12.Domain/
 COPY ledger12.Infrastructure/ledger12.Infrastructure.csproj ledger12.Infrastructure/
 COPY ledger12.Tests/ledger12.Tests.csproj ledger12.Tests/
+COPY ledger12.MigrateFromLedger11/ledger12.MigrateFromLedger11.csproj ledger12.MigrateFromLedger11/
 
 RUN dotnet restore
 

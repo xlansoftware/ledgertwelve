@@ -1,8 +1,10 @@
 services:
   nginx:
-    build: ./frontend
+    build: 
+      context: ./frontend
+      dockerfile: Dockerfile
     ports:
-      - "80:80"
+      - "3000:3000"
     depends_on:
       - webapi
 
@@ -13,7 +15,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:5000
-      - ConnectionStrings__Default=Data Source=/data/ledger12.db
+      - ConnectionStrings__AppDbContextConnection=Data Source=/data/ledger12.db
     volumes:
       - sqlitedata:/data
 
