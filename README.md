@@ -63,3 +63,9 @@ The `migration-job` service uses a Docker Compose **profile** (`migration`). It 
 - **Migration fails**: Check the logs with `docker compose --profile migration logs migration-job`. Fix any data issues and re-run the migration. The database is left in a clean (empty) state after a failed migration.
 - **"Data directory not found"**: Ensure `./ledger11data` exists and contains `appdata.db`.
 - **"appdata.db not found"**: The ledger11 folder must have the main database file at its root.
+
+
+curl -c cookies.txt 'https://l12.frogonaquest.com/api/v1/auth/login' -H 'Content-Type: application/json' --data-raw '{"email":"demo@example.com","password":"Example-1"}'
+
+curl -i -b cookies.txt \
+  https://l12.frogonaquest.com/api/v1/auth/whoami

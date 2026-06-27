@@ -11,6 +11,7 @@ using ledger12.Application.Services;
 using ledger12.Infrastructure.Data;
 using ledger12.Infrastructure.Repositories;
 using ledger12.Infrastructure.Services;
+using Microsoft.AspNetCore.HttpOverrides;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,11 +32,17 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.Cookie.HttpOnly = true;
     options.Cookie.SameSite = SameSiteMode.Lax;
     options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
-    options.Cookie.Name = "ledger12.session";
     options.ExpireTimeSpan = TimeSpan.FromDays(7);
-    options.LoginPath = "/api/v1/auth/login";
+    options.LoginPath = "/login";
     options.SlidingExpiration = true;
     options.Cookie.MaxAge = TimeSpan.FromDays(7);
+});
+
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders =
+        ForwardedHeaders.XForwardedFor |
+        ForwardedHeaders.XForwardedProto;
 });
 
 // ─── HTTP context ───────────────────────────────────────────────────
@@ -98,6 +105,7 @@ var app = builder.Build();
 // ─── Middleware pipeline ────────────────────────────────────────────
 app.UseMiddleware<ExceptionMiddleware>();
 app.UseCors();
+app.UseForwardedHeaders();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
