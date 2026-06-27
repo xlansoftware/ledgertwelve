@@ -93,8 +93,8 @@ async function main() {
     return
   }
 
-  // Phase 3 — Start MSW (online mode only, unless disabled via env var)
-  if (import.meta.env.VITE_DISABLE_MSW !== 'true') {
+  // Phase 3 — Start MSW (dev mode only, unless explicitly disabled via env var)
+  if (import.meta.env.DEV && import.meta.env.VITE_DISABLE_MSW !== 'true') {
     try {
       await worker.start()
     } catch (err) {
