@@ -7,10 +7,13 @@
     "pi": "agentignore run pi",
     "pi:backend": "agentignore run --source /workspaces/ledgertwelve/backend pi",
     "dev:backend": "dotnet run --project backend/ledger12.API",
+    "build:backend": "dotnet build backend/ledger12.API",
+    "build:frontend": "npm run build --prefix frontend",
     "test:backend": "dotnet test backend/ledger12.slnx",
-    "test:frontend": "cd frontend && npm run test",
+    "test:frontend": "npm run test --prefix frontend",
     "dev": "concurrently -n API,UI -c \"cyan,magenta\" \"dotnet run --project backend/ledger12.API\" \"npm run dev:proxy --prefix frontend\"",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "npm run test:backend && npm run test:frontend",
+    "build": "npm run build:backend && npm run build:frontend"
   },
   "keywords": [],
   "author": "",
