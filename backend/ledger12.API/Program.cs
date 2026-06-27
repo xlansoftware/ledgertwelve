@@ -11,7 +11,7 @@ using ledger12.Application.Services;
 using ledger12.Infrastructure.Data;
 using ledger12.Infrastructure.Repositories;
 using ledger12.Infrastructure.Services;
-using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.DataProtection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,6 +19,10 @@ var connectionString = builder.Configuration.GetConnectionString("AppDbContextCo
 
 // ─── Database ───────────────────────────────────────────────────────
 builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlite(connectionString));
+
+// ─── Data Protection (persist keys to volume so cookies survive restarts) ─
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo("/data/keys"));
 
 // ─── Identity (Cookie Auth) ─────────────────────────────────────────
 builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
@@ -36,13 +40,6 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.LoginPath = "/login";
     options.SlidingExpiration = true;
     options.Cookie.MaxAge = TimeSpan.FromDays(7);
-});
-
-builder.Services.Configure<ForwardedHeadersOptions>(options =>
-{
-    options.ForwardedHeaders =
-        ForwardedHeaders.XForwardedFor |
-        ForwardedHeaders.XForwardedProto;
 });
 
 // ─── HTTP context ───────────────────────────────────────────────────
@@ -102,10 +99,11 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+app.UseDefaultForwardedHeaders();
+
 // ─── Middleware pipeline ────────────────────────────────────────────
 app.UseMiddleware<ExceptionMiddleware>();
 app.UseCors();
-app.UseForwardedHeaders();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
