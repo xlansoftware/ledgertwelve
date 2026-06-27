@@ -30,11 +30,12 @@ builder.Services.ConfigureApplicationCookie(options =>
 {
     options.Cookie.HttpOnly = true;
     options.Cookie.SameSite = SameSiteMode.Lax;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
     options.Cookie.Name = "ledger12.session";
     options.ExpireTimeSpan = TimeSpan.FromDays(7);
     options.LoginPath = "/api/v1/auth/login";
     options.SlidingExpiration = true;
+    options.Cookie.MaxAge = TimeSpan.FromDays(7);
 });
 
 // ─── HTTP context ───────────────────────────────────────────────────
