@@ -31,7 +31,7 @@ Console.WriteLine($"Data directory: {resolvedDataDir}");
 if (!Directory.Exists(resolvedDataDir))
 {
     Console.Error.WriteLine($"Error: Data directory not found: {resolvedDataDir}");
-    return;
+    Environment.Exit(1);
 }
 
 if (!File.Exists(Path.Combine(resolvedDataDir, "appdata.db")))
@@ -63,6 +63,12 @@ if (connectionString is null)
             Console.Error.WriteLine($"Warning: Could not read appsettings: {ex.Message}");
         }
     }
+
+    // Try environment variable (Docker convention)
+    connectionString ??= Environment.GetEnvironmentVariable("ConnectionStrings__AppDbContextConnection");
+
+    if (connectionString is not null)
+        Console.WriteLine("Using connection string from environment variable.");
 
     if (connectionString is null)
     {

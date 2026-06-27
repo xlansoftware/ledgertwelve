@@ -19,5 +19,18 @@ services:
     volumes:
       - sqlitedata:/data
 
+  migration-job:
+    build:
+      context: ./backend
+      dockerfile: ledger12.MigrateFromLedger11/Dockerfile
+    profiles:
+      - migration
+    environment:
+      - ConnectionStrings__AppDbContextConnection=Data Source=/data/ledger12.db
+    volumes:
+      - sqlitedata:/data
+      - ./ledger11data:/ledger11data
+    restart: no
+
 volumes:
   sqlitedata:
