@@ -84,10 +84,11 @@ public class AuthController : ControllerBase
     [HttpGet("whoami")]
     public async Task<ActionResult<AuthResponse>> Whoami()
     {
-        if (_currentUser.UserId == Guid.Empty)
+        var userIdString = _currentUser.UserIdString;
+        if (string.IsNullOrEmpty(userIdString))
             return Unauthorized(new { error = "Unauthorized" });
 
-        var user = await _userManager.FindByIdAsync(_currentUser.UserId.ToString());
+        var user = await _userManager.FindByIdAsync(userIdString);
         if (user == null)
             return Unauthorized(new { error = "Unauthorized" });
 
