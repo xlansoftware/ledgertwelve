@@ -49,13 +49,13 @@ The migration job:
 docker compose up -d
 ```
 
-The `migration-job` service uses a Docker Compose **profile** (`migration`). It is **not** started by default — only when `--profile migration` is passed. Normal `up` starts webapi and nginx directly.
+The `migration` service uses a Docker Compose **profile** (`migration`). It is **not** started by default — only when `--profile migration` is passed. Normal `up` starts webapi and nginx directly.
 
 ### Volumes
 
 | Volume | Purpose |
 |---|---|
-| `sqlitedata` | SQLite database file (`/data/ledger12.db`), shared between migration-job and webapi |
+| `ledger12data` | SQLite database file (`/data/ledger12.db`), shared between migration-job and webapi |
 | `./ledger11data` (bind mount) | Ledger11 data folder, mounted at `/ledger11data` in the migration container only |
 
 ### Troubleshooting
@@ -63,9 +63,3 @@ The `migration-job` service uses a Docker Compose **profile** (`migration`). It 
 - **Migration fails**: Check the logs with `docker compose --profile migration logs migration-job`. Fix any data issues and re-run the migration. The database is left in a clean (empty) state after a failed migration.
 - **"Data directory not found"**: Ensure `./ledger11data` exists and contains `appdata.db`.
 - **"appdata.db not found"**: The ledger11 folder must have the main database file at its root.
-
-
-curl -c cookies.txt 'https://l12.frogonaquest.com/api/v1/auth/login' -H 'Content-Type: application/json' --data-raw '{"email":"demo@example.com","password":"Example-1"}'
-
-curl -i -b cookies.txt \
-  https://l12.frogonaquest.com/api/v1/auth/whoami
