@@ -78,8 +78,17 @@ internal class InfrastructureExportService
                     var bookName = "Unknown";
                     if (job.BookId.HasValue)
                     {
-                        var book = await _context.Books.FindAsync(new object[] { job.BookId.Value }, ct);
-                        if (book != null) bookName = book.Name;
+                        var book = await _context.Books
+                            .Where(b => b.Id == job.BookId.Value &&
+                                        (b.OwnerId == job.UserId || b.Shares.Any(s => s.UserId == job.UserId)))
+                            .FirstOrDefaultAsync(ct);
+                        if (book == null)
+                        {
+                            job.SetFailed("Book not found or not accessible");
+                            await _context.SaveChangesAsync(ct);
+                            return;
+                        }
+                        bookName = book.Name;
                     }
                     content = await ExportTransactionsAsync(job.BookId, job.Format);
                     fileName = $"transactions-{bookName}-{dateStr}.{FormatExt(job.Format)}";
@@ -172,7 +181,9 @@ internal class InfrastructureExportService
 
     private async Task<string> ExportBooksAsync(Guid userId, Domain.Enums.ExportFormat format)
     {
-        var books = await _context.Books.Where(b => b.OwnerId == userId).ToListAsync();
+        var books = await _context.Books
+            .Where(b => b.OwnerId == userId || b.Shares.Any(s => s.UserId == userId))
+            .ToListAsync();
 
         if (format == Domain.Enums.ExportFormat.Json)
         {
@@ -194,10 +205,13 @@ internal class InfrastructureExportService
 
     private async Task<string> ExportBackupAsync(Guid userId)
     {
-        var books = await _context.Books.Where(b => b.OwnerId == userId).ToListAsync();
+        var books = await _context.Books
+            .Where(b => b.OwnerId == userId || b.Shares.Any(s => s.UserId == userId))
+            .ToListAsync();
         var categories = await _context.Categories.Where(c => c.UserId == userId).ToListAsync();
         var transactions = await _context.Transactions
-            .Where(t => _context.Books.Any(b => b.Id == t.BookId && b.OwnerId == userId))
+            .Where(t => _context.Books.Any(b => b.Id == t.BookId &&
+                                               (b.OwnerId == userId || b.Shares.Any(s => s.UserId == userId))))
             .ToListAsync();
 
         var backup = new

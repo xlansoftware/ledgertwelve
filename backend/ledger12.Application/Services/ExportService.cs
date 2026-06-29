@@ -193,7 +193,16 @@ public class ExportService : IExportService
 
     private async Task<string> GenerateTransactionsExport(Guid userId, Guid? bookId, ExportFormat format)
     {
-        var transactions = await _transactionRepo.SearchAsync(bookId: bookId, page: 1, pageSize: int.MaxValue);
+        if (bookId.HasValue)
+        {
+            var visible = await _bookRepo.IsVisibleAsync(bookId.Value, userId);
+            if (!visible)
+                throw new NotFoundException("Book", bookId.Value);
+        }
+
+        var transactions = bookId.HasValue
+            ? await _transactionRepo.SearchAsync(bookId: bookId, page: 1, pageSize: int.MaxValue)
+            : await GetAllVisibleTransactionsAsync(userId);
 
         if (format == ExportFormat.Json)
         {
@@ -221,7 +230,7 @@ public class ExportService : IExportService
 
     private async Task<string> GenerateBooksExport(Guid userId, ExportFormat format)
     {
-        var books = await _bookRepo.GetByOwnerAsync(userId);
+        var books = await _bookRepo.GetVisibleBooksAsync(userId);
 
         if (format == ExportFormat.Json)
         {
@@ -245,9 +254,9 @@ public class ExportService : IExportService
 
     private async Task<string> GenerateBackupExport(Guid userId)
     {
-        var books = await _bookRepo.GetByOwnerAsync(userId);
+        var books = await _bookRepo.GetVisibleBooksAsync(userId);
         var categories = await _categoryRepo.GetByUserAsync(userId);
-        var transactions = await _transactionRepo.SearchAsync(page: 1, pageSize: int.MaxValue);
+        var transactions = await GetAllVisibleTransactionsAsync(userId);
 
         var backup = new
         {
@@ -294,6 +303,18 @@ public class ExportService : IExportService
         // Simplified report export - returns JSON
         var reportData = new { message = "Report export - see /api/v1/reports for live data" };
         return JsonSerializer.Serialize(reportData, new JsonSerializerOptions { WriteIndented = true });
+    }
+
+    private async Task<List<Transaction>> GetAllVisibleTransactionsAsync(Guid userId)
+    {
+        var books = await _bookRepo.GetVisibleBooksAsync(userId);
+        var all = new List<Transaction>();
+        foreach (var book in books)
+        {
+            var txs = await _transactionRepo.SearchAsync(bookId: book.Id, page: 1, pageSize: int.MaxValue);
+            all.AddRange(txs);
+        }
+        return all;
     }
 
     private static string EscapeCsv(string? value) =>
