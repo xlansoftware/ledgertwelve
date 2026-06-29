@@ -26,6 +26,24 @@ public class Book
         CreatedAt = DateTimeOffset.UtcNow;
     }
 
+    /// <summary>
+    /// Restores a book from backup data, preserving its original identity and state.
+    /// </summary>
+    public static Book Restore(Guid id, string name, Guid ownerId, string? currency, DateTimeOffset? closedAt = null)
+    {
+        var book = new Book
+        {
+            Id = id,
+            Name = name,
+            Currency = currency,
+            Status = closedAt.HasValue ? BookStatus.Closed : BookStatus.Open,
+            OwnerId = ownerId,
+            CreatedAt = DateTimeOffset.UtcNow,
+            ClosedAt = closedAt
+        };
+        return book;
+    }
+
     public void Update(string name, string? currency)
     {
         Name = name;

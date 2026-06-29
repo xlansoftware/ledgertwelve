@@ -320,7 +320,10 @@ public class ImportService : IImportService
                     }
                 }
 
-                var book = new Book(name, userId, currency);
+                var bookId = !string.IsNullOrEmpty(idStr) && Guid.TryParse(idStr, out var parsedId)
+                    ? parsedId
+                    : Guid.NewGuid();
+                var book = Book.Restore(bookId, name, userId, currency);
                 await _bookRepo.AddAsync(book);
                 created++;
             }
