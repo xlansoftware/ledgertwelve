@@ -36,6 +36,7 @@ import {
   Upload,
 } from "lucide-react"
 import { getFactory } from "@/features/offline"
+import { refresh } from "@/hooks/useRefresh"
 import type { ImportRequest, ImportResult, ImportIssue } from "@/types"
 
 // ---------------------------------------------------------------------------
@@ -129,6 +130,13 @@ export default function PreviewPage() {
       store.setImportResult(result)
       store.setStep("complete")
       setImportCompleted(true)
+
+      // Refresh affected stores after import
+      if (entityType === "backup") {
+        await refresh({ books: true, transactions: true, categories: true, users: true })
+      } else {
+        await refresh({ books: true, transactions: true, categories: true })
+      }
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Failed to import data"

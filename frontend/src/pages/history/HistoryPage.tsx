@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTransactionsStore, useBooksStore, useCategoriesStore, useUsersStore } from "@/store";
+import { useRefresh } from "@/hooks/useRefresh";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Loader2, Search } from "lucide-react";
@@ -45,6 +46,8 @@ function groupByDate(
 // ---------------------------------------------------------------------------
 
 export default function HistoryPage() {
+  useRefresh({ transactions: true });
+
   const transactions = useTransactionsStore((s) => s.transactions);
   const isLoading = useTransactionsStore((s) => s.isLoading);
   const error = useTransactionsStore((s) => s.error);

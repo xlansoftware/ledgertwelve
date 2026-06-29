@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useBooksStore } from "@/store";
+import { useRefresh } from "@/hooks/useRefresh";
 import {
   Card,
   CardHeader,
@@ -16,6 +17,8 @@ import { formatCurrency } from "@/lib/utils";
 
 export default function BookPage() {
   const navigate = useNavigate();
+
+  useRefresh({ books: true });
   const {
     books,
     currentBook,
