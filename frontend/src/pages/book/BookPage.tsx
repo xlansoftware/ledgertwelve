@@ -26,6 +26,7 @@ export default function BookPage() {
     error,
     fetchBooks,
     fetchBook,
+    setCurrentBook
   } = useBooksStore();
 
   const { balances, isLoading: isBalancesLoading } = useClosedBookBalances(books);
@@ -128,7 +129,10 @@ export default function BookPage() {
                     <Button
                       variant={isSelected ? "default" : "outline"}
                       size="sm"
-                      onClick={() => fetchBook(book.id)}
+                      onClick={async () => {
+                        await setCurrentBook(book.id);
+                        await fetchBook(book.id);
+                      }}
                       disabled={isSelected}
                     >
                       {isSelected ? "Current book" : "Select"}
