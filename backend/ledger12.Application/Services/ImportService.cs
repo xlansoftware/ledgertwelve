@@ -278,9 +278,18 @@ public class ImportService : IImportService
         int cCreated = 0, cUpdated = 0, cDeleted = 0;
         int tCreated = 0, tUpdated = 0, tDeleted = 0;
 
-        // Process in order: books → categories → transactions
+        // Clear existing data, then process in order: books → categories → transactions
         if (!request.Preview)
         {
+            // Fetch user's owned book IDs before deleting (we need them to delete transactions)
+            var ownedBooks = await _bookRepo.GetByOwnerAsync(userId);
+            var ownedBookIds = ownedBooks.Select(b => b.Id).ToList();
+
+            // Clear in FK-safe order: transactions → categories → books
+            await _transactionRepo.DeleteAllByBookIdsAsync(ownedBookIds);
+            await _categoryRepo.DeleteAllByUserAsync(userId);
+            await _bookRepo.DeleteAllByOwnerAsync(userId);
+
             var bookResult = await ProcessBackupBooksAsync(data, userId, bookIssues, jsonOpts);
             bCreated += bookResult.created; bUpdated += bookResult.updated;
             var catResult = await ProcessBackupCategoriesAsync(data, userId, catIssues, jsonOpts);

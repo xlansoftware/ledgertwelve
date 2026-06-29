@@ -14,6 +14,7 @@ public interface IBookRepository
     Task AddAsync(Book book);
     Task UpdateAsync(Book book);
     Task DeleteAsync(Book book);
+    Task DeleteAllByOwnerAsync(Guid ownerId);
     Task<bool> HasTransactionsAsync(Guid bookId);
     Task<int> GetTransactionCountAsync(Guid bookId, DateTimeOffset? asOf = null);
     Task<decimal> GetTotalSumAsync(Guid bookId, DateTimeOffset? asOf = null);

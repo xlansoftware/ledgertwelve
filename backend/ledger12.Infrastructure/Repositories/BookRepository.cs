@@ -88,6 +88,15 @@ public class BookRepository : IBookRepository
         await _context.SaveChangesAsync();
     }
 
+    public async Task DeleteAllByOwnerAsync(Guid ownerId)
+    {
+        var books = await _context.Books
+            .Where(b => b.OwnerId == ownerId)
+            .ToListAsync();
+        _context.Books.RemoveRange(books);
+        await _context.SaveChangesAsync();
+    }
+
     public async Task UpdateAsync(Book book)
     {
         _context.Books.Update(book);

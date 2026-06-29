@@ -95,6 +95,15 @@ public class TransactionRepository : ITransactionRepository
         await _context.SaveChangesAsync();
     }
 
+    public async Task DeleteAllByBookIdsAsync(List<Guid> bookIds)
+    {
+        var transactions = await _context.Transactions
+            .Where(t => bookIds.Contains(t.BookId))
+            .ToListAsync();
+        _context.Transactions.RemoveRange(transactions);
+        await _context.SaveChangesAsync();
+    }
+
     public async Task UpdateAsync(Transaction transaction)
     {
         _context.Transactions.Update(transaction);

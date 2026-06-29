@@ -30,6 +30,7 @@ public interface ITransactionRepository
     Task AddAsync(Transaction transaction);
     Task UpdateAsync(Transaction transaction);
     Task DeleteAsync(Transaction transaction);
+    Task DeleteAllByBookIdsAsync(List<Guid> bookIds);
     Task<int> GetTransactionCountForCategoryAsync(string categoryName, Guid userId);
     Task UpdateCategoryNameAsync(string oldName, string newName, Guid userId);
 
