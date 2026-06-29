@@ -83,6 +83,11 @@ public static class DataMapper
     public static BookShare ToBookShare(Guid bookId, Guid userId)
         => new(bookId, userId, BookPermission.Edit);
 
+    // ─── Global Shares ──────────────────────────────────────────────
+
+    public static GlobalShare ToGlobalShare(Guid ownerId, Guid sharedWithUserId)
+        => new(ownerId, sharedWithUserId);
+
     // ─── Categories ─────────────────────────────────────────────────
 
     /// <summary>

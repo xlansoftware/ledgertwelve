@@ -24,4 +24,10 @@ public class MigrationContext
     /// Maps (spaceFileId, oldCategoryIntId) → category name for resolving transaction category references.
     /// </summary>
     public Dictionary<(string SpaceFileId, int OldCategoryId), string> CategoryIdToName { get; } = new();
+
+    /// <summary>Maps ledger11 "Ledger" space file ID → Main book GUID for transaction routing.</summary>
+    public Dictionary<string, Guid> SpaceFileIdToMainBookId { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Maps new user GUID → Main book GUID (shared or private) for preference setting.</summary>
+    public Dictionary<Guid, Guid> UserToMainBookId { get; } = new();
 }
