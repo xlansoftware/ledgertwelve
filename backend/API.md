@@ -88,7 +88,7 @@ Server sets:
 
 ```http
 Set-Cookie:
-ledger12.session=...
+.AspNetCore.Identity.Application=...
 HttpOnly
 Secure
 SameSite=Lax
