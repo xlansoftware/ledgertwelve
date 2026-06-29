@@ -119,7 +119,9 @@ public class AddShareRequestValidator : AbstractValidator<AddShareRequest>
     public AddShareRequestValidator()
     {
         RuleFor(x => x.Email).NotEmpty().EmailAddress();
-        RuleFor(x => x.Permission).NotEmpty().Must(p => p is "view" or "edit")
+        // default permission is "edit"
+        RuleFor(x => x.Permission)
+            .Must(p => string.IsNullOrEmpty(p) || p is "view" or "edit")
             .WithMessage("Permission must be 'view' or 'edit'");
     }
 }

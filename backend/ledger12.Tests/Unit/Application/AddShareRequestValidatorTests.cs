@@ -33,19 +33,19 @@ public class AddShareRequestValidatorTests
     }
 
     [Fact]
-    public void Validate_HasError_WhenPermissionIsEmpty()
-    {
-        var request = new AddShareRequest("user@example.com", "");
-        var result = _validator.TestValidate(request);
-        result.ShouldHaveValidationErrorFor(r => r.Permission);
-    }
-
-    [Fact]
     public void Validate_HasError_WhenPermissionIsInvalid()
     {
         var request = new AddShareRequest("user@example.com", "admin");
         var result = _validator.TestValidate(request);
         result.ShouldHaveValidationErrorFor(r => r.Permission);
+    }
+
+    [Fact]
+    public void Validate_HasNoError_WhenPermissionIsEmpty()
+    {
+        var request = new AddShareRequest("user@example.com", "");
+        var result = _validator.TestValidate(request);
+        result.ShouldNotHaveAnyValidationErrors();
     }
 
     [Fact]
