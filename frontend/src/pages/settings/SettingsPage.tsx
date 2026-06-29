@@ -91,6 +91,24 @@ export default function SettingsPage() {
 
         <Card>
           <CardHeader>
+            <CardTitle>Books</CardTitle>
+            <CardDescription>
+              Add, close or edit the books...
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate("/books")}
+            >
+              Show the Books…
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
             <CardTitle>Categories</CardTitle>
             <CardDescription>
               Add, remove or edit the categories...

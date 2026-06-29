@@ -21,8 +21,11 @@ var connectionString = builder.Configuration.GetConnectionString("AppDbContextCo
 builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlite(connectionString));
 
 // ─── Data Protection (persist keys to volume so cookies survive restarts) ─
-builder.Services.AddDataProtection()
-    .PersistKeysToFileSystem(new DirectoryInfo("/data/keys"));
+if (builder.Environment.IsProduction())
+{
+    builder.Services.AddDataProtection()
+        .PersistKeysToFileSystem(new DirectoryInfo("/data/keys"));
+}
 
 // ─── Identity (Cookie Auth) ─────────────────────────────────────────
 builder.Services.AddIdentity<AppUser, IdentityRole>(options =>

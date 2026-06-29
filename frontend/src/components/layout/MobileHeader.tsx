@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 import { useLocation, useNavigate } from "react-router-dom";
 import type { LucideIcon } from "lucide-react";
-import { BarChart2, Book, ClipboardList, Plus, Settings } from 'lucide-react';
+import { BarChart2, ClipboardList, Plus, Settings } from 'lucide-react';
 
 function TabButton({
   path,
@@ -40,7 +40,7 @@ export default function MobileHeader() {
   const tint = null;
 
   const tabs = [
-    { path: "/books", label: "Books", icon: Book },
+    // { path: "/books", label: "Books", icon: Book },
     { path: "/", label: "Add", icon: Plus },
     { path: "/history", label: "History", icon: ClipboardList },
     { path: "/insight", label: "Insight", icon: BarChart2 },
@@ -60,7 +60,7 @@ export default function MobileHeader() {
           : {}
       }
     >
-      <div className="grid grid-cols-5 h-full">
+      <div className="grid grid-cols-4 h-full">
         {tabs.map(({ path, label, icon }) => (
           <TabButton
             key={path}
