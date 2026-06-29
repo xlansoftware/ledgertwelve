@@ -65,13 +65,16 @@ public class BookRepository : IBookRepository
 
     public async Task<Book?> GetMainBookAsync(Guid userId)
     {
+        // Look for a "Main" book visible to the user — either owned or shared
         var mainBook = await _context.Books
             .Include(b => b.Shares)
-            .FirstOrDefaultAsync(b => b.OwnerId == userId && b.Name == "Main");
+            .FirstOrDefaultAsync(b => b.Name == "Main" &&
+                (b.OwnerId == userId || b.Shares.Any(s => s.UserId == userId)));
 
         if (mainBook is not null)
             return mainBook;
 
+        // Fallback: user's own first open book
         return await _context.Books
             .Include(b => b.Shares)
             .Where(b => b.OwnerId == userId && b.Status == BookStatus.Open)

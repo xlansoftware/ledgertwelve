@@ -10,8 +10,8 @@ services:
     build: 
       context: ./frontend
       dockerfile: Dockerfile
-    # ports:
-    #   - "8080:8080"
+    ports:
+      - "8080:8080"
     depends_on:
       - webapi
 
@@ -36,7 +36,7 @@ services:
       - ConnectionStrings__AppDbContextConnection=Data Source=/data/ledger12.db
     volumes:
       - ledger12data:/data
-      - ./backend/ledger11data:/ledger11data
+      - ./ledger11data:/ledger11data
     restart: no
 
 volumes:
