@@ -16,3 +16,4 @@ frontend/dist/
 backend/ledger12.API/data/ledger12.*
 backend/data/ledger12.*
 ledger11data/
+skills-lock.json

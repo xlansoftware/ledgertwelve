@@ -10,8 +10,8 @@ services:
     build: 
       context: ./frontend
       dockerfile: Dockerfile
-    ports:
-      - "8080:8080"
+    # ports:
+    #   - "8080:8080"
     depends_on:
       - webapi
 
@@ -24,9 +24,9 @@ services:
       - ASPNETCORE_URLS=http://+:5000
       - ConnectionStrings__AppDbContextConnection=Data Source=/data/ledger12.db
     volumes:
-      - sqlitedata:/data
+      - ledger12data:/data
 
-  migration-job:
+  migration:
     build:
       context: ./backend
       dockerfile: ledger12.MigrateFromLedger11/Dockerfile
@@ -35,9 +35,10 @@ services:
     environment:
       - ConnectionStrings__AppDbContextConnection=Data Source=/data/ledger12.db
     volumes:
-      - sqlitedata:/data
+      - ledger12data:/data
       - ./backend/ledger11data:/ledger11data
     restart: no
 
 volumes:
-  sqlitedata:
+  ledger12data:
+    external: true
