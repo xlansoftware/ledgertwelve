@@ -3,6 +3,7 @@ using System.Text.Json;
 using ledger12.Application.DTOs;
 using ledger12.Application.Interfaces;
 using ledger12.Domain.Entities;
+using ledger12.Domain.Enums;
 using ledger12.Domain.Exceptions;
 
 namespace ledger12.Application.Services;
@@ -317,12 +318,34 @@ public class ImportService : IImportService
                 var currency = bookEl.TryGetProperty("currency", out var curEl) ? curEl.GetString() : null;
                 var idStr = bookEl.TryGetProperty("id", out var idEl) ? idEl.GetString() : null;
 
+                // Read status from backup, defaulting to Open
+                var status = BookStatus.Open;
+                if (bookEl.TryGetProperty("status", out var statusEl))
+                {
+                    var statusStr = statusEl.GetString();
+                    if (string.Equals(statusStr, "closed", StringComparison.OrdinalIgnoreCase))
+                        status = BookStatus.Closed;
+                }
+
+                // Read closedAt if present in backup
+                DateTimeOffset? closedAt = null;
+                if (bookEl.TryGetProperty("closedAt", out var closedAtEl))
+                {
+                    if (DateTimeOffset.TryParse(closedAtEl.GetString(), out var parsedClosedAt))
+                        closedAt = parsedClosedAt;
+                }
+
                 if (!string.IsNullOrEmpty(idStr) && Guid.TryParse(idStr, out var existingId))
                 {
                     var existing = await _bookRepo.GetByIdAsync(existingId);
                     if (existing != null && existing.OwnerId == userId)
                     {
+                        // Update the existing book's status and name/currency
                         existing.Update(name, currency);
+                        if (status == BookStatus.Closed)
+                            existing.Close(closedAt ?? DateTimeOffset.UtcNow);
+                        else
+                            existing.Reopen();
                         await _bookRepo.UpdateAsync(existing);
                         updated++;
                         continue;
@@ -332,7 +355,7 @@ public class ImportService : IImportService
                 var bookId = !string.IsNullOrEmpty(idStr) && Guid.TryParse(idStr, out var parsedId)
                     ? parsedId
                     : Guid.NewGuid();
-                var book = Book.Restore(bookId, name, userId, currency);
+                var book = Book.Restore(bookId, name, userId, currency, status, closedAt);
                 await _bookRepo.AddAsync(book);
                 created++;
             }

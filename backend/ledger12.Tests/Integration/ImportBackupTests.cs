@@ -4,6 +4,7 @@ using ledger12.Application.DTOs;
 using ledger12.Application.Interfaces;
 using ledger12.Application.Services;
 using ledger12.Domain.Entities;
+using ledger12.Domain.Enums;
 using ledger12.Infrastructure.Data;
 using ledger12.Infrastructure.Repositories;
 
@@ -118,10 +119,19 @@ public class ImportBackupTests : IDisposable
         var mainBook = books.FirstOrDefault(b => b.Name == "Main");
         Assert.NotNull(mainBook);
         Assert.Equal("EUR", mainBook!.Currency);
+        Assert.Equal(BookStatus.Open, mainBook.Status);
 
         Assert.Contains(books, b => b.Name == "Море 2025");
         Assert.Contains(books, b => b.Name == "Greece 2025");
         Assert.Contains(books, b => b.Name == "Swiss 2026");
+
+        // Assert — books from backup retain their original status
+        var moreBook = books.First(b => b.Name == "Море 2025");
+        var greeceBook = books.First(b => b.Name == "Greece 2025");
+        var swissBook = books.First(b => b.Name == "Swiss 2026");
+        Assert.Equal(BookStatus.Closed, moreBook.Status);
+        Assert.Equal(BookStatus.Closed, greeceBook.Status);
+        Assert.Equal(BookStatus.Closed, swissBook.Status);
 
         // Assert — transactions are persisted (Main book has the most)
         var transactions = await _transactionRepo.SearchAsync(bookId: mainBook.Id, pageSize: 5000);
@@ -129,11 +139,9 @@ public class ImportBackupTests : IDisposable
         Assert.True(transactions.Count > 100);
 
         // Assert — transactions exist in other books too
-        var greeceBook = books.First(b => b.Name == "Greece 2025");
         var greeceTransactions = await _transactionRepo.SearchAsync(bookId: greeceBook.Id, pageSize: 100);
         Assert.NotEmpty(greeceTransactions);
 
-        var moreBook = books.First(b => b.Name == "Море 2025");
         var moreTransactions = await _transactionRepo.SearchAsync(bookId: moreBook.Id, pageSize: 100);
         Assert.NotEmpty(moreTransactions);
 
@@ -196,6 +204,15 @@ public class ImportBackupTests : IDisposable
         Assert.Equal(22, categories.Count);
         Assert.Contains(books, b => b.Name == "Main");
         Assert.Contains(categories, c => c.Name == "Groceries");
+
+        // Assert — closed books retain their status
+        var closedBooks = books.Where(b => b.Status == BookStatus.Closed).ToList();
+        Assert.Equal(3, closedBooks.Count);
+        Assert.Contains(closedBooks, b => b.Name == "Море 2025");
+        Assert.Contains(closedBooks, b => b.Name == "Greece 2025");
+        Assert.Contains(closedBooks, b => b.Name == "Swiss 2026");
+        var mainBook2 = books.First(b => b.Name == "Main");
+        Assert.Equal(BookStatus.Open, mainBook2.Status);
     }
 
     [Fact]
@@ -236,6 +253,13 @@ public class ImportBackupTests : IDisposable
         // Assert — final state is identical to a single import
         var books = await _bookRepo.GetByOwnerAsync(_userId);
         Assert.Equal(4, books.Count);
+
+        // Assert — book status is preserved across multiple imports
+        Assert.Contains(books, b => b.Name == "Море 2025" && b.Status == BookStatus.Closed);
+        Assert.Contains(books, b => b.Name == "Greece 2025" && b.Status == BookStatus.Closed);
+        Assert.Contains(books, b => b.Name == "Swiss 2026" && b.Status == BookStatus.Closed);
+        var mainBook3 = books.First(b => b.Name == "Main");
+        Assert.Equal(BookStatus.Open, mainBook3.Status);
 
         var categories = await _categoryRepo.GetByUserAsync(_userId);
         Assert.Equal(22, categories.Count);

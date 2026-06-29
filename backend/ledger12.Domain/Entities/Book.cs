@@ -29,14 +29,14 @@ public class Book
     /// <summary>
     /// Restores a book from backup data, preserving its original identity and state.
     /// </summary>
-    public static Book Restore(Guid id, string name, Guid ownerId, string? currency, DateTimeOffset? closedAt = null)
+    public static Book Restore(Guid id, string name, Guid ownerId, string? currency, BookStatus status, DateTimeOffset? closedAt = null)
     {
         var book = new Book
         {
             Id = id,
             Name = name,
             Currency = currency,
-            Status = closedAt.HasValue ? BookStatus.Closed : BookStatus.Open,
+            Status = status,
             OwnerId = ownerId,
             CreatedAt = DateTimeOffset.UtcNow,
             ClosedAt = closedAt
