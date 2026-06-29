@@ -60,7 +60,13 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     return undefined as T
   }
 
-  // Handle binary downloads
+  // Handle file downloads (any content type with Content-Disposition: attachment)
+  const contentDisposition = response.headers.get("content-disposition") || ""
+  if (contentDisposition.startsWith("attachment")) {
+    return response.blob() as unknown as T
+  }
+
+  // Handle known binary content types that may not have the attachment header
   const contentType = response.headers.get("content-type") || ""
   if (contentType.startsWith("text/csv") || contentType.startsWith("application/vnd.openxmlformats")) {
     return response.blob() as unknown as T
