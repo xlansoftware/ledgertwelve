@@ -3,10 +3,11 @@
 // ---------------------------------------------------------------------------
 
 import { render, screen, fireEvent, waitFor } from "@testing-library/react"
-import { describe, expect, it, vi, beforeEach } from "vitest"
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest"
 import { createMemoryRouter, RouterProvider } from "react-router-dom"
 import { useBooksStore } from "@/store"
 import type { BookDto } from "@/types"
+import { books as mswBooks } from "@/mocks/handlers"
 import BookPage from "./BookPage"
 
 const { navigateSpy } = vi.hoisted(() => ({
@@ -58,6 +59,18 @@ const closedBooks: BookDto[] = [
   },
 ]
 
+// Closed books in MSW internal format (Date objects for dates)
+const mswClosedBooks = closedBooks.map(b => ({
+  id: b.id,
+  name: b.name,
+  currency: b.currency,
+  status: b.status as "open" | "closed",
+  ownerId: b.ownerId,
+  sharedWith: [] as { userId: string; permission: "view" | "edit" }[],
+  createdAt: new Date(b.createdAt),
+  closedAt: b.closedAt ? new Date(b.closedAt) : undefined,
+}))
+
 // Mock the hook
 const mockUseClosedBookBalances = vi.fn()
 
@@ -72,6 +85,26 @@ vi.mock("react-router-dom", async () => {
     useNavigate: () => navigateSpy,
   }
 })
+
+/** Add closed books to the MSW in-memory store (used by fetchBooks). */
+function seedMswClosedBooks() {
+  for (const book of mswClosedBooks) {
+    if (!mswBooks.find((b) => b.id === book.id)) {
+      mswBooks.push(book)
+    }
+  }
+}
+
+/** Remove any books beyond the default seed (book_main, book_vacation). */
+function resetMswBooks() {
+  // Keep only the original 2 default books
+  const defaultIds = new Set(["book_main", "book_vacation"])
+  for (let i = mswBooks.length - 1; i >= 0; i--) {
+    if (!defaultIds.has(mswBooks[i].id)) {
+      mswBooks.splice(i, 1)
+    }
+  }
+}
 
 function renderPage() {
   const router = createMemoryRouter(
@@ -104,6 +137,10 @@ describe("BookPage", () => {
     mockUseClosedBookBalances.mockReturnValue({ balances: {}, isLoading: false })
     // Seed the store with books as if initializeApp ran
     useBooksStore.setState({ books: seedOpenBooks, isLoading: false, error: null, currentBook: seedOpenBooks[0] })
+  })
+
+  afterEach(() => {
+    resetMswBooks()
   })
 
   // -----------------------------------------------------------------------
@@ -176,6 +213,7 @@ describe("BookPage", () => {
         isLoading: false,
       })
 
+      seedMswClosedBooks()
       renderPage()
 
       await waitFor(() => {
@@ -197,6 +235,7 @@ describe("BookPage", () => {
         isLoading: false,
       })
 
+      seedMswClosedBooks()
       renderPage()
 
       // The separator is the horizontal rule element
@@ -212,6 +251,7 @@ describe("BookPage", () => {
         isLoading: false,
       })
 
+      seedMswClosedBooks()
       renderPage()
 
       // Open books should have Select buttons
@@ -228,6 +268,7 @@ describe("BookPage", () => {
         isLoading: false,
       })
 
+      seedMswClosedBooks()
       renderPage()
 
       // All 4 books should have Edit buttons
@@ -243,6 +284,7 @@ describe("BookPage", () => {
         isLoading: false,
       })
 
+      seedMswClosedBooks()
       renderPage()
 
       await waitFor(() => {
@@ -263,6 +305,7 @@ describe("BookPage", () => {
         isLoading: true,
       })
 
+      seedMswClosedBooks()
       renderPage()
 
       await waitFor(() => {
@@ -294,6 +337,18 @@ describe("BookPage", () => {
         isLoading: false,
       })
 
+      // Also seed MSW with the third closed book
+      seedMswClosedBooks()
+      mswBooks.push({
+        id: "book_closed_3",
+        name: "Summer Trip",
+        currency: "EUR",
+        status: "closed" as const,
+        ownerId: "usr_1",
+        sharedWith: [],
+        createdAt: new Date("2026-02-01T10:00:00Z"),
+        closedAt: new Date("2026-04-15T10:00:00Z"),
+      })
       renderPage()
 
       await waitFor(() => {
@@ -328,6 +383,9 @@ describe("BookPage", () => {
         isLoading: false,
       })
 
+      // Replace MSW books with only closed books (no open books)
+      mswBooks.length = 0
+      mswBooks.push(...mswClosedBooks)
       renderPage()
 
       await waitFor(() => {
@@ -353,6 +411,7 @@ describe("BookPage", () => {
         isLoading: false,
       })
 
+      seedMswClosedBooks()
       renderPage()
 
       const newBookButton = screen.getByRole("button", { name: "New book" })

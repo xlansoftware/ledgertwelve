@@ -119,7 +119,7 @@ interface Book {
   closedAt?: Date
 }
 
-const books: Book[] = [
+export const books: Book[] = [
   {
     id: 'book_main',
     name: 'Main',
