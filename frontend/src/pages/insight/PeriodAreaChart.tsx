@@ -104,7 +104,8 @@ export function PeriodAreaChart({
   const chartConfig = {
     historical: {
       label: "Accumulated",
-      color: "hsl(var(--primary))",
+      // color: "hsl(var(--primary))",
+      color: "#ff0000",
     },
     projected: {
       label: "Projected",
@@ -216,14 +217,15 @@ export function PeriodAreaChart({
             {/* Historical area */}
             <defs>
               <linearGradient id="histGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.2} />
-                <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.8} />
+                <stop offset="95%" stopColor="var(--primary)" stopOpacity={0.5} />
               </linearGradient>
             </defs>
 
             <Area
               type="step"
               dataKey="historical"
+              stroke="var(--primary)"
               strokeWidth={2}
               fill="url(#histGradient)"
               dot={false}
@@ -234,7 +236,7 @@ export function PeriodAreaChart({
             <Line
               type="monotone"
               dataKey="projected"
-              stroke="#ff0000"
+              stroke="var(--primary)"
               strokeWidth={2}
               strokeDasharray="6 3"
               dot={false}
