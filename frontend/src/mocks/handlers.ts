@@ -1,5 +1,6 @@
 // mocks/handlers.ts
 import { http, HttpResponse } from 'msw'
+import type { BackupData } from '@/types'
 
 // ---------------------------------------------------------------------------
 // In-memory store — resets between test runs, persists within a session
@@ -1992,7 +1993,7 @@ export const handlers = [
       preview?: boolean
       entityType?: string
       rows?: Record<string, unknown>[]
-      data?: Record<string, unknown>
+      data?: BackupData
     }
 
     const entityType = body.entityType
@@ -2094,14 +2095,14 @@ export const handlers = [
     }
 
     // Backup response
-    const bks = body.data!.books as Record<string, unknown>[]
-    const cats = body.data!.categories as Record<string, unknown>[]
+    const bks = body.data!.books
+    const cats = body.data!.categories
 
     return HttpResponse.json({
       data: {
         books: {
-          created: bks.filter((b: Record<string, unknown>) => b.name !== 'Main').length,
-          updated: bks.filter((b: Record<string, unknown>) => b.name === 'Main').length,
+          created: bks.filter((b) => b.name !== 'Main').length,
+          updated: bks.filter((b) => b.name === 'Main').length,
           deleted: 0,
           errors: 0,
           warnings: 0,

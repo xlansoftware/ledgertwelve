@@ -66,7 +66,7 @@ describe("importsService", () => {
         books: [],
         categories: [],
         transactions: [],
-      } as unknown as Record<string, unknown>,
+      },
     })
 
     expect(result.books?.created).toBe(1)

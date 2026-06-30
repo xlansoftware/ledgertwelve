@@ -220,9 +220,9 @@ export class OfflineImportService implements IImportService {
     }
 
     // Validate schema
-    const backupBooks = data.books as Record<string, unknown>[] | undefined
-    const backupCategories = data.categories as Record<string, unknown>[] | undefined
-    const backupTransactions = data.transactions as Record<string, unknown>[] | undefined
+    const backupBooks = data.books
+    const backupCategories = data.categories
+    const backupTransactions = data.transactions
 
     if (!Array.isArray(backupBooks) || !Array.isArray(backupCategories) || !Array.isArray(backupTransactions)) {
       issues.push({
@@ -242,12 +242,13 @@ export class OfflineImportService implements IImportService {
     if (!preview) {
       await db.clearStore(db.STORES.transactions)
       await db.clearStore(db.STORES.categories)
+      await db.clearStore(db.STORES.books)
     }
 
     // Process in order: books → categories → transactions
-    const booksResult = await this.processBackupBooks(backupBooks as unknown as BookDto[], preview)
-    const categoriesResult = await this.processBackupCategories(backupCategories as unknown as CategoryDto[], preview)
-    const transactionsResult = await this.processBackupTransactions(backupTransactions as unknown as TransactionDto[], preview)
+    const booksResult = await this.processBackupBooks(backupBooks, preview)
+    const categoriesResult = await this.processBackupCategories(backupCategories, preview)
+    const transactionsResult = await this.processBackupTransactions(backupTransactions, preview)
 
     return {
       books: booksResult,
@@ -266,29 +267,12 @@ export class OfflineImportService implements IImportService {
     let updated = 0
 
     for (const book of backupBooks) {
-      // Skip Main book — never cleared, always merged
-      if (book.name === "Main") {
-        existingBooks.find((b) => b.name === "Main")
-        // Just update the Main book's metadata if it exists
-        const existing = existingBooks.find((b) => b.id === book.id)
-        if (existing) {
-          updated++
-        } else {
-          // Try to find by name
-          const existingByName = existingBooks.find((b) => b.name === "Main")
-          if (existingByName) {
-            updated++
-          }
-        }
-        continue
-      }
-
       const existing = existingBooks.find((b) => b.id === book.id || b.name === book.name)
 
       if (existing) {
         // Merge by ID — update existing
         if (!preview) {
-          await db.put(db.STORES.books, { ...existing, ...book, id: existing.id })
+          await db.put(db.STORES.books, { ...existing, ...book, id: book.id })
         }
         updated++
       } else {
@@ -521,11 +505,6 @@ export class OfflineImportService implements IImportService {
 
     const trimmedName = name.trim()
 
-    // Protect Main book
-    if (trimmedName === "Main") {
-      return { issue: { row: rowNum, field: "name", message: "Cannot create or modify Main book via import", severity: "error" } }
-    }
-
     const rowId = row.id as string | undefined
     const existing = rowId ? existingBooks.find((b) => b.id === rowId) : undefined
     const isUpdate = !!existing
@@ -575,10 +554,8 @@ export class OfflineImportService implements IImportService {
       const books = await db.getAll<BookDto>(db.STORES.books)
       let deletedCount = 0
       for (const book of books) {
-        if (book.name !== "Main") {
-          await db.remove(db.STORES.books, book.id)
-          deletedCount++
-        }
+        await db.remove(db.STORES.books, book.id)
+        deletedCount++
       }
       return deletedCount
     }
@@ -600,7 +577,7 @@ export class OfflineImportService implements IImportService {
     }
     if (entityType === "books") {
       const books = await db.getAll<BookDto>(db.STORES.books)
-      return books.filter((b) => b.name !== "Main").length
+      return books.length
     }
     return 0
   }

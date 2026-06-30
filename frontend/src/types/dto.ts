@@ -135,6 +135,8 @@ export interface ImportResult {
   transactions?: ImportResultItem
 }
 
+import type { BackupData } from "./import"
+
 export interface ImportRequest {
   preview: boolean
   entityType: ImportEntityType
@@ -142,5 +144,5 @@ export interface ImportRequest {
   clearExisting?: boolean
   mapping?: Record<string, string | null>
   rows?: Record<string, unknown>[]
-  data?: Record<string, unknown>
+  data?: BackupData
 }

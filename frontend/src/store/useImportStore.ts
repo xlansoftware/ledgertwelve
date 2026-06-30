@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------
 
 import { create } from "zustand"
-import type { ImportEntityType, ImportResult } from "@/types"
+import type { BackupData, ImportEntityType, ImportResult } from "@/types"
 
 // ---------------------------------------------------------------------------
 // Types
@@ -43,7 +43,7 @@ interface ImportState {
   /** Server/offline preview/import result */
   importResult: ImportResult | null
   /** Parsed backup JSON data (backup restore only) */
-  backupData: Record<string, unknown> | null
+  backupData: BackupData | null
   /** Whether the user wants to resume a previous session */
   showResumePrompt: boolean
   /** Error message for the current step */
@@ -64,7 +64,7 @@ interface ImportActions {
   setMapping: (mapping: Record<string, string | null>) => void
   setConvertedRows: (rows: Record<string, unknown>[]) => void
   setImportResult: (result: ImportResult | null) => void
-  setBackupData: (data: Record<string, unknown> | null) => void
+  setBackupData: (data: BackupData | null) => void
   setError: (error: string | null) => void
   showResume: () => void
   hideResume: () => void

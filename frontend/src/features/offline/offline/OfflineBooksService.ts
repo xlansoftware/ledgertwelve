@@ -138,6 +138,9 @@ export class OfflineBooksService implements IBooksService {
     if (books.length === 0) {
       throw new Error("No books found")
     }
+    const firstOpenBook = books.find((b) => b.status !== "closed");
+    if (firstOpenBook) return firstOpenBook;
+    
     return books[0]
   }
 

@@ -34,7 +34,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useBooksStore } from "@/store"
 import { Upload, FileText, Database, BookOpen, ArrowLeft } from "lucide-react"
-import type { ImportEntityType } from "@/types"
+import type { BackupData, ImportEntityType } from "@/types"
 
 export default function ImportPage() {
   const navigate = useNavigate()
@@ -126,7 +126,7 @@ export default function ImportPage() {
         try {
           const text = await file.text()
           const jsonData = JSON.parse(text)
-          store.setBackupData(jsonData as Record<string, unknown>)
+          store.setBackupData(jsonData as BackupData)
           // Navigate directly to preview for backups
           navigate("/import/preview")
         } catch {
