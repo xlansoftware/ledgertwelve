@@ -138,14 +138,27 @@ export class OfflineBooksService implements IBooksService {
     if (books.length === 0) {
       throw new Error("No books found")
     }
-    const firstOpenBook = books.find((b) => b.status !== "closed");
-    if (firstOpenBook) return firstOpenBook;
-    
+
+    // Try the persisted preference first
+    const userId = this.userStore.getUserId()
+    const pref = await db.getUserPreference(userId)
+    if (pref) {
+      const preferred = books.find((b) => b.id === pref.selectedBookId)
+      if (preferred) return preferred
+    }
+
+    // Fall back to first open book
+    const firstOpenBook = books.find((b) => b.status !== "closed")
+    if (firstOpenBook) return firstOpenBook
+
     return books[0]
   }
 
   async setCurrentBook(bookId: string): Promise<BookDto> {
-    return this.getBook(bookId)
+    const book = await this.getBook(bookId)
+    const userId = this.userStore.getUserId()
+    await db.setUserPreference({ userId, selectedBookId: bookId })
+    return book
   }
 
   async getBookStats(bookId: string, params?: GetBookStatsParams): Promise<BookStatsDto> {

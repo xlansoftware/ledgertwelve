@@ -20,6 +20,7 @@ export const STORES = {
   transactions: "transactions",
   users: "users",
   sharedUsers: "sharedUsers",
+  userPreferences: "userPreferences",
 } as const
 
 export interface SharedUserEntry {
@@ -29,12 +30,18 @@ export interface SharedUserEntry {
   permission: "view" | "edit"
 }
 
+export interface UserPreference {
+  userId: string
+  selectedBookId: string
+}
+
 export interface MockDbState {
   [STORES.books]: BookDto[]
   [STORES.categories]: CategoryDto[]
   [STORES.transactions]: TransactionDto[]
   [STORES.users]: { id: string; email: string }[]
   [STORES.sharedUsers]: SharedUserEntry[]
+  [STORES.userPreferences]: UserPreference[]
 }
 
 // ---------------------------------------------------------------------------
@@ -135,6 +142,7 @@ export function createMockDb() {
     [STORES.transactions]: [],
     [STORES.users]: [],
     [STORES.sharedUsers]: [],
+    [STORES.userPreferences]: [],
   }
 
   const module = {
@@ -224,6 +232,19 @@ export function createMockDb() {
       )
     },
 
+    async getUserPreference(userId: string): Promise<UserPreference | undefined> {
+      return state[STORES.userPreferences].find((p) => p.userId === userId)
+    },
+
+    async setUserPreference(pref: UserPreference): Promise<void> {
+      const idx = state[STORES.userPreferences].findIndex((p) => p.userId === pref.userId)
+      if (idx >= 0) {
+        state[STORES.userPreferences][idx] = pref
+      } else {
+        state[STORES.userPreferences].push(pref)
+      }
+    },
+
     // Expose the state for assertions and seeding
     _state: state,
 
@@ -240,6 +261,7 @@ export function createMockDb() {
       state[STORES.transactions] = []
       state[STORES.users] = []
       state[STORES.sharedUsers] = []
+      state[STORES.userPreferences] = []
     },
   }
 

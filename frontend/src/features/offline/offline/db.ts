@@ -3,18 +3,19 @@
 // provides typed wrappers for CRUD on object stores.
 //
 // Database name:   "ledger12"
-// Schema version:  v1
+// Schema version:  v2  (v1 → v2 added userPreferences store)
 // Object stores:
-//   books         — keyed by id (UUID). Stores BookDto documents.
-//   categories    — keyed by id (UUID). Stores CategoryDto documents.
-//   transactions  — keyed by id (UUID). Stores TransactionDto documents.
-//                  Indexes: bookId (standalone), [bookId, dateTime] (compound).
-//   users         — keyed by id (UUID). Stores UserSummary documents.
-//   sharedUsers   — keyed by compound [bookId, userId]. Stores shared user entries.
+//   books            — keyed by id (UUID). Stores BookDto documents.
+//   categories       — keyed by id (UUID). Stores CategoryDto documents.
+//   transactions     — keyed by id (UUID). Stores TransactionDto documents.
+//                     Indexes: bookId (standalone), [bookId, dateTime] (compound).
+//   users            — keyed by id (UUID). Stores UserSummary documents.
+//   sharedUsers      — keyed by compound [bookId, userId]. Stores shared user entries.
+//   userPreferences  — keyed by userId. Stores UserPreference documents.
 // ---------------------------------------------------------------------------
 
 const DB_NAME = "ledger12"
-const DB_VERSION = 1
+const DB_VERSION = 2
 
 // ---- Store names ----
 
@@ -24,6 +25,7 @@ export const STORES = {
   transactions: "transactions",
   users: "users",
   sharedUsers: "sharedUsers",
+  userPreferences: "userPreferences",
 } as const
 
 // ---- Low-level helpers ----
@@ -60,6 +62,11 @@ function openDb(): Promise<IDBDatabase> {
       // SharedUsers store — compound key [bookId, userId]
       if (!db.objectStoreNames.contains(STORES.sharedUsers)) {
         db.createObjectStore(STORES.sharedUsers, { keyPath: ["bookId", "userId"] })
+      }
+
+      // v2: UserPreferences store — keyed by userId
+      if (!db.objectStoreNames.contains(STORES.userPreferences)) {
+        db.createObjectStore(STORES.userPreferences, { keyPath: "userId" })
       }
     }
 
@@ -218,7 +225,23 @@ async function clearAllSharedUsersForBook(bookId: string): Promise<void> {
   }
 }
 
+// ---- UserPreferences specific helpers ----
+
+export interface UserPreference {
+  userId: string
+  selectedBookId: string
+}
+
+async function getUserPreference(userId: string): Promise<UserPreference | undefined> {
+  return getById<UserPreference>(STORES.userPreferences, userId)
+}
+
+async function setUserPreference(pref: UserPreference): Promise<void> {
+  return put<UserPreference>(STORES.userPreferences, pref)
+}
+
 // ---- Exports ----
+
 
 export {
   openDb,
@@ -232,6 +255,8 @@ export {
   getAllSharedUsersForBook,
   removeSharedUser,
   clearAllSharedUsersForBook,
+  getUserPreference,
+  setUserPreference,
 }
 
 export type { SharedUserEntry }

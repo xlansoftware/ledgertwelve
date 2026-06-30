@@ -14,15 +14,22 @@ setupMockIdbKeyRange()
 const STORES = { books: "books", categories: "categories", transactions: "transactions", users: "users", sharedUsers: "sharedUsers" }
 const TEST_USER_ID = "test_user_001"
 
+interface MockUserPreference {
+  userId: string
+  selectedBookId: string
+}
+
 // In-memory stores for db mock
 let mockBooks: BookDto[] = []
 let mockTransactions: TransactionDto[] = []
 let mockSharedUsers: SharedUserEntry[] = []
+let mockUserPreferences: MockUserPreference[] = []
 
 function resetAllStores() {
   mockBooks = []
   mockTransactions = []
   mockSharedUsers = []
+  mockUserPreferences = []
 }
 resetAllStores()
 
@@ -67,6 +74,17 @@ const mockDb = {
   getAllByIndexRange: vi.fn().mockResolvedValue([]),
   async getAllSharedUsersForBook(bookId: string): Promise<SharedUserEntry[]> {
     return mockSharedUsers.filter((e) => e.bookId === bookId)
+  },
+  async getUserPreference(userId: string): Promise<MockUserPreference | undefined> {
+    return mockUserPreferences.find((p) => p.userId === userId)
+  },
+  async setUserPreference(pref: MockUserPreference): Promise<void> {
+    const idx = mockUserPreferences.findIndex((p) => p.userId === pref.userId)
+    if (idx >= 0) {
+      mockUserPreferences[idx] = pref
+    } else {
+      mockUserPreferences.push(pref)
+    }
   },
   async removeSharedUser(bookId: string, userId: string): Promise<void> {
     const idx = mockSharedUsers.findIndex((e) => e.bookId === bookId && e.userId === userId)
@@ -310,8 +328,24 @@ describe("OfflineBooksService", () => {
   // -----------------------------------------------------------------------
 
   describe("getCurrentBook", () => {
-    it("returns the first book when there are no selections", async () => {
+    it("returns the book from user preference when one is stored", async () => {
+      seedSecondaryBook()
+      mockUserPreferences.push({ userId: TEST_USER_ID, selectedBookId: "book_vacation" })
+
+      const result = await service.getCurrentBook()
+      expect(result.name).toBe("Vacation 2026")
+    })
+
+    it("returns the first open book when no preference is stored", async () => {
       seedBooksWithMain()
+      const result = await service.getCurrentBook()
+      expect(result.name).toBe("Main")
+    })
+
+    it("falls back to first open book when preferred book is not found", async () => {
+      seedBooksWithMain()
+      mockUserPreferences.push({ userId: TEST_USER_ID, selectedBookId: "book_deleted" })
+
       const result = await service.getCurrentBook()
       expect(result.name).toBe("Main")
     })
@@ -326,6 +360,24 @@ describe("OfflineBooksService", () => {
       seedBooksWithMain()
       const result = await service.setCurrentBook("book_main")
       expect(result.name).toBe("Main")
+    })
+
+    it("persists the selection in user preferences", async () => {
+      seedSecondaryBook()
+      await service.setCurrentBook("book_vacation")
+
+      expect(mockUserPreferences).toHaveLength(1)
+      expect(mockUserPreferences[0]).toEqual({ userId: TEST_USER_ID, selectedBookId: "book_vacation" })
+    })
+
+    it("updates an existing preference on re-selection", async () => {
+      seedSecondaryBook()
+      mockUserPreferences.push({ userId: TEST_USER_ID, selectedBookId: "book_main" })
+
+      await service.setCurrentBook("book_vacation")
+
+      expect(mockUserPreferences).toHaveLength(1)
+      expect(mockUserPreferences[0].selectedBookId).toBe("book_vacation")
     })
 
     it("throws when book not found", async () => {
