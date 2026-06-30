@@ -14,7 +14,7 @@ import {
 } from "recharts"
 
 import { ChartContainer } from "@/components/ui/chart"
-import { formatCompactNumber, formatCurrency } from "@/lib/utils"
+import { formatCompactNumber, formatCurrency } from "@/lib/my-utils"
 import {
   computeChartData,
   type AccumulatedRow,

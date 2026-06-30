@@ -30,7 +30,7 @@ import {
   useComboboxAnchor,
 } from "@/components/ui/combobox";
 import { type CategoryDto, type FilterRequest } from "@/types";
-import { formatDateWithoutCurrentYear } from "@/lib/utils";
+import { formatDateWithoutCurrentYear } from "@/lib/my-utils";
 
 interface FilterProps {
   categories: CategoryDto[];

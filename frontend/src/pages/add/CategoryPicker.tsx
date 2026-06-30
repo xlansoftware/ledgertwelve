@@ -2,7 +2,9 @@ import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { iconMap } from "@/lib/getIcon";
-import { cn, invertColor } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { invertColor } from "@/lib/my-utils";
+
 import { useCategoriesStore } from "@/store";
 import type { CategoryDto } from "@/types";
 import { MoreHorizontal } from "lucide-react";
@@ -75,7 +77,7 @@ export default function CategoryPicker({ selectedId, onSelect }: CategoryPickerP
               className="flex items-stretch p-0 overflow-hidden"
             >
               <div
-                className={cn("min-w-4 flex-shrink-0 flex items-center justify-center p-2", isSelected && "border-l border-t border-b border-primary")}
+                className={cn("min-w-4 flex-shrink-0 flex items-center justify-center p-2", isSelected && "border-l border-t border-b border-primary rounded-l-lg")}
                 style={{
                   backgroundColor: color,
                   color: invertColor(color),

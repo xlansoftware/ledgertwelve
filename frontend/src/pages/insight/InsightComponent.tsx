@@ -14,7 +14,7 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart";
 
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency } from "@/lib/my-utils";
 import { iconMap } from "@/lib/getIcon";
 import { useCategoriesStore } from "@/store";
 import { type CategoryDto } from "@/types/dto";

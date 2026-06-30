@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { useClosedBookBalances } from "@/features/books/hooks/useClosedBookBalances";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency } from "@/lib/my-utils";
 
 export default function BookPage() {
   const navigate = useNavigate();

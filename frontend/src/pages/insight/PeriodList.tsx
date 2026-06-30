@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------
 
 import { Loader2 } from "lucide-react"
-import { formatCurrency } from "@/lib/utils"
+import { formatCurrency } from "@/lib/my-utils"
 import { cn } from "@/lib/utils"
 
 // ---------------------------------------------------------------------------

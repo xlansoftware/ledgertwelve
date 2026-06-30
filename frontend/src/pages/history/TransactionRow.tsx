@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { iconMap } from "@/lib/getIcon";
-import { formatCurrency, formatDate, invertColor } from "@/lib/utils";
+import { formatCurrency, formatDate, invertColor } from "@/lib/my-utils";
 import { useCategoriesStore, useUsersStore } from "@/store";
 import type { TransactionDto } from "@/types";
 import TransactionRowMenu from "./TransactionRowMenu";
