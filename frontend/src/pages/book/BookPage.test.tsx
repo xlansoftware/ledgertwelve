@@ -292,9 +292,10 @@ describe("BookPage", () => {
       })
 
       // The balance values should be visible
-      expect(screen.getByText("1,250.00")).toBeInTheDocument()
-      // -500 should be displayed as (500.00) with brackets
-      expect(screen.getByText("(500.00)")).toBeInTheDocument()
+      // formatExpense(1250) = formatCurrency(-1250) = -1,250.00
+      expect(screen.getByText("-1,250.00")).toBeInTheDocument()
+      // formatExpense(-500) = formatCurrency(500) = 500.00 (expense shown as positive)
+      expect(screen.getByText("500.00")).toBeInTheDocument()
     })
 
     it("displays em dash for balances while loading", async () => {

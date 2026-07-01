@@ -24,7 +24,9 @@ export interface DailyListProps {
 // Helpers
 // ---------------------------------------------------------------------------
 
-const todayStr = new Date().toISOString().slice(0, 10)
+function getTodayStr(): string {
+  return new Date().toISOString().slice(0, 10)
+}
 
 function formatLabel(dateStr: string): string {
   const d = new Date(dateStr + "T00:00:00")
@@ -54,7 +56,7 @@ export function DailyList({
     <PeriodList
       periods={periods}
       selectedPeriod={selectedDay}
-      currentPeriod={todayStr}
+      currentPeriod={getTodayStr()}
       labelForCurrent="Today"
       isLoadingPeriod={isLoadingSelectedDay}
       isLoadingList={isLoadingDaily}

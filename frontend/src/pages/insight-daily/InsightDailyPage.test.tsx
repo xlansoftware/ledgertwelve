@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------
 
 import { render, screen, fireEvent, waitFor } from "@testing-library/react"
-import { describe, expect, it, vi, beforeEach } from "vitest"
+import { describe, expect, it, vi, beforeEach, beforeAll, afterAll } from "vitest"
 import { MemoryRouter } from "react-router-dom"
 import InsightDailyPage from "./InsightDailyPage"
 import * as reportsService from "@/services/reportsService"
@@ -35,7 +35,9 @@ const mockGetBookStats = vi.mocked(booksService.getBookStats)
 // Date helpers (relative to today)
 // ---------------------------------------------------------------------------
 
-const todayStr = new Date().toISOString().slice(0, 10)
+function getTodayStr(): string {
+  return new Date().toISOString().slice(0, 10)
+}
 
 function dayOffset(n: number): string {
   const d = new Date()
@@ -44,7 +46,7 @@ function dayOffset(n: number): string {
 }
 
 function formatListDay(dateStr: string): string {
-  if (dateStr === todayStr) return "Today"
+  if (dateStr === getTodayStr()) return "Today"
   const d = new Date(dateStr + "T00:00:00")
   return format(d, "EEE d")
 }
@@ -139,6 +141,15 @@ function findTodayButton(): HTMLElement | null {
 // Setup
 // ---------------------------------------------------------------------------
 
+beforeAll(() => {
+  vi.useFakeTimers({ toFake: ["Date"] })
+  vi.setSystemTime(new Date("2026-07-15"))
+})
+
+afterAll(() => {
+  vi.useRealTimers()
+})
+
 beforeEach(() => {
   vi.clearAllMocks()
 
@@ -156,7 +167,7 @@ beforeEach(() => {
 
   // getCategoryReport returns different data depending on the day requested
   mockGetCategoryReport.mockImplementation((params) => {
-    if (params?.from?.startsWith(todayStr)) {
+    if (params?.from?.startsWith(getTodayStr())) {
       return Promise.resolve(TODAY_CATEGORIES)
     }
     if (params?.from?.startsWith(dayOffset(-1))) {

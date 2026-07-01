@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------
 
 import { render, screen, fireEvent, waitFor } from "@testing-library/react"
-import { describe, expect, it, vi, beforeEach } from "vitest"
+import { describe, expect, it, vi, beforeEach, beforeAll, afterAll } from "vitest"
 import { MemoryRouter } from "react-router-dom"
 import InsightMonthlyPage from "./InsightMonthlyPage"
 import * as reportsService from "@/services/reportsService"
@@ -86,6 +86,15 @@ const CATEGORIES: CategoryDto[] = [
   { id: "cat_21", name: "Rent / Mortgage", recurring: true,  color: "#fca5a5", icon: "home",          createdAt: "2026-01-01T00:00:00Z", order: 21 },
 ]
 
+beforeAll(() => {
+  vi.useFakeTimers({ toFake: ["Date"] })
+  vi.setSystemTime(new Date("2026-07-15"))
+})
+
+afterAll(() => {
+  vi.useRealTimers()
+})
+
 beforeEach(() => {
   vi.clearAllMocks()
 
@@ -125,11 +134,12 @@ function getRowNet(button: HTMLElement): number {
   const amountSpan = button.querySelector(".font-mono.tabular-nums")
   if (!amountSpan) return NaN
   const raw = amountSpan.textContent ?? ""
-  // Bracket format: (55.00) means -55.00
-  const isNegative = raw.startsWith("(") && raw.endsWith(")")
+  // formatExpense(-x) returns positive (no sign) → original is -parsed
+  // formatExpense(x) returns -x (with "-" prefix) → original is parsed
+  const isNegative = raw.startsWith("-")
   const digits = raw.replace(/[^0-9.]/g, "")
   const val = parseFloat(digits)
-  return isNegative ? -val : val
+  return isNegative ? val : -val
 }
 
 /** Find a button whose text content matches the given month label. */

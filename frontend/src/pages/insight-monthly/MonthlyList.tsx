@@ -24,8 +24,10 @@ export interface MonthlyListProps {
 // Helpers
 // ---------------------------------------------------------------------------
 
-const now = new Date()
-const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`
+function getCurrentMonth(): string {
+  const now2 = new Date()
+  return `${now2.getFullYear()}-${String(now2.getMonth() + 1).padStart(2, "0")}`
+}
 
 function formatLabel(period: string): string {
   // period = "YYYY-MM"
@@ -57,7 +59,7 @@ export function MonthlyList({
     <PeriodList
       periods={periods}
       selectedPeriod={selectedMonth}
-      currentPeriod={currentMonth}
+      currentPeriod={getCurrentMonth()}
       labelForCurrent="This Month"
       isLoadingPeriod={isLoadingSelectedMonth}
       isLoadingList={isLoadingMonthly}
