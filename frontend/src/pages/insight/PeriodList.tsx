@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------
 
 import { Loader2 } from "lucide-react"
-import { formatCurrency } from "@/lib/my-utils"
+import { formatExpense } from "@/lib/my-utils"
 import { cn } from "@/lib/utils"
 
 // ---------------------------------------------------------------------------
@@ -111,7 +111,7 @@ export function PeriodList({
                       : "text-muted-foreground",
                   )}
                 >
-                  {formatCurrency(row.amount)}
+                  {formatExpense(row.amount)}
                 </span>
               </span>
             </button>

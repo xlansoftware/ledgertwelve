@@ -107,7 +107,7 @@ export function formatCurrency(
   const formatted = new Intl.NumberFormat("en-US", options).format(Math.abs(amount));
 
   // Negative amounts displayed in brackets, e.g. -1.00 → (1.00)
-  return amount < 0 ? `(${formatted})` : formatted;
+  return amount < 0 ? `-${formatted}` : formatted;
 }
 
 export function formatDate(dateUtc: Date): string {

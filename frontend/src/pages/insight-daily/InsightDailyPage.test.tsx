@@ -111,10 +111,10 @@ function getRowNet(button: HTMLElement): number {
   if (!amountSpan) return NaN
   const raw = amountSpan.textContent ?? ""
   // Bracket format: (55.00) means -55.00
-  const isNegative = raw.startsWith("(") && raw.endsWith(")")
+  const isNegative = raw.startsWith("-")
   const digits = raw.replace(/[^0-9.]/g, "")
   const val = parseFloat(digits)
-  return isNegative ? -val : val
+  return isNegative ? val : -val
 }
 
 /**
