@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { useClosedBookBalances } from "@/features/books/hooks/useClosedBookBalances";
-import { formatCurrency } from "@/lib/my-utils";
+import { formatExpense } from "@/lib/my-utils";
 
 export default function BookPage() {
   const navigate = useNavigate();
@@ -162,7 +162,7 @@ export default function BookPage() {
             const balance = balances[book.id];
             const balanceDisplay =
               balance !== undefined && balance !== null && !isBalancesLoading
-                ? formatCurrency(balance)
+                ? formatExpense(balance)
                 : "\u2014";
 
             return (

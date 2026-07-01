@@ -14,7 +14,7 @@ import {
 } from "recharts"
 
 import { ChartContainer } from "@/components/ui/chart"
-import { formatCompactNumber, formatCurrency } from "@/lib/my-utils"
+import { formatCompactNumber, formatExpense } from "@/lib/my-utils"
 import {
   computeChartData,
   type AccumulatedRow,
@@ -54,10 +54,10 @@ function CustomTooltip({
         {formatTooltipLabel(dataPoint.date)}
       </span>
       <span className="font-medium">
-        {prefix}{deltaLabel}: {formatCurrency(dataPoint.delta)}
+        {prefix}{deltaLabel}: {formatExpense(dataPoint.delta)}
       </span>
       <span className="font-medium">
-        {prefix}{balanceLabel}: {formatCurrency(dataPoint.historical ?? dataPoint.projected ?? 0)}
+        {prefix}{balanceLabel}: {formatExpense(dataPoint.historical ?? dataPoint.projected ?? 0)}
       </span>
     </div>
   )
@@ -161,13 +161,13 @@ export function PeriodAreaChart({
             Average{unitLabel ?? ""}
           </span>
           <span className="text-base font-bold tabular-nums text-foreground">
-            {average !== undefined ? formatCurrency(average, 0) : "—"}
+            {average !== undefined ? formatExpense(average, 0) : "—"}
           </span>
         </div>
         <div className="flex flex-col gap-0.5 px-3 py-2 border items-end">
           <span className="text-muted-foreground">Projected End</span>
           <span className="text-base font-bold tabular-nums text-foreground text-right">
-            {endValue !== null ? formatCurrency(endValue, 0) : "—"}
+            {endValue !== null ? formatExpense(endValue, 0) : "—"}
           </span>
         </div>
       </div>

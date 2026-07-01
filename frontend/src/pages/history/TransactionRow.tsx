@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { iconMap } from "@/lib/getIcon";
-import { formatCurrency, formatDate, invertColor } from "@/lib/my-utils";
+import { formatCurrency, formatDate, formatExpense, invertColor } from "@/lib/my-utils";
 import { useCategoriesStore, useUsersStore } from "@/store";
 import type { TransactionDto } from "@/types";
 import TransactionRowMenu from "./TransactionRowMenu";
@@ -11,7 +11,7 @@ interface TransactionRowProps {
 }
 
 function transactionValue(transaction: TransactionDto) {
-  return formatCurrency(transaction.amount, 2);
+  return formatExpense(transaction.amount, 2);
 }
 
 function explainValue(value: number, exchangeRate?: number, currency?: string) {

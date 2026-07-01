@@ -85,6 +85,14 @@ export function invertColor(color: string): string {
   throw new Error(`Invalid color format: ${color}`);
 }
 
+export function formatExpense(
+  amount: number,
+  fractionDigits: number = 2
+): string {
+  // expense is shown as positive, income is shown with negative sign - meaning it redusces the expense
+  return formatCurrency(amount * (-1), fractionDigits)
+}
+
 export function formatCurrency(
   amount: number,
   fractionDigits: number = 2
