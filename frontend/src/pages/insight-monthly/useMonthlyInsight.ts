@@ -147,7 +147,7 @@ export function useMonthlyInsight(): UseMonthlyInsightReturn {
     // 12 months ago, 1st of that month → 1st of current month (exclusive)
     const fromDate = new Date(currentYear, currentMonth - 13, 1)
     const fromStr = fromDate.toISOString().slice(0, 10)
-    const toStr = firstOfMonth(currentYear, currentMonth)
+    const toStr = firstOfMonth(currentYear, currentMonth - 1)
 
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsLoadingAverage(true)

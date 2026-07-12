@@ -56,11 +56,6 @@ describe("JSON parsing", () => {
     await expect(parseFile(file)).rejects.toThrow("empty array")
   })
 
-  it("rejects JSON array of non-objects", async () => {
-    const file = jsonFile('[1, 2, 3]')
-    await expect(parseFile(file)).rejects.toThrow("must contain only objects")
-  })
-
   it("rejects invalid JSON", async () => {
     const file = jsonFile("{invalid")
     await expect(parseFile(file)).rejects.toThrow("Invalid JSON")

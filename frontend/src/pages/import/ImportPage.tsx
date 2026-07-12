@@ -124,7 +124,10 @@ export default function ImportPage() {
       // For backup, parse the JSON and extract backup data
       if (store.entityType === "backup") {
         try {
-          const text = await file.text()
+          let text = await file.text()
+          if (text.startsWith("[") && text.endsWith("]")) {
+            text = text.substring(1, text.length-1);
+          }
           const jsonData = JSON.parse(text)
           store.setBackupData(jsonData as BackupData)
           // Navigate directly to preview for backups

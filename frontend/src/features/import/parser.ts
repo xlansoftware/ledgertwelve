@@ -191,8 +191,13 @@ async function parseXlsx(
 // ---------------------------------------------------------------------------
 
 async function parseJson(file: File): Promise<ParsedData> {
-  const text = await file.text()
-
+  let text = await file.text()
+  if (text.startsWith("[") && text.endsWith("]")) {
+    text = text.substring(1, text.length-1)
+    if (text.length === 0) {
+      throw { message: "JSON file contains an empty array" }
+    }
+  }
   let data: unknown
   try {
     data = JSON.parse(text)
