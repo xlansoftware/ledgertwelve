@@ -17,3 +17,7 @@ docker run --rm -v ledger12data:/data -v $(pwd):/backup alpine sh -c "cp /data/l
 
 scp jll:/home/john/ledger12/*.db .
 ```
+
+```bash
+sudo apt install sqlite3
+```
