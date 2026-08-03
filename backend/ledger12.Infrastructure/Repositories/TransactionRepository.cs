@@ -186,7 +186,8 @@ public class TransactionRepository : ITransactionRepository
     {
         var transactions = await _context.Transactions
             .Where(t => t.BookId == bookId &&
-                        t.DateTime >= from && t.DateTime < to)
+                        t.DateTime >= from && t.DateTime < to &&
+                        t.Amount < 0) // use only expenses for reports
             .ToListAsync();
 
         return transactions
@@ -202,7 +203,8 @@ public class TransactionRepository : ITransactionRepository
     {
         var transactions = await _context.Transactions
             .Where(t => t.BookId == bookId &&
-                        t.DateTime >= from && t.DateTime < to)
+                        t.DateTime >= from && t.DateTime < to &&
+                        t.Amount < 0) // use only expenses for reports
             .ToListAsync();
 
         return transactions
