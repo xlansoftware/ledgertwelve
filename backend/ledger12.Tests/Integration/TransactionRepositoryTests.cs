@@ -242,17 +242,22 @@ public class TransactionRepositoryTests : IDisposable
         var from = new DateTimeOffset(2025, 1, 1, 0, 0, 0, TimeSpan.Zero);
         var to = new DateTimeOffset(2025, 12, 31, 0, 0, 0, TimeSpan.Zero);
 
-        // Add another transaction on same date as first
+        // Add another expense on the same date as the first (positive) transaction
         _context.Transactions.Add(new Transaction(
-            _bookId, _userId, new DateTimeOffset(2025, 1, 1, 10, 0, 0, TimeSpan.Zero), 50m, categoryName: "Snacks"));
+            _bookId, _userId, new DateTimeOffset(2025, 1, 1, 10, 0, 0, TimeSpan.Zero), -50m, categoryName: "Snacks"));
         await _context.SaveChangesAsync();
 
         var result = await _repository.GetDailyReportAsync(_bookId, from, to);
 
-        // Should group Jan 1 transactions
+        // Should group Jan 1 expenses only (the +100m income is excluded from reports)
         var jan1 = result.FirstOrDefault(r => r.Date == new DateTimeOffset(2025, 1, 1, 0, 0, 0, TimeSpan.Zero));
         Assert.NotEqual(default, jan1);
-        Assert.Equal(150m, jan1.Amount); // 100 + 50
+        Assert.Equal(-50m, jan1.Amount);
+
+        // Jan 15 expense (Transport) should also be present
+        var jan15 = result.FirstOrDefault(r => r.Date == new DateTimeOffset(2025, 1, 15, 0, 0, 0, TimeSpan.Zero));
+        Assert.NotEqual(default, jan15);
+        Assert.Equal(-50m, jan15.Amount);
     }
 
     [Fact]
@@ -263,7 +268,10 @@ public class TransactionRepositoryTests : IDisposable
 
         var result = await _repository.GetMonthlyReportAsync(_bookId, from, to);
 
+        // Only expenses are included in reports; income months (Feb, Mar) are excluded
         Assert.Contains(result, r => r.Period == "2025-01");
-        Assert.Contains(result, r => r.Period == "2025-03");
+        Assert.Equal(-50m, result.First(r => r.Period == "2025-01").Amount);
+        Assert.DoesNotContain(result, r => r.Period == "2025-02");
+        Assert.DoesNotContain(result, r => r.Period == "2025-03");
     }
 }
