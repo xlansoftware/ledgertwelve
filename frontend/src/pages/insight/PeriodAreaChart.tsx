@@ -202,6 +202,7 @@ export function PeriodAreaChart({
               fontSize={11}
               width={40}
               reversed={true}
+              // domain={['dataMin', 0]}  // This forces the axis to show the proper scale of the projection
             />
             <Tooltip
               content={
