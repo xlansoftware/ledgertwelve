@@ -145,9 +145,9 @@ export function useMonthlyInsight(): UseMonthlyInsightReturn {
   // ── Fetch wide-window average (12-month rolling) ──
   useEffect(() => {
     // 12 months ago, 1st of that month → 1st of current month (exclusive)
-    const fromDate = new Date(currentYear, currentMonth - 13, 1)
+    const fromDate = new Date(Date.UTC(currentYear, currentMonth - 13, 1))
     const fromStr = fromDate.toISOString().slice(0, 10)
-    const toStr = firstOfMonth(currentYear, currentMonth - 1)
+    const toStr = firstOfMonth(currentYear, currentMonth)
 
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsLoadingAverage(true)
