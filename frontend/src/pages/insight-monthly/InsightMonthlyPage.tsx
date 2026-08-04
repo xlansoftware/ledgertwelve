@@ -1,11 +1,12 @@
 // ---------------------------------------------------------------------------
-// InsightMonthlyPage — monthly insight page with pie chart, area chart, and list
+// InsightMonthlyPage — monthly insight page with pie chart, area chart, and lists
 // ---------------------------------------------------------------------------
 
 import { Skeleton } from "@/components/ui/skeleton"
 import { InsightComponent } from "@/pages/insight/InsightComponent"
 import { MonthlyAreaChart } from "./MonthlyAreaChart"
 import { MonthlyList } from "./MonthlyList"
+import { YearList } from "./YearList"
 import { useMonthlyInsight } from "./useMonthlyInsight"
 import { format } from "date-fns"
 import { Button } from "@/components/ui/button"
@@ -16,11 +17,21 @@ import { ArrowLeft } from "lucide-react"
 // Helpers
 // ---------------------------------------------------------------------------
 
-function formatPieTitle(selectedMonth: string | null): string {
-  if (selectedMonth === null) return "This Month"
-  const [year, month] = selectedMonth.split("-")
+function getCurrentMonthStr(): string {
+  const now = new Date()
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`
+}
+
+function formatMonthTitle(period: string): string {
+  const [year, month] = period.split("-")
   const d = new Date(parseInt(year), parseInt(month) - 1, 1)
   return format(d, "MMM yyyy")
+}
+
+function formatPieTitle(pieMonth: string | null, isCurrentYear: boolean): string {
+  if (pieMonth === null) return "—" // in-flight year switch; stale pie still visible
+  if (isCurrentYear && pieMonth === getCurrentMonthStr()) return "This Month"
+  return formatMonthTitle(pieMonth)
 }
 
 // ---------------------------------------------------------------------------
@@ -29,7 +40,7 @@ function formatPieTitle(selectedMonth: string | null): string {
 
 export default function InsightMonthlyPage() {
   const navigate = useNavigate()
-  
+
   const {
     expenses,
     income,
@@ -40,15 +51,32 @@ export default function InsightMonthlyPage() {
     monthlyError,
 
     selectedMonth,
+    pieMonth,
 
-    averageChange,
     monthlyTotals,
     selectMonth,
+
+    chartAverage,
+    chartEndValue,
+    isCurrentYear,
+    activeYear,
+
+    years,
+    yearNets,
+    selectedYear,
+    isLoadingYears,
+    yearsError,
+    selectYear,
   } = useMonthlyInsight()
 
-  const pieTitle = formatPieTitle(selectedMonth)
+  const pieTitle = formatPieTitle(pieMonth, isCurrentYear)
   const hasPieData = Object.keys(expenses).length > 0 || Object.keys(income).length > 0
   const showPieSkeleton = isLoadingPie && !hasPieData
+
+  // For past years, the "selected" month shown on the chart/list is the
+  // effective pie month (defaults to that year's last month with transactions).
+  // For the current year the existing selectedMonth semantics are preserved.
+  const displayedMonth = isCurrentYear ? selectedMonth : pieMonth
 
   return (
     <div className="mx-auto flex w-full max-w-lg flex-col gap-6 px-4">
@@ -83,9 +111,12 @@ export default function InsightMonthlyPage() {
           data={accumulatedData}
           isLoading={isLoadingMonthly}
           error={monthlyError}
-          selectedMonth={selectedMonth}
-          average={averageChange || undefined}
+          selectedMonth={displayedMonth}
           onSelectMonth={selectMonth}
+          average={chartAverage ?? undefined}
+          year={activeYear}
+          endValue={chartEndValue ?? undefined}
+          endLabel={isCurrentYear ? "Projected End" : "Year End"}
         />
       </section>
 
@@ -93,11 +124,24 @@ export default function InsightMonthlyPage() {
       <section>
         <MonthlyList
           monthlyTotals={monthlyTotals}
-          selectedMonth={selectedMonth}
+          selectedMonth={displayedMonth}
+          isCurrentYear={isCurrentYear}
           isLoadingSelectedMonth={isLoadingPie}
           isLoadingMonthly={isLoadingMonthly}
           monthlyError={monthlyError}
           onSelectMonth={selectMonth}
+        />
+      </section>
+
+      {/* ── Year List Section ── */}
+      <section>
+        <YearList
+          years={years}
+          yearNets={yearNets}
+          selectedYear={selectedYear}
+          isLoadingYears={isLoadingYears}
+          yearsError={yearsError}
+          onSelectYear={selectYear}
         />
       </section>
     </div>

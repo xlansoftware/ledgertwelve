@@ -7,7 +7,6 @@ import { describe, expect, it, vi, beforeEach, beforeAll, afterAll } from "vites
 import { MemoryRouter } from "react-router-dom"
 import InsightMonthlyPage from "./InsightMonthlyPage"
 import * as reportsService from "@/services/reportsService"
-import * as booksService from "@/services/booksService"
 import { useCategoriesStore } from "@/store"
 import { format } from "date-fns"
 import type { CategoryDto } from "@/types"
@@ -20,16 +19,13 @@ vi.mock("@/services/reportsService", () => ({
   getCategoryReport: vi.fn(),
   getMonthlyReport: vi.fn(),
   getMonthlyAverage: vi.fn(),
-}))
-
-vi.mock("@/services/booksService", () => ({
-  getBookStats: vi.fn(),
+  getTotals: vi.fn(),
 }))
 
 const mockGetCategoryReport = vi.mocked(reportsService.getCategoryReport)
 const mockGetMonthlyReport = vi.mocked(reportsService.getMonthlyReport)
 const mockGetMonthlyAverage = vi.mocked(reportsService.getMonthlyAverage)
-const mockGetBookStats = vi.mocked(booksService.getBookStats)
+const mockGetTotals = vi.mocked(reportsService.getTotals)
 
 // ---------------------------------------------------------------------------
 // Date helpers (relative to the faked "today" — initialized in beforeAll)
@@ -39,9 +35,10 @@ let now: Date
 let currentYear: number
 let currentMonth: number
 let currentMonthStr: string
+const PAST_YEAR = 2025
 
-function monthPeriod(n: number): string {
-  return `${currentYear}-${String(n).padStart(2, "0")}`
+function monthPeriod(year: number, n: number): string {
+  return `${year}-${String(n).padStart(2, "0")}`
 }
 
 function formatMonthLabel(n: number): string {
@@ -53,9 +50,19 @@ function formatMonthLabel(n: number): string {
 function buildMonthlyData(): { period: string; amount: number }[] {
   const rows: { period: string; amount: number }[] = []
   for (let m = 1; m <= currentMonth; m++) {
-    rows.push({ period: monthPeriod(m), amount: -(100 + m * 50) })
+    rows.push({ period: monthPeriod(currentYear, m), amount: -(100 + m * 50) })
   }
   return rows
+}
+
+/** Build sparse monthly data for a past year (months 1, 3, 6, 12). */
+function buildPastYearData(): { period: string; amount: number }[] {
+  return [
+    { period: monthPeriod(PAST_YEAR, 1), amount: -250 },
+    { period: monthPeriod(PAST_YEAR, 3), amount: -150 },
+    { period: monthPeriod(PAST_YEAR, 6), amount: -300 },
+    { period: monthPeriod(PAST_YEAR, 12), amount: -400 },
+  ]
 }
 
 // ── Category report data ──
@@ -75,6 +82,10 @@ const FEBRUARY_CATEGORIES = [
   { categoryName: "Salary", amount: 150 },
 ]
 
+const PAST_DECEMBER_CATEGORIES = [
+  { categoryName: "Gifts", amount: -400 },
+]
+
 // ---------------------------------------------------------------------------
 // Setup
 // ---------------------------------------------------------------------------
@@ -84,6 +95,7 @@ const CATEGORIES: CategoryDto[] = [
   { id: "cat_5", name: "Dining Out",      recurring: false, color: "#FFCAD4", icon: "utensils",       createdAt: "2026-01-01T00:00:00Z", order: 5 },
   { id: "cat_9", name: "Salary",          recurring: false, color: "#4ade80", icon: "piggy-bank",     createdAt: "2026-01-01T00:00:00Z", order: 9 },
   { id: "cat_21", name: "Rent / Mortgage", recurring: true,  color: "#fca5a5", icon: "home",          createdAt: "2026-01-01T00:00:00Z", order: 21 },
+  { id: "cat_22", name: "Gifts",          recurring: false, color: "#FF6B6B", icon: "piggy-bank",     createdAt: "2026-01-01T00:00:00Z", order: 22 },
 ]
 
 beforeAll(() => {
@@ -113,20 +125,33 @@ beforeEach(() => {
     error: null,
   })
 
+  // Both the current and previous year have transactions (default view = current year)
+  mockGetTotals.mockResolvedValue([
+    { period: String(PAST_YEAR), income: 2000, expense: -1100, net: 900 },
+    { period: String(currentYear), income: 5000, expense: -4000, net: 1000 },
+  ])
+
   // Mock successful API responses
-  mockGetMonthlyReport.mockResolvedValue(buildMonthlyData())
-  mockGetBookStats.mockResolvedValue({ transactionCount: 100, totalSum: -500 })
+  mockGetMonthlyReport.mockImplementation((params) => {
+    if (params?.from?.startsWith(String(PAST_YEAR))) {
+      return Promise.resolve(buildPastYearData())
+    }
+    return Promise.resolve(buildMonthlyData())
+  })
   mockGetMonthlyAverage.mockResolvedValue({ average: -1380.0, count: 12 })
 
   // getCategoryReport returns different data depending on the month
   mockGetCategoryReport.mockImplementation((params) => {
+    if (params?.from?.startsWith(`${PAST_YEAR}-12`)) {
+      return Promise.resolve(PAST_DECEMBER_CATEGORIES)
+    }
     if (params?.from?.startsWith(currentMonthStr)) {
       return Promise.resolve(CURRENT_MONTH_CATEGORIES)
     }
-    if (params?.from?.startsWith(monthPeriod(1))) {
+    if (params?.from?.startsWith(monthPeriod(currentYear, 1))) {
       return Promise.resolve(JANUARY_CATEGORIES)
     }
-    if (params?.from?.startsWith(monthPeriod(2))) {
+    if (params?.from?.startsWith(monthPeriod(currentYear, 2))) {
       return Promise.resolve(FEBRUARY_CATEGORIES)
     }
     return Promise.resolve([])
@@ -165,6 +190,12 @@ function findThisMonthButton(): HTMLElement | null {
   }) ?? null
 }
 
+/** Find a year row button whose label starts with the given year. */
+function findYearButton(year: string): HTMLElement | null {
+  const buttons = screen.getAllByRole("button")
+  return buttons.find((btn) => btn.textContent?.trim().startsWith(year)) ?? null
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -174,11 +205,12 @@ describe("InsightMonthlyPage", () => {
     beforeEach(async () => {
       render(<MemoryRouter><InsightMonthlyPage /></MemoryRouter>)
 
-      // Wait for all three parallel fetches to settle
+      // Wait for all fetches to settle
       await waitFor(() => {
+        expect(mockGetTotals).toHaveBeenCalledTimes(1)
         expect(mockGetMonthlyReport).toHaveBeenCalledTimes(1)
         expect(mockGetCategoryReport).toHaveBeenCalledTimes(1)
-        expect(mockGetBookStats).toHaveBeenCalledTimes(1)
+        expect(mockGetMonthlyAverage).toHaveBeenCalledTimes(1)
       })
     })
 
@@ -221,6 +253,71 @@ describe("InsightMonthlyPage", () => {
       await waitFor(() => {
         expect(getRowNet(thisMonthButton!)).toBe(expected)
       })
+    })
+  })
+
+  describe("year navigation", () => {
+    it("renders the year list at the bottom with yearly nets", async () => {
+      render(<MemoryRouter><InsightMonthlyPage /></MemoryRouter>)
+
+      await waitFor(() => {
+        expect(screen.getByText("Yearly Net")).toBeInTheDocument()
+      })
+
+      expect(findYearButton("2025")).not.toBeNull()
+      expect(findYearButton("2026")).not.toBeNull()
+    })
+
+    it("switching to a past year updates the chart, list, and labels", async () => {
+      render(<MemoryRouter><InsightMonthlyPage /></MemoryRouter>)
+
+      await waitFor(() => {
+        expect(screen.getByText("This Year")).toBeInTheDocument()
+        expect(findThisMonthButton()).not.toBeNull()
+      })
+
+      // Switch to the previous year
+      fireEvent.click(findYearButton(String(PAST_YEAR))!)
+
+      // The pie defaults to that year's last month with transactions
+      await waitFor(() => {
+        expect(screen.getByText("Dec 2025")).toBeInTheDocument()
+      })
+
+      // Chart header switches to the year's own stats
+      expect(screen.getByText("Year End")).toBeInTheDocument()
+      expect(screen.queryByText("This Year")).not.toBeInTheDocument()
+      expect(screen.queryByText("This Month")).not.toBeInTheDocument()
+
+      // Monthly list shows all 12 months (Jan–Dec), no "This Month" row
+      const rows = screen.getAllByRole("button")
+      const monthButtons = rows.filter((btn) => {
+        const text = btn.textContent?.trim() ?? ""
+        return /^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)/.test(text)
+      })
+      expect(monthButtons).toHaveLength(12)
+    })
+
+    it("switching back to the current year restores 'This Year' and 'This Month'", async () => {
+      render(<MemoryRouter><InsightMonthlyPage /></MemoryRouter>)
+
+      await waitFor(() => {
+        expect(screen.getByText("This Year")).toBeInTheDocument()
+      })
+
+      // Go to the previous year, then back to the current year
+      fireEvent.click(findYearButton(String(PAST_YEAR))!)
+      await waitFor(() => {
+        expect(screen.getByText("Dec 2025")).toBeInTheDocument()
+      })
+
+      fireEvent.click(findYearButton(String(currentYear))!)
+
+      await waitFor(() => {
+        expect(screen.getByText("This Year")).toBeInTheDocument()
+        expect(screen.getAllByText("This Month").length).toBeGreaterThanOrEqual(1)
+      })
+      expect(screen.queryByText("Year End")).not.toBeInTheDocument()
     })
   })
 

@@ -80,6 +80,8 @@ export interface PeriodAreaChartProps {
   balanceLabel?: string                           // Label for the balance line (default: "Balance")
   average?: number                                // Average change per period (shown above chart)
   unitLabel?: string                              // Unit label for values (e.g. "/mo", "/day")
+  endValue?: number                               // Overrides the computed end value (e.g. actual year-end)
+  endLabel?: string                               // Label for the end value box (default: "Projected End")
 }
 
 // ---------------------------------------------------------------------------
@@ -99,6 +101,8 @@ export function PeriodAreaChart({
   balanceLabel = "Balance",
   average,
   unitLabel = "",
+  endValue,
+  endLabel = "Projected End",
 }: PeriodAreaChartProps) {
 
   const chartConfig = {
@@ -133,15 +137,12 @@ export function PeriodAreaChart({
   const chartData = computeChartData(data)
 
   // Derived summary values shown above the chart
-  // const beginningValue =
-  //   chartData.length > 0 && chartData[0]?.historical && chartData[0]?.delta
-  //     ? chartData[0].historical - chartData[0].delta
-  //     : null
-  const endValue =
+  const computedEnd =
     chartData.length > 0
       ? chartData[chartData.length - 1].projected ??
         chartData[chartData.length - 1].historical
       : null
+  const shownEnd = endValue ?? computedEnd
 
   return (
     <div className="w-full">
@@ -165,9 +166,9 @@ export function PeriodAreaChart({
           </span>
         </div>
         <div className="flex flex-col gap-0.5 px-3 py-2 border items-end">
-          <span className="text-muted-foreground">Projected End</span>
+          <span className="text-muted-foreground">{endLabel}</span>
           <span className="text-base font-bold tabular-nums text-foreground text-right">
-            {endValue !== null ? formatExpense(endValue, 0) : "—"}
+            {shownEnd !== null ? formatExpense(shownEnd, 0) : "—"}
           </span>
         </div>
       </div>

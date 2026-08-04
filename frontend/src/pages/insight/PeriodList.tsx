@@ -20,6 +20,7 @@ export interface PeriodListProps {
   error: string | null
   onSelect: (period: string | null) => void
   formatLabel: (period: string) => string
+  listLabel?: string // optional override for the header label
 }
 
 // ---------------------------------------------------------------------------
@@ -36,6 +37,7 @@ export function PeriodList({
   error,
   onSelect,
   formatLabel,
+  listLabel,
 }: PeriodListProps) {
 
   // Sort periods newest-first
@@ -66,7 +68,7 @@ export function PeriodList({
   return (
     <div className="w-full">
       <h3 className="mb-2 text-sm font-medium text-muted-foreground">
-        {labelForCurrent === "Today" ? "Daily Net" : "Monthly Net"}
+        {listLabel ?? (labelForCurrent === "Today" ? "Daily Net" : "Monthly Net")}
       </h3>
       <div className="space-y-1">
         {sorted.map((row) => {

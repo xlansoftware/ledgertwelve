@@ -13,7 +13,8 @@ import type { MonthlyReportRow } from "@/types"
 
 export interface MonthlyListProps {
   monthlyTotals: MonthlyReportRow[]
-  selectedMonth: string | null   // null = current month ("YYYY-MM")
+  selectedMonth: string | null   // null = default month for the active year
+  isCurrentYear: boolean         // whether the active year is the current calendar year
   isLoadingSelectedMonth: boolean
   isLoadingMonthly: boolean
   monthlyError: string | null
@@ -43,6 +44,7 @@ function formatLabel(period: string): string {
 export function MonthlyList({
   monthlyTotals,
   selectedMonth,
+  isCurrentYear,
   isLoadingSelectedMonth,
   isLoadingMonthly,
   monthlyError,
@@ -59,7 +61,8 @@ export function MonthlyList({
     <PeriodList
       periods={periods}
       selectedPeriod={selectedMonth}
-      currentPeriod={getCurrentMonth()}
+      // Only the current year has a "current" month; past years show Jan…Dec plainly.
+      currentPeriod={isCurrentYear ? getCurrentMonth() : ""}
       labelForCurrent="This Month"
       isLoadingPeriod={isLoadingSelectedMonth}
       isLoadingList={isLoadingMonthly}
