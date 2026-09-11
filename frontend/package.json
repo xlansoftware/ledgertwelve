@@ -39,7 +39,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.29.0",
-    "@earendil-works/pi-coding-agent": "^0.79.9",
+    "@earendil-works/pi-coding-agent": "*",
     "@eslint/js": "^10.0.1",
     "@rolldown/plugin-babel": "^0.2.3",
     "@testing-library/jest-dom": "^6.9.1",
