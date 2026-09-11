@@ -8,6 +8,7 @@ import type {
   AddShareRequest,
   UpdateShareRequest,
 } from "@/features/offline/interfaces/IBooksService"
+import { refreshBookStores } from "./refreshBookStores"
 
 // ---------------------------------------------------------------------------
 // State
@@ -139,10 +140,10 @@ export const useBooksStore = create<BooksState & BooksActions>((set, get) => ({
   setCurrentBook: async (bookId: string) => {
     set({ error: null })
     const previous = get().currentBook
+    let updated: BookDto
     try {
-      const updated = await getFactory().books.setCurrentBook(bookId)
+      updated = await getFactory().books.setCurrentBook(bookId)
       set({ currentBook: updated })
-      return updated
     } catch (err: unknown) {
       // Revert on failure
       set({
@@ -151,6 +152,10 @@ export const useBooksStore = create<BooksState & BooksActions>((set, get) => ({
       })
       throw err
     }
+    // Persisted successfully — refresh every store with the new book's data.
+    // Failures are isolated and never revert the selection.
+    await refreshBookStores(updated.id)
+    return updated
   },
 
   fetchBook: async (bookId: string) => {

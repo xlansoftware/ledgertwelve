@@ -142,6 +142,11 @@ interface TransactionsActions {
   setFilter: (filter: FilterRequest) => Promise<TransactionDto[]>
   /** Clear the active filter and refetch. Optionally override the bookId. */
   clearFilter: (bookIdOverride?: string) => Promise<TransactionDto[]>
+  /**
+   * Discard the current book's data and load the transaction list for a newly
+   * selected book. Clears the active filter and invalidates in-flight requests.
+   */
+  resetForBook: (bookId: string) => Promise<TransactionDto[]>
 }
 
 // ---------------------------------------------------------------------------
@@ -167,10 +172,19 @@ export const useTransactionsStore = create<TransactionsState & TransactionsActio
   // -- Actions --
 
   fetchTransactions: async (params?: GetTransactionsParams) => {
-    set({ isLoading: true, error: null, isLoadingMore: false, loadMoreError: null })
+    // Bump the epoch before the request so any response from a previous
+    // request (e.g. the old book) is discarded when it resolves.
+    const requestEpoch = get().epoch + 1
+    set({
+      isLoading: true,
+      error: null,
+      isLoadingMore: false,
+      loadMoreError: null,
+      epoch: requestEpoch,
+    })
     try {
       const result = await getFactory().transactions.getTransactions(params)
-      const epoch = get().epoch + 1
+      if (get().epoch !== requestEpoch) return result.items
       set({
         transactions: result.items,
         page: result.page,
@@ -181,10 +195,10 @@ export const useTransactionsStore = create<TransactionsState & TransactionsActio
         isLoading: false,
         isLoadingMore: false,
         loadMoreError: null,
-        epoch,
       })
       return result.items
     } catch (err: unknown) {
+      if (get().epoch !== requestEpoch) throw err
       const message = err instanceof Error ? err.message : "Failed to load transactions"
       set({ error: message, isLoading: false, isLoadingMore: false })
       throw err
@@ -328,5 +342,21 @@ export const useTransactionsStore = create<TransactionsState & TransactionsActio
     set({ currentFilter: {} })
     const bookId = bookIdOverride || get().lastParams.bookId
     return get().fetchTransactions({ bookId })
+  },
+
+  resetForBook: (bookId: string) => {
+    // Clear the previous book's data immediately and invalidate any in-flight
+    // request before loading the newly selected book's transactions.
+    set({
+      transactions: [],
+      currentTransaction: null,
+      currentFilter: {},
+      page: 1,
+      total: 0,
+      hasMore: false,
+      loadMoreError: null,
+      epoch: get().epoch + 1,
+    })
+    return get().fetchTransactions({ bookId, page: 1 })
   },
 }))

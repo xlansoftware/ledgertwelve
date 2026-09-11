@@ -423,7 +423,7 @@ describe("useTransactionsStore", () => {
       })
 
       // Should have called getTransactions with resolved params and page=1
-      const callParams = mockGetTransactions.mock.calls[0][0]!!
+      const callParams = mockGetTransactions.mock.calls[0][0]!
       expect(callParams).toMatchObject({
         note: "test note",
         minValue: -100,
@@ -549,6 +549,77 @@ describe("useTransactionsStore", () => {
       expect(mockGetTransactions).toHaveBeenCalledWith({
         bookId: "book_vacation",
       })
+    })
+  })
+
+  describe("resetForBook", () => {
+    it("discards the previous book's data and loads the new book's first page", async () => {
+      useTransactionsStore.setState({
+        transactions: [makeTx({ id: "old_book_tx", bookId: "book_main" })],
+        currentTransaction: makeTx({ id: "old_book_tx", bookId: "book_main" }),
+        currentFilter: { note: "old filter" },
+        page: 4,
+        total: 100,
+        hasMore: true,
+        lastParams: { bookId: "book_main", page: 4 },
+      })
+
+      mockGetTransactions.mockResolvedValueOnce({
+        items: [makeTx({ id: "new_book_tx", bookId: "book_vacation" })],
+        page: 1,
+        pageSize: 50,
+        total: 1,
+      })
+
+      await useTransactionsStore.getState().resetForBook("book_vacation")
+
+      expect(mockGetTransactions).toHaveBeenCalledWith({
+        bookId: "book_vacation",
+        page: 1,
+      })
+
+      const state = useTransactionsStore.getState()
+      expect(state.transactions).toHaveLength(1)
+      expect(state.transactions[0].id).toBe("new_book_tx")
+      expect(state.currentTransaction).toBeNull()
+      expect(state.currentFilter).toEqual({})
+      expect(state.page).toBe(1)
+      expect(state.total).toBe(1)
+      expect(state.hasMore).toBe(false)
+      expect(state.lastParams).toEqual({ bookId: "book_vacation", page: 1 })
+    })
+
+    it("discards an in-flight request from the previous book", async () => {
+      // Start a fetch for the old book that resolves late
+      let resolveOld: (value: PaginatedTransactions) => void = () => {}
+      mockGetTransactions.mockImplementationOnce(
+        () => new Promise((resolve) => { resolveOld = resolve }),
+      )
+      const oldFetch = useTransactionsStore.getState().fetchTransactions({
+        bookId: "book_main",
+      })
+
+      // Switch to the new book before the old request resolves
+      mockGetTransactions.mockResolvedValueOnce({
+        items: [makeTx({ id: "new_book_tx", bookId: "book_vacation" })],
+        page: 1,
+        pageSize: 50,
+        total: 1,
+      })
+      await useTransactionsStore.getState().resetForBook("book_vacation")
+
+      // Resolve the stale old-book request — it must not overwrite the new book
+      resolveOld({
+        items: [makeTx({ id: "stale_tx", bookId: "book_main" })],
+        page: 1,
+        pageSize: 50,
+        total: 1,
+      })
+      await oldFetch
+
+      const state = useTransactionsStore.getState()
+      expect(state.transactions).toHaveLength(1)
+      expect(state.transactions[0].id).toBe("new_book_tx")
     })
   })
 })

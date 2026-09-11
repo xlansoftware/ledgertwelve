@@ -5,6 +5,7 @@
 import { describe, expect, it, vi, beforeEach } from "vitest"
 import { useBooksStore } from "./useBooksStore"
 import * as booksService from "@/services/booksService"
+import { refreshBookStores } from "./refreshBookStores"
 import type { BookDto } from "@/types"
 
 // ---------------------------------------------------------------------------
@@ -50,6 +51,10 @@ vi.mock("@/services/booksService", () => ({
   addShare: vi.fn(),
   updateShare: vi.fn(),
   removeShare: vi.fn(),
+}))
+
+vi.mock("./refreshBookStores", () => ({
+  refreshBookStores: vi.fn().mockResolvedValue(undefined),
 }))
 
 // ---------------------------------------------------------------------------
@@ -143,6 +148,17 @@ describe("useBooksStore — setCurrentBook", () => {
     const state = useBooksStore.getState()
     expect(state.currentBook).toEqual(existing)
     expect(state.error).toBe("Book not found")
+    expect(refreshBookStores).not.toHaveBeenCalled()
+  })
+
+  it("refreshes all stores with the newly selected book on success", async () => {
+    const vacationBook = makeBook({ id: "book_vacation", name: "Vacation 2026" })
+    vi.mocked(booksService.setCurrentBook).mockResolvedValueOnce(vacationBook)
+
+    await useBooksStore.getState().setCurrentBook("book_vacation")
+
+    expect(refreshBookStores).toHaveBeenCalledTimes(1)
+    expect(refreshBookStores).toHaveBeenCalledWith("book_vacation")
   })
 })
 

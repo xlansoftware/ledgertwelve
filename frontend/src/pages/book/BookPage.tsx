@@ -25,7 +25,6 @@ export default function BookPage() {
     isLoading,
     error,
     fetchBooks,
-    fetchBook,
     setCurrentBook
   } = useBooksStore();
 
@@ -131,7 +130,6 @@ export default function BookPage() {
                       size="sm"
                       onClick={async () => {
                         await setCurrentBook(book.id);
-                        await fetchBook(book.id);
                       }}
                       disabled={isSelected}
                     >
