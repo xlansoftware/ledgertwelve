@@ -1582,7 +1582,7 @@ Import data into the ledger. Supports three entity types (`transactions`, `categ
 |-------|----------|-------------|
 | `preview` | yes | `true` to validate only; `false` to commit. |
 | `entityType` | yes | `"transactions"`, `"categories"`, `"books"`, or `"backup"`. |
-| `bookId` | conditional | Required for `entityType: "transactions"`. The fallback book when no row has a `bookId` field. Ignored for other entity types. |
+| `bookId` | conditional | Required for `entityType: "transactions"`. The fallback book when no row has a `bookId` field. Must reference a book the caller can **edit** (owned or shared with edit permission). Ignored for other entity types. |
 | `clearExisting` | no | Default `false`. If `true`, deletes all existing records of the given entity type (for transactions: scoped to `bookId`) before creating new rows. Ignored in preview mode — the preview response includes the `deleted` count to show impact. |
 | `mapping` | conditional | Required for `transactions`/`categories`/`books`. Source column name → target field name. Used for building richer error messages. Not used for `backup`. |
 | `rows` | conditional | Required for `transactions`/`categories`/`books`. Array of objects where keys are **target field names** and values are already typed (dates as ISO 8601 strings, amounts as numbers). Not used for `backup`. |
@@ -1610,7 +1610,7 @@ Import data into the ledger. Supports three entity types (`transactions`, `categ
 |-------|----------|-------|
 | `amount` | **yes** | Must be a number. |
 | `dateTime` | no | Must be a valid ISO 8601 date string. Defaults to current date/time if missing or invalid. |
-| `bookId` | no | Must reference an existing, visible book. Falls back to the top-level `bookId` parameter. |
+| `bookId` | no | Must reference an existing book the caller can **edit**. Falls back to the top-level `bookId` parameter. |
 | `categoryName` | no | If provided, must match an existing category name. |
 | `originalCurrency` | no | If set, `originalAmount` and `exchangeRate` must also be set. |
 | `originalAmount` | no | Required if `originalCurrency` is set. |
@@ -1642,6 +1642,7 @@ Import data into the ledger. Supports three entity types (`transactions`, `categ
 - `version` must be present and must match a supported version (currently `1`).
 - For unsupported versions: import is blocked with an error.
 - `books`, `categories`, `transactions` arrays are validated in order.
+- Every transaction's `bookId` must reference a book the caller can **edit** (owned or shared with edit permission). A transaction targeting a book the caller can only view is rejected and skipped.
 - If a transaction references a category or book that fails validation, the transaction is skipped.
 
 ### Issue format
@@ -1758,6 +1759,7 @@ Each entity key contains the same `created`/`updated`/`deleted`/`errors`/`warnin
 ### Notes
 
 - Import is **partial-success** by design. Rows that pass validation are committed; rows that fail are skipped. The response tells you which rows failed and why.
+- All import targets require **edit** access. The top-level `bookId`, any row-level `bookId`, and any transaction matched by `id` for an upsert must belong to a book the caller owns or has been granted edit permission on. View-only shares are rejected: a transaction import into an uneditable book is reported as a row issue, and a backup restore into a view-only shared book is skipped.
 - Clearing existing data with `clearExisting: true` **always preserves the Main book**.
 - Books are never cleared during backup restore — they are always merged by ID.
 - Row indices in issues are 1-based (matching spreadsheet row numbering).

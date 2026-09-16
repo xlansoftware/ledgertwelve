@@ -98,11 +98,26 @@ public class ImportService : IImportService
                     continue;
                 }
 
-                // Check for upsert
+                // A row-level bookId must resolve to a book the caller can edit,
+                // otherwise the row would inject a transaction into another tenant's book.
                 var rowBookId = bookId;
                 var rowBookIdStr = GetRowString(row, "bookId");
-                if (!string.IsNullOrEmpty(rowBookIdStr) && Guid.TryParse(rowBookIdStr, out var rbid))
+                if (!string.IsNullOrEmpty(rowBookIdStr))
+                {
+                    if (!Guid.TryParse(rowBookIdStr, out var rbid))
+                    {
+                        issues.Add(new ImportIssue(rowNum, "bookId", "Invalid bookId", "error"));
+                        continue;
+                    }
+
                     rowBookId = rbid;
+                }
+
+                if (rowBookId != bookId && !await _bookRepo.HasEditAccessAsync(rowBookId, userId))
+                {
+                    issues.Add(new ImportIssue(rowNum, "bookId", "Book not found or not editable", "error"));
+                    continue;
+                }
 
                 var rowId = GetRowString(row, "id");
 
@@ -113,6 +128,13 @@ public class ImportService : IImportService
                         var existing = await _transactionRepo.GetByIdAsync(existingId);
                         if (existing != null)
                         {
+                            // An upsert may only touch a transaction in a book the caller can edit.
+                            if (!await _bookRepo.HasEditAccessAsync(existing.BookId, userId))
+                            {
+                                issues.Add(new ImportIssue(rowNum, "id", "Transaction not found or not editable", "error"));
+                                continue;
+                            }
+
                             existing.Update(dateTime, amount.Value, originalCurrency, originalAmount, exchangeRate, categoryName, note);
                             await _transactionRepo.UpdateAsync(existing);
                             updated++;
@@ -421,10 +443,11 @@ public class ImportService : IImportService
                     continue;
                 }
 
-                var visible = await _bookRepo.IsVisibleAsync(bookId, userId);
-                if (!visible)
+                // Backup restore must not write into a book the caller can only view.
+                var canEditBook = await _bookRepo.HasEditAccessAsync(bookId, userId);
+                if (!canEditBook)
                 {
-                    issues.Add(new ImportIssue(row, "bookId", "Book not found or not visible", "error"));
+                    issues.Add(new ImportIssue(row, "bookId", "Book not found or not editable", "error"));
                     continue;
                 }
 
@@ -441,6 +464,13 @@ public class ImportService : IImportService
                     var existing = await _transactionRepo.GetByIdAsync(existingId);
                     if (existing != null)
                     {
+                        // An upsert may only touch a transaction in a book the caller can edit.
+                        if (!await _bookRepo.HasEditAccessAsync(existing.BookId, userId))
+                        {
+                            issues.Add(new ImportIssue(row, "id", "Transaction not found or not editable", "error"));
+                            continue;
+                        }
+
                         existing.Update(dateTime, amount, null, null, null, categoryName, note);
                         await _transactionRepo.UpdateAsync(existing);
                         updated++;

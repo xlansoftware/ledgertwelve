@@ -4,7 +4,7 @@
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] Importing a transaction with a row-level `bookId` the caller cannot edit is rejected and reported as a row issue, with nothing written.
 - [ ] Upserting an existing transaction the caller cannot edit is rejected and leaves the row unchanged.

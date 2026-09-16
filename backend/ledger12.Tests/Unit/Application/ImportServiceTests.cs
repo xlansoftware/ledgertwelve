@@ -259,6 +259,80 @@ public class ImportServiceTests
     }
 
     [Fact]
+    public async Task ImportTransactionsAsync_ReportsRowIssue_WhenRowBookIsNotEditable()
+    {
+        var otherBookId = Guid.NewGuid();
+        var rows = new List<Dictionary<string, object?>>
+        {
+            new() { ["amount"] = 100m, ["bookId"] = otherBookId.ToString() },
+        };
+        var request = new ImportRequest(false, "transactions", _bookId.ToString(), null, null, rows, null);
+        _bookRepo.Setup(r => r.HasEditAccessAsync(_bookId, _userId)).ReturnsAsync(true);
+        _bookRepo.Setup(r => r.HasEditAccessAsync(otherBookId, _userId)).ReturnsAsync(false);
+
+        var response = await _service.ImportAsync(request, _userId);
+        var result = response.Data as EntityImportResult;
+
+        Assert.NotNull(result);
+        Assert.Equal(1, result.Errors);
+        Assert.Equal(0, result.Created);
+        Assert.Single(result.Issues);
+        Assert.Equal("bookId", result.Issues[0].Field);
+        _transactionRepo.Verify(r => r.AddAsync(It.IsAny<Transaction>()), Times.Never);
+        _transactionRepo.Verify(r => r.UpdateAsync(It.IsAny<Transaction>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task ImportTransactionsAsync_ReportsRowIssue_WhenUpsertTargetIsNotEditable()
+    {
+        var otherBookId = Guid.NewGuid();
+        var existingId = Guid.NewGuid();
+        var existing = new Transaction(otherBookId, Guid.NewGuid(), DateTimeOffset.UtcNow, -30m, note: "original");
+        var rows = new List<Dictionary<string, object?>>
+        {
+            new() { ["amount"] = 999m, ["id"] = existingId.ToString(), ["note"] = "hijacked" },
+        };
+        var request = new ImportRequest(false, "transactions", _bookId.ToString(), null, null, rows, null);
+        _bookRepo.Setup(r => r.HasEditAccessAsync(_bookId, _userId)).ReturnsAsync(true);
+        _transactionRepo.Setup(r => r.GetByIdAsync(existingId)).ReturnsAsync(existing);
+        _bookRepo.Setup(r => r.HasEditAccessAsync(otherBookId, _userId)).ReturnsAsync(false);
+
+        var response = await _service.ImportAsync(request, _userId);
+        var result = response.Data as EntityImportResult;
+
+        Assert.NotNull(result);
+        Assert.Equal(1, result.Errors);
+        Assert.Equal(0, result.Updated);
+        Assert.Equal("id", result.Issues[0].Field);
+        _transactionRepo.Verify(r => r.UpdateAsync(It.IsAny<Transaction>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task ImportBackupAsync_ReportsIssue_WhenBookIsViewOnly()
+    {
+        var otherBookId = Guid.NewGuid();
+        var data = new Dictionary<string, object?>
+        {
+            ["version"] = System.Text.Json.JsonDocument.Parse("1").RootElement,
+            ["books"] = System.Text.Json.JsonDocument.Parse("[]").RootElement,
+            ["categories"] = System.Text.Json.JsonDocument.Parse("[]").RootElement,
+            ["transactions"] = System.Text.Json.JsonDocument.Parse(
+                $"[{{\"bookId\": \"{otherBookId}\", \"amount\": 10}}]").RootElement,
+        };
+        var request = new ImportRequest(false, "backup", null, null, null, null, data);
+        _bookRepo.Setup(r => r.GetByOwnerAsync(_userId)).ReturnsAsync(new List<Book>());
+        _bookRepo.Setup(r => r.HasEditAccessAsync(otherBookId, _userId)).ReturnsAsync(false);
+
+        var response = await _service.ImportAsync(request, _userId);
+        var result = response.Data as BackupImportResult;
+
+        Assert.NotNull(result);
+        Assert.Equal(1, result.Transactions.Errors);
+        Assert.Equal("bookId", result.Transactions.Issues[0].Field);
+        _transactionRepo.Verify(r => r.AddAsync(It.IsAny<Transaction>()), Times.Never);
+    }
+
+    [Fact]
     public async Task ImportTransactionsAsync_CreatesTransactions_WithCorrectDateCategoryAndAmount_FromCsvData()
     {
         // Arrange — JSON string matching what the frontend sends.
