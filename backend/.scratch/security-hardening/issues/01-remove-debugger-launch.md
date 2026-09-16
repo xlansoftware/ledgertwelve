@@ -4,7 +4,7 @@
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] Importing transactions completes normally in a non-development environment with no debugger interaction.
 - [ ] No debugger-launch call remains anywhere in the shipped code.

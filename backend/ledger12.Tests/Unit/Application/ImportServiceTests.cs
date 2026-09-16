@@ -96,6 +96,27 @@ public class ImportServiceTests
     }
 
     [Fact]
+    public async Task ImportAsync_CompletesWithoutDebugger_WhenImportingTransactions()
+    {
+        Assert.False(System.Diagnostics.Debugger.IsAttached);
+
+        var rows = new List<Dictionary<string, object?>>
+        {
+            new() { ["amount"] = 12.5m, ["dateTime"] = "2025-06-01T12:00:00Z" },
+        };
+        var request = new ImportRequest(false, "transactions", _bookId.ToString(), null, null, rows, null);
+        _bookRepo.Setup(r => r.HasEditAccessAsync(_bookId, _userId)).ReturnsAsync(true);
+        _transactionRepo.Setup(r => r.AddAsync(It.IsAny<Transaction>())).Returns(Task.CompletedTask);
+
+        var response = await _service.ImportAsync(request, _userId);
+        var result = response.Data as EntityImportResult;
+
+        Assert.NotNull(result);
+        Assert.Equal(1, result.Created);
+        Assert.Equal(0, result.Errors);
+    }
+
+    [Fact]
     public async Task ImportTransactionsAsync_ReportsError_WhenAmountMissing()
     {
         var rows = new List<Dictionary<string, object?>>
