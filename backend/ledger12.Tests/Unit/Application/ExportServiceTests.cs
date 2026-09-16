@@ -152,4 +152,69 @@ public class ExportServiceTests
         Assert.Equal(ExportJobStatus.Failed, job.Status);
         Assert.Equal("DB error", job.ErrorMessage);
     }
+
+    [Fact]
+    public async Task ProcessExportAsync_ScopesTransactionsToVisibleBooks_WhenNoBookIdSupplied()
+    {
+        var visibleBook = new Book("Visible", _userId);
+        var searchedBookIds = new List<Guid?>();
+
+        _bookRepo.Setup(r => r.GetVisibleBooksAsync(_userId)).ReturnsAsync(new List<Book> { visibleBook });
+        _transactionRepo
+            .Setup(r => r.SearchAsync(
+                It.IsAny<Guid?>(), It.IsAny<DateTimeOffset?>(), It.IsAny<DateTimeOffset?>(),
+                It.IsAny<List<string>?>(), It.IsAny<List<Guid>?>(), It.IsAny<string?>(),
+                It.IsAny<decimal?>(), It.IsAny<decimal?>(), It.IsAny<int>(), It.IsAny<int>()))
+            .Callback<Guid?, DateTimeOffset?, DateTimeOffset?, List<string>?, List<Guid>?, string?, decimal?, decimal?, int, int>(
+                (bookId, _, _, _, _, _, _, _, _, _) => searchedBookIds.Add(bookId))
+            .ReturnsAsync(new List<Transaction>());
+
+        var job = new ExportJob(ExportFormat.Csv, ExportContentType.Transactions, _userId);
+        await _service.ProcessExportAsync(job);
+
+        Assert.Equal(ExportJobStatus.Completed, job.Status);
+        Assert.Contains(visibleBook.Id, searchedBookIds);
+        Assert.DoesNotContain(null, searchedBookIds);
+    }
+
+    [Fact]
+    public async Task ProcessExportAsync_ScopesTransactionsToRequestedBook_WhenBookIdSupplied()
+    {
+        var bookId = Guid.NewGuid();
+        _bookRepo.Setup(r => r.IsVisibleAsync(bookId, _userId)).ReturnsAsync(true);
+        _bookRepo.Setup(r => r.GetByIdAsync(bookId)).ReturnsAsync(new Book("Main", _userId));
+        _transactionRepo
+            .Setup(r => r.SearchAsync(
+                It.IsAny<Guid?>(), It.IsAny<DateTimeOffset?>(), It.IsAny<DateTimeOffset?>(),
+                It.IsAny<List<string>?>(), It.IsAny<List<Guid>?>(), It.IsAny<string?>(),
+                It.IsAny<decimal?>(), It.IsAny<decimal?>(), It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(new List<Transaction>());
+
+        var job = new ExportJob(ExportFormat.Csv, ExportContentType.Transactions, _userId, bookId);
+        await _service.ProcessExportAsync(job);
+
+        Assert.Equal(ExportJobStatus.Completed, job.Status);
+        _transactionRepo.Verify(
+            r => r.SearchAsync(bookId, null, null, null, null, null, null, null, 1, int.MaxValue),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task ProcessExportAsync_SetsFailed_WhenRequestedBookIsNotVisible()
+    {
+        var bookId = Guid.NewGuid();
+        _bookRepo.Setup(r => r.IsVisibleAsync(bookId, _userId)).ReturnsAsync(false);
+
+        var job = new ExportJob(ExportFormat.Csv, ExportContentType.Transactions, _userId, bookId);
+        await _service.ProcessExportAsync(job);
+
+        Assert.Equal(ExportJobStatus.Failed, job.Status);
+        Assert.NotNull(job.ErrorMessage);
+        _transactionRepo.Verify(
+            r => r.SearchAsync(
+                It.IsAny<Guid?>(), It.IsAny<DateTimeOffset?>(), It.IsAny<DateTimeOffset?>(),
+                It.IsAny<List<string>?>(), It.IsAny<List<Guid>?>(), It.IsAny<string?>(),
+                It.IsAny<decimal?>(), It.IsAny<decimal?>(), It.IsAny<int>(), It.IsAny<int>()),
+            Times.Never);
+    }
 }

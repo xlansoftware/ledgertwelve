@@ -4,7 +4,7 @@
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] A transaction/category/book/report/backup export requested through the API completes and downloads.
 - [ ] Only one export-generation code path exists; the unused duplicate is deleted.
