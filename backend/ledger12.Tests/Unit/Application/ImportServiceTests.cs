@@ -4,6 +4,7 @@ using ledger12.Application.Interfaces;
 using ledger12.Application.Services;
 using ledger12.Domain.Entities;
 using ledger12.Domain.Exceptions;
+using Microsoft.Extensions.Logging;
 
 namespace ledger12.Tests.Unit.Application;
 
@@ -13,6 +14,7 @@ public class ImportServiceTests
     private readonly Mock<ICategoryRepository> _categoryRepo;
     private readonly Mock<IBookRepository> _bookRepo;
     private readonly Mock<IUserRepository> _userRepo;
+    private readonly Mock<ILogger<ImportService>> _logger;
     private readonly ImportService _service;
     private readonly Guid _userId = Guid.NewGuid();
     private readonly Guid _bookId = Guid.NewGuid();
@@ -23,7 +25,8 @@ public class ImportServiceTests
         _categoryRepo = new Mock<ICategoryRepository>();
         _bookRepo = new Mock<IBookRepository>();
         _userRepo = new Mock<IUserRepository>();
-        _service = new ImportService(_transactionRepo.Object, _categoryRepo.Object, _bookRepo.Object, _userRepo.Object);
+        _logger = new Mock<ILogger<ImportService>>();
+        _service = new ImportService(_transactionRepo.Object, _categoryRepo.Object, _bookRepo.Object, _userRepo.Object, _logger.Object);
     }
 
     [Fact]
@@ -256,6 +259,37 @@ public class ImportServiceTests
         var request = new ImportRequest(true, "backup", null, null, null, null, dict);
 
         await Assert.ThrowsAsync<DomainException>(() => _service.ImportAsync(request, _userId));
+    }
+
+    [Fact]
+    public async Task ImportTransactionsAsync_ReturnsSafeIssueAndLogsDetails_WhenRowThrowsUnexpectedException()
+    {
+        var rows = new List<Dictionary<string, object?>>
+        {
+            new() { ["amount"] = 100m, ["dateTime"] = "2025-06-01T12:00:00Z" },
+        };
+        var request = new ImportRequest(false, "transactions", _bookId.ToString(), null, null, rows, null);
+        _bookRepo.Setup(r => r.HasEditAccessAsync(_bookId, _userId)).ReturnsAsync(true);
+        _transactionRepo
+            .Setup(r => r.AddAsync(It.IsAny<Transaction>()))
+            .ThrowsAsync(new InvalidOperationException("/internal/path/secret.db"));
+
+        var response = await _service.ImportAsync(request, _userId);
+        var result = response.Data as EntityImportResult;
+
+        Assert.NotNull(result);
+        Assert.Equal(1, result.Errors);
+        Assert.Single(result.Issues);
+        Assert.DoesNotContain("secret.db", result.Issues[0].Message);
+        Assert.Equal("An unexpected error occurred while importing this row.", result.Issues[0].Message);
+        _logger.Verify(
+            l => l.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, _) => true),
+                It.Is<Exception>(e => e.Message == "/internal/path/secret.db"),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
     }
 
     [Fact]

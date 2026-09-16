@@ -4,26 +4,32 @@ using ledger12.Application.Interfaces;
 using ledger12.Domain.Entities;
 using ledger12.Domain.Enums;
 using ledger12.Domain.Exceptions;
+using Microsoft.Extensions.Logging;
 
 namespace ledger12.Application.Services;
 
 public class ImportService : IImportService
 {
+    private const string UnexpectedRowIssueMessage = "An unexpected error occurred while importing this row.";
+
     private readonly ITransactionRepository _transactionRepo;
     private readonly ICategoryRepository _categoryRepo;
     private readonly IBookRepository _bookRepo;
     private readonly IUserRepository _userRepo;
+    private readonly ILogger<ImportService> _logger;
 
     public ImportService(
         ITransactionRepository transactionRepo,
         ICategoryRepository categoryRepo,
         IBookRepository bookRepo,
-        IUserRepository userRepo)
+        IUserRepository userRepo,
+        ILogger<ImportService> logger)
     {
         _transactionRepo = transactionRepo;
         _categoryRepo = categoryRepo;
         _bookRepo = bookRepo;
         _userRepo = userRepo;
+        _logger = logger;
     }
 
     public async Task<ImportResponse> ImportAsync(ImportRequest request, Guid userId)
@@ -151,9 +157,14 @@ public class ImportService : IImportService
                     created++;
                 }
             }
-            catch (Exception ex)
+            catch (DomainException ex)
             {
                 issues.Add(new ImportIssue(rowNum, null, ex.Message, "error"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to process transaction import row {Row} for user {UserId}", rowNum, userId);
+                issues.Add(new ImportIssue(rowNum, null, UnexpectedRowIssueMessage, "error"));
             }
         }
 
@@ -206,9 +217,14 @@ public class ImportService : IImportService
                     created++;
                 }
             }
-            catch (Exception ex)
+            catch (DomainException ex)
             {
                 issues.Add(new ImportIssue(rowNum, null, ex.Message, "error"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to process category import row {Row} for user {UserId}", rowNum, userId);
+                issues.Add(new ImportIssue(rowNum, null, UnexpectedRowIssueMessage, "error"));
             }
         }
 
@@ -264,9 +280,14 @@ public class ImportService : IImportService
                     created++;
                 }
             }
-            catch (Exception ex)
+            catch (DomainException ex)
             {
                 issues.Add(new ImportIssue(rowNum, null, ex.Message, "error"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to process book import row {Row} for user {UserId}", rowNum, userId);
+                issues.Add(new ImportIssue(rowNum, null, UnexpectedRowIssueMessage, "error"));
             }
         }
 
@@ -379,9 +400,14 @@ public class ImportService : IImportService
                 await _bookRepo.AddAsync(book);
                 created++;
             }
-            catch (Exception ex)
+            catch (DomainException ex)
             {
                 issues.Add(new ImportIssue(null, null, ex.Message, "error"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to process backup book entry for user {UserId}", userId);
+                issues.Add(new ImportIssue(null, null, UnexpectedRowIssueMessage, "error"));
             }
         }
         return (created, updated);
@@ -418,9 +444,14 @@ public class ImportService : IImportService
                 await _categoryRepo.AddAsync(cat);
                 created++;
             }
-            catch (Exception ex)
+            catch (DomainException ex)
             {
                 issues.Add(new ImportIssue(null, null, ex.Message, "error"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to process backup category entry for user {UserId}", userId);
+                issues.Add(new ImportIssue(null, null, UnexpectedRowIssueMessage, "error"));
             }
         }
         return (created, updated);
@@ -482,9 +513,14 @@ public class ImportService : IImportService
                 await _transactionRepo.AddAsync(tx);
                 created++;
             }
-            catch (Exception ex)
+            catch (DomainException ex)
             {
                 issues.Add(new ImportIssue(row, null, ex.Message, "error"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to process backup transaction row {Row} for user {UserId}", row, userId);
+                issues.Add(new ImportIssue(row, null, UnexpectedRowIssueMessage, "error"));
             }
         }
         return (created, updated);

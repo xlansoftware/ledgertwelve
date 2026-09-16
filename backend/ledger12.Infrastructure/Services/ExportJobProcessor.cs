@@ -2,6 +2,7 @@ using System.Threading.Channels;
 using ledger12.Application.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace ledger12.Infrastructure.Services;
 
@@ -9,11 +10,13 @@ public class ExportJobProcessor : BackgroundService
 {
     private readonly Channel<Guid> _channel;
     private readonly IServiceScopeFactory _scopeFactory;
+    private readonly ILogger<ExportJobProcessor> _logger;
 
-    public ExportJobProcessor(Channel<Guid> channel, IServiceScopeFactory scopeFactory)
+    public ExportJobProcessor(Channel<Guid> channel, IServiceScopeFactory scopeFactory, ILogger<ExportJobProcessor> logger)
     {
         _channel = channel;
         _scopeFactory = scopeFactory;
+        _logger = logger;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -32,7 +35,7 @@ public class ExportJobProcessor : BackgroundService
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"Export processing error: {ex.Message}");
+                _logger.LogError(ex, "Export processing error");
             }
         }
     }

@@ -5,6 +5,7 @@ using ledger12.Application.Services;
 using ledger12.Domain.Entities;
 using ledger12.Domain.Enums;
 using ledger12.Domain.Exceptions;
+using Microsoft.Extensions.Logging;
 
 namespace ledger12.Tests.Unit.Application;
 
@@ -15,6 +16,7 @@ public class ExportServiceTests
     private readonly Mock<ITransactionRepository> _transactionRepo;
     private readonly Mock<IUserRepository> _userRepo;
     private readonly Mock<ICategoryRepository> _categoryRepo;
+    private readonly Mock<ILogger<ExportService>> _logger;
     private readonly ExportService _service;
     private readonly Guid _userId = Guid.NewGuid();
     private readonly string _testExportDir;
@@ -26,11 +28,12 @@ public class ExportServiceTests
         _transactionRepo = new Mock<ITransactionRepository>();
         _userRepo = new Mock<IUserRepository>();
         _categoryRepo = new Mock<ICategoryRepository>();
+        _logger = new Mock<ILogger<ExportService>>();
         _testExportDir = Path.Combine(Path.GetTempPath(), "ledger12-export-tests", Guid.NewGuid().ToString());
 
         _service = new ExportService(
             _jobRepo.Object, _bookRepo.Object, _transactionRepo.Object,
-            _userRepo.Object, _categoryRepo.Object, _testExportDir);
+            _userRepo.Object, _categoryRepo.Object, _logger.Object, _testExportDir);
     }
 
     [Fact]
@@ -139,7 +142,7 @@ public class ExportServiceTests
 
         var _ = new ExportService(
             _jobRepo.Object, _bookRepo.Object, _transactionRepo.Object,
-            _userRepo.Object, _categoryRepo.Object, _testExportDir);
+            _userRepo.Object, _categoryRepo.Object, _logger.Object, _testExportDir);
 
         Assert.True(Directory.Exists(_testExportDir));
     }
@@ -161,14 +164,23 @@ public class ExportServiceTests
     [Fact]
     public async Task ProcessExportAsync_SetsFailed_WhenExceptionOccurs()
     {
-        _categoryRepo.Setup(r => r.GetByUserAsync(_userId)).ThrowsAsync(new Exception("DB error"));
+        _categoryRepo.Setup(r => r.GetByUserAsync(_userId)).ThrowsAsync(new InvalidOperationException("/internal/export/path.csv"));
 
         var job = new ExportJob(ExportFormat.Json, ExportContentType.Categories, _userId);
         await _service.ProcessExportAsync(job);
 
         _jobRepo.Verify(r => r.UpdateAsync(It.IsAny<ExportJob>()), Times.Exactly(2));
         Assert.Equal(ExportJobStatus.Failed, job.Status);
-        Assert.Equal("DB error", job.ErrorMessage);
+        Assert.Equal("Export failed. Please try again.", job.ErrorMessage);
+        Assert.DoesNotContain("/internal/export/path.csv", job.ErrorMessage);
+        _logger.Verify(
+            l => l.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, _) => true),
+                It.Is<Exception>(e => e.Message == "/internal/export/path.csv"),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
     }
 
     [Fact]

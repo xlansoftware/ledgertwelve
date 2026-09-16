@@ -4,7 +4,7 @@
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] Import responses contain user-safe issue messages, not raw exception messages.
 - [ ] Export status no longer returns raw internal exception text.

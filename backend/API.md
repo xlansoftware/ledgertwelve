@@ -1490,7 +1490,7 @@ Check export status.
   "data": {
     "jobId": "exp_123",
     "status": "failed",
-    "errorMessage": "Failed to generate XLSX: insufficient memory"
+    "errorMessage": "Export failed. Please try again."
   }
 }
 ```

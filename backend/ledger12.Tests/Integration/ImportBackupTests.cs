@@ -7,6 +7,7 @@ using ledger12.Domain.Entities;
 using ledger12.Domain.Enums;
 using ledger12.Infrastructure.Data;
 using ledger12.Infrastructure.Repositories;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace ledger12.Tests.Integration;
 
@@ -30,7 +31,7 @@ public class ImportBackupTests : IDisposable
         _transactionRepo = new TransactionRepository(_context);
         _categoryRepo = new CategoryRepository(_context);
         var userRepo = new UserRepository(_context);
-        _importService = new ImportService(_transactionRepo, _categoryRepo, _bookRepo, userRepo);
+        _importService = new ImportService(_transactionRepo, _categoryRepo, _bookRepo, userRepo, NullLogger<ImportService>.Instance);
     }
 
     public void Dispose()

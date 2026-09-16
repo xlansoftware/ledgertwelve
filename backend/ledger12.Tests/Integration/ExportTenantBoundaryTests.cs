@@ -4,6 +4,7 @@ using ledger12.Domain.Entities;
 using ledger12.Domain.Enums;
 using ledger12.Infrastructure.Data;
 using ledger12.Infrastructure.Repositories;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace ledger12.Tests.Integration;
 
@@ -41,6 +42,7 @@ public class ExportTenantBoundaryTests : IDisposable
             new TransactionRepository(_context),
             new UserRepository(_context),
             new CategoryRepository(_context),
+            NullLogger<ExportService>.Instance,
             _exportDir);
     }
 

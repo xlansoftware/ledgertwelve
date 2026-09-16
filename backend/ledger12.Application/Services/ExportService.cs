@@ -4,16 +4,20 @@ using ledger12.Application.Interfaces;
 using ledger12.Domain.Entities;
 using ledger12.Domain.Enums;
 using ledger12.Domain.Exceptions;
+using Microsoft.Extensions.Logging;
 
 namespace ledger12.Application.Services;
 
 public class ExportService : IExportService
 {
+    private const string ExportFailedMessage = "Export failed. Please try again.";
+
     private readonly IExportJobRepository _jobRepo;
     private readonly IBookRepository _bookRepo;
     private readonly ITransactionRepository _transactionRepo;
     private readonly IUserRepository _userRepo;
     private readonly ICategoryRepository _categoryRepo;
+    private readonly ILogger<ExportService> _logger;
     private readonly string _exportDir;
 
     public ExportService(
@@ -22,6 +26,7 @@ public class ExportService : IExportService
         ITransactionRepository transactionRepo,
         IUserRepository userRepo,
         ICategoryRepository categoryRepo,
+        ILogger<ExportService> logger,
         string? exportDir = null)
     {
         _jobRepo = jobRepo;
@@ -29,6 +34,7 @@ public class ExportService : IExportService
         _transactionRepo = transactionRepo;
         _userRepo = userRepo;
         _categoryRepo = categoryRepo;
+        _logger = logger;
         _exportDir = exportDir ?? Path.Combine(Directory.GetCurrentDirectory(), "exports");
         Directory.CreateDirectory(_exportDir);
     }
@@ -157,7 +163,8 @@ public class ExportService : IExportService
         }
         catch (Exception ex)
         {
-            job.SetFailed(ex.Message);
+            _logger.LogError(ex, "Export job {JobId} failed for user {UserId}", job.Id, job.UserId);
+            job.SetFailed(ExportFailedMessage);
             await _jobRepo.UpdateAsync(job);
         }
     }
