@@ -2,7 +2,7 @@
 
 Base path: `/api/v1`
 
-Auth: Cookie-based (Identity). `/api/v1/auth/login` and `/api/v1/auth/whoami` are unauthenticated; everything else requires `[Authorize]`.
+Auth: Cookie-based (Identity). `/api/v1/auth/register`, `/api/v1/auth/login`, and `/api/v1/auth/whoami` are unauthenticated; everything else requires `[Authorize]`.
 
 Error shape: `{ "error": "Human-readable message" }`
 
@@ -51,6 +51,65 @@ This principle applies uniformly across list endpoints, report endpoints, and ex
 # Authentication
 
 ASP.NET Identity handles registration, password reset, email verification, etc.
+
+---
+
+# POST /api/v1/auth/register
+
+Creates a new account and returns the current user. Registration also seeds the
+account's default Main book and categories, and signs the new user in
+immediately by setting the same session cookie as login.
+
+### Purpose
+
+Register a new user with an email and password.
+
+### Request
+
+```json
+{
+  "email": "john@example.com",
+  "password": "Example-1"
+}
+```
+
+### Validation
+
+| Field | Required | Valid values | Notes |
+|---|---|---|---|
+| `email` | yes | valid email address | Must not already belong to an account. |
+| `password` | yes | at least 6 characters, containing an uppercase letter, a lowercase letter, a digit, and a non-alphanumeric character | Enforced by the ASP.NET Identity password policy. |
+
+### Response (201)
+
+```json
+{
+  "data": {
+    "id": "usr_123",
+    "email": "john@example.com"
+  }
+}
+```
+
+Server sets:
+
+```http
+Set-Cookie:
+.AspNetCore.Identity.Application=...
+HttpOnly
+Secure
+SameSite=Lax
+```
+
+and a `Location` header pointing to `GET /api/v1/auth/whoami`.
+
+### Errors
+
+| Status | Body | When |
+|--------|------|------|
+| `400 Bad Request` | `{ "error": "Email is already registered." }` | The email already belongs to an account. |
+| `400 Bad Request` | `{ "error": "Passwords must have at least one uppercase ('A'-'Z')." }` | The password does not satisfy the account policy. The message lists every unmet requirement, separated by `; `. |
+| `400 Bad Request` | `application/problem+json` with an `errors` object | The body is missing required fields, the email is malformed, or the password is shorter than 6 characters. |
 
 ---
 

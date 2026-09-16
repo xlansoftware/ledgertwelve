@@ -4,8 +4,8 @@
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] `POST /api/v1/auth/register` is documented in `API.md` with its request, response, and error responses.
-- [ ] The GitHub OAuth extension is either reachable from startup configuration or deleted.
-- [ ] No undocumented endpoints remain relative to `API.md`.
+- [x] `POST /api/v1/auth/register` is documented in `API.md` with its request, response, and error responses.
+- [x] The GitHub OAuth extension is either reachable from startup configuration or deleted.
+- [x] No undocumented endpoints remain relative to `API.md`.
