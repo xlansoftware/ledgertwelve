@@ -4,7 +4,7 @@
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] Seeding the demo user is skipped outside Development.
 - [ ] Development startup still produces the demo user with its existing defaults.

@@ -10,8 +10,13 @@ namespace ledger12.Infrastructure.Data;
 
 public static class DbInitializer
 {
-    public static async Task SeedAsync(IServiceProvider serviceProvider)
+    public static async Task SeedAsync(IServiceProvider serviceProvider, bool isDevelopment)
     {
+        // The demo account uses a publicly known credential, so it must never
+        // exist outside Development.
+        if (!isDevelopment)
+            return;
+
         await SeedUserAsync(serviceProvider);
     }
 

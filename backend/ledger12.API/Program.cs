@@ -117,7 +117,7 @@ using (var scope = app.Services.CreateScope())
     var sp = scope.ServiceProvider;
     var db = sp.GetRequiredService<AppDbContext>();
     db.Database.Migrate();
-    await DbInitializer.SeedAsync(sp);
+    await DbInitializer.SeedAsync(sp, app.Environment.IsDevelopment());
 }
 
 app.Run();
