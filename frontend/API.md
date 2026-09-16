@@ -2,7 +2,7 @@
 
 Base path: `/api/v1`
 
-Auth: Cookie-based (Identity). `/api/v1/auth/login` and `/api/v1/auth/whoami` are unauthenticated; everything else requires `[Authorize]`.
+Auth: Cookie-based (Identity). `/api/v1/auth/register`, `/api/v1/auth/login`, and `/api/v1/auth/whoami` are unauthenticated; everything else requires `[Authorize]`.
 
 Error shape: `{ "error": "Human-readable message" }`
 
@@ -54,6 +54,65 @@ ASP.NET Identity handles registration, password reset, email verification, etc.
 
 ---
 
+# POST /api/v1/auth/register
+
+Creates a new account and returns the current user. Registration also seeds the
+account's default Main book and categories, and signs the new user in
+immediately by setting the same session cookie as login.
+
+### Purpose
+
+Register a new user with an email and password.
+
+### Request
+
+```json
+{
+  "email": "john@example.com",
+  "password": "Example-1"
+}
+```
+
+### Validation
+
+| Field | Required | Valid values | Notes |
+|---|---|---|---|
+| `email` | yes | valid email address | Must not already belong to an account. |
+| `password` | yes | at least 6 characters, containing an uppercase letter, a lowercase letter, a digit, and a non-alphanumeric character | Enforced by the ASP.NET Identity password policy. |
+
+### Response (201)
+
+```json
+{
+  "data": {
+    "id": "usr_123",
+    "email": "john@example.com"
+  }
+}
+```
+
+Server sets:
+
+```http
+Set-Cookie:
+.AspNetCore.Identity.Application=...
+HttpOnly
+Secure
+SameSite=Lax
+```
+
+and a `Location` header pointing to `GET /api/v1/auth/whoami`.
+
+### Errors
+
+| Status | Body | When |
+|--------|------|------|
+| `400 Bad Request` | `{ "error": "Email is already registered." }` | The email already belongs to an account. |
+| `400 Bad Request` | `{ "error": "Passwords must have at least one uppercase ('A'-'Z')." }` | The password does not satisfy the account policy. The message lists every unmet requirement, separated by `; `. |
+| `400 Bad Request` | `application/problem+json` with an `errors` object | The body is missing required fields, the email is malformed, or the password is shorter than 6 characters. |
+
+---
+
 # POST /api/v1/auth/login
 
 Creates an authenticated session and returns the current user.
@@ -88,11 +147,23 @@ Server sets:
 
 ```http
 Set-Cookie:
-ledger12.session=...
+.AspNetCore.Identity.Application=...
 HttpOnly
 Secure
 SameSite=Lax
 ```
+
+Failed attempts are throttled twice:
+
+* Per client — the number of login requests from one client is limited; requests over the limit are rejected until the window resets.
+* Per account — after repeated failed attempts the account is locked for a fixed period. Lockout is released automatically once that period elapses; a correct password then succeeds.
+
+### Errors
+
+| Status | Body | When |
+|--------|------|------|
+| `401 Unauthorized` | `{ "error": "Invalid email or password." }` | The email is unknown, the password is wrong, or the account is temporarily locked. The response is intentionally identical in all three cases so it never reveals whether an account exists. |
+| `429 Too Many Requests` | `{ "error": "Too many login attempts. Please try again later." }` | The client exceeded the login rate limit. A `Retry-After` header states how many seconds to wait. |
 
 ---
 
@@ -289,14 +360,14 @@ Returns all users the current user has interacted with — the current user them
 | `id` | string | yes | |
 | `bookId` | string | yes | |
 | `userId` | string | yes | User who created the transaction. |
-| `dateTime` | string | yes | **User-supplied** business date of the transaction (when it occurred). Used for reporting, filtering, and sorting. Can differ from when the record was created. |
+| `dateTime` | string | yes | ISO 8601 timestamp. |
 | `amount` | number | yes | Negative for expenses, positive for income. |
 | `originalCurrency` | string | no | Required when using multi-currency. |
 | `originalAmount` | number | no | Amount in original currency. |
 | `exchangeRate` | number | no | Rate used for conversion. |
 | `categoryName` | string | no | Category name (not ID). |
 | `note` | string | no | Free text. |
-| `createdAt` | string | yes | **Server-generated** audit timestamp — when the record was persisted in the database. Not settable by the user. For auditing and conflict resolution, not business reporting. |
+| `createdAt` | string | yes | ISO 8601 timestamp. |
 | `isBookClosingEntry` | boolean | no | `true` if this is an auto-generated closing transaction. |
 | `closedBookId` | string\|null | no | If this is a closing entry, the ID of the closed book. `null` otherwise. |
 
@@ -968,6 +1039,8 @@ Reopen closed book.
 
 Search transactions.
 
+Results are **always** limited to books visible to the authenticated caller — books they own or that are shared with them. This applies whether or not `bookId` is supplied, so filters such as `createdBy`, `note`, `category` and date ranges never match transactions from books the caller cannot see. `meta.total` counts only the same scoped result set. Supplying a `bookId` that is not visible to the caller returns `404 Not Found`.
+
 ### Query Parameters
 
 ```text
@@ -1476,7 +1549,7 @@ Check export status.
   "data": {
     "jobId": "exp_123",
     "status": "failed",
-    "errorMessage": "Failed to generate XLSX: insufficient memory"
+    "errorMessage": "Export failed. Please try again."
   }
 }
 ```
@@ -1495,7 +1568,7 @@ For human-readable formats (CSV, XLSX), foreign-key ID columns are replaced with
 
 The `json` format retains raw IDs (`bookId`, `userId`, `ownerId`) for machine consumption.
 
-Download filenames for CSV/XLSX transaction exports use the **book name** instead of the `bookId`.
+Download filenames for CSV/XLSX transaction exports use the **book name** instead of the `bookId`. The book name is sanitised before it is used in a filename; path separators and other unsafe characters are replaced so the file always stays inside the export directory.
 
 ---
 
@@ -1580,7 +1653,7 @@ Import data into the ledger. Supports three entity types (`transactions`, `categ
 |-------|----------|-------------|
 | `preview` | yes | `true` to validate only; `false` to commit. |
 | `entityType` | yes | `"transactions"`, `"categories"`, `"books"`, or `"backup"`. |
-| `bookId` | conditional | Required for `entityType: "transactions"`. The fallback book when no row has a `bookId` field. Ignored for other entity types. |
+| `bookId` | conditional | Required for `entityType: "transactions"`. The fallback book when no row has a `bookId` field. Must reference a book the caller can **edit** (owned or shared with edit permission). Ignored for other entity types. |
 | `clearExisting` | no | Default `false`. If `true`, deletes all existing records of the given entity type (for transactions: scoped to `bookId`) before creating new rows. Ignored in preview mode — the preview response includes the `deleted` count to show impact. |
 | `mapping` | conditional | Required for `transactions`/`categories`/`books`. Source column name → target field name. Used for building richer error messages. Not used for `backup`. |
 | `rows` | conditional | Required for `transactions`/`categories`/`books`. Array of objects where keys are **target field names** and values are already typed (dates as ISO 8601 strings, amounts as numbers). Not used for `backup`. |
@@ -1608,7 +1681,7 @@ Import data into the ledger. Supports three entity types (`transactions`, `categ
 |-------|----------|-------|
 | `amount` | **yes** | Must be a number. |
 | `dateTime` | no | Must be a valid ISO 8601 date string. Defaults to current date/time if missing or invalid. |
-| `bookId` | no | Must reference an existing, visible book. Falls back to the top-level `bookId` parameter. |
+| `bookId` | no | Must reference an existing book the caller can **edit**. Falls back to the top-level `bookId` parameter. |
 | `categoryName` | no | If provided, must match an existing category name. |
 | `originalCurrency` | no | If set, `originalAmount` and `exchangeRate` must also be set. |
 | `originalAmount` | no | Required if `originalCurrency` is set. |
@@ -1640,6 +1713,7 @@ Import data into the ledger. Supports three entity types (`transactions`, `categ
 - `version` must be present and must match a supported version (currently `1`).
 - For unsupported versions: import is blocked with an error.
 - `books`, `categories`, `transactions` arrays are validated in order.
+- Every transaction's `bookId` must reference a book the caller can **edit** (owned or shared with edit permission). A transaction targeting a book the caller can only view is rejected and skipped.
 - If a transaction references a category or book that fails validation, the transaction is skipped.
 
 ### Issue format
@@ -1756,6 +1830,7 @@ Each entity key contains the same `created`/`updated`/`deleted`/`errors`/`warnin
 ### Notes
 
 - Import is **partial-success** by design. Rows that pass validation are committed; rows that fail are skipped. The response tells you which rows failed and why.
+- All import targets require **edit** access. The top-level `bookId`, any row-level `bookId`, and any transaction matched by `id` for an upsert must belong to a book the caller owns or has been granted edit permission on. View-only shares are rejected: a transaction import into an uneditable book is reported as a row issue, and a backup restore into a view-only shared book is skipped.
 - Clearing existing data with `clearExisting: true` **always preserves the Main book**.
 - Books are never cleared during backup restore — they are always merged by ID.
 - Row indices in issues are 1-based (matching spreadsheet row numbering).
