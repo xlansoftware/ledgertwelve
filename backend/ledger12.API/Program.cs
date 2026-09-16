@@ -31,6 +31,9 @@ if (builder.Environment.IsProduction())
 builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
     {
         options.SignIn.RequireConfirmedAccount = false;
+        options.Lockout.AllowedForNewUsers = true;
+        options.Lockout.MaxFailedAccessAttempts = 5;
+        options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
     })
     .AddEntityFrameworkStores<AppDbContext>();
 
@@ -65,6 +68,12 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IImportService, ImportService>();
 builder.Services.AddScoped<IExportService, ExportService>();
 builder.Services.AddScoped<IDefaultDataService, DefaultDataService>();
+
+// ─── Login rate limiting ────────────────────────────────────────────
+builder.Services.Configure<LoginRateLimitOptions>(
+    builder.Configuration.GetSection(LoginRateLimitOptions.SectionName));
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<ILoginRateLimiter, LoginRateLimiter>();
 
 // ─── Exchange Rate HttpClient ───────────────────────────────────────
 builder.Services.AddHttpClient<IExchangeRateService, ExchangeRateService>();

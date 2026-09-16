@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -15,28 +16,61 @@ public class AuthController : ControllerBase
     private readonly UserManager<AppUser> _userManager;
     private readonly IDefaultDataService _defaultDataService;
     private readonly ICurrentUserService _currentUser;
+    private readonly ILoginRateLimiter _loginRateLimiter;
+    private readonly IPasswordHasher<AppUser> _passwordHasher;
+
+    /// <summary>
+    /// Well-formed hash used to perform comparable work when the email is unknown, so
+    /// response timing does not reveal whether an account exists.
+    /// </summary>
+    private static readonly string DummyPasswordHash =
+        new PasswordHasher<AppUser>().HashPassword(new AppUser(), "not-a-real-password");
 
     public AuthController(
         SignInManager<AppUser> signInManager,
         UserManager<AppUser> userManager,
         IDefaultDataService defaultDataService,
-        ICurrentUserService currentUser)
+        ICurrentUserService currentUser,
+        ILoginRateLimiter loginRateLimiter,
+        IPasswordHasher<AppUser> passwordHasher)
     {
         _signInManager = signInManager;
         _userManager = userManager;
         _defaultDataService = defaultDataService;
         _currentUser = currentUser;
+        _loginRateLimiter = loginRateLimiter;
+        _passwordHasher = passwordHasher;
     }
 
     [HttpPost("login")]
     public async Task<ActionResult<AuthResponse>> Login([FromBody] LoginRequest request)
     {
+        var clientKey = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        var rateLimit = _loginRateLimiter.RegisterAttempt(clientKey);
+        if (!rateLimit.IsAllowed)
+        {
+            Response.Headers.RetryAfter = Math.Max(1, (int)Math.Ceiling(rateLimit.RetryAfter.TotalSeconds))
+                .ToString(CultureInfo.InvariantCulture);
+
+            return StatusCode(
+                StatusCodes.Status429TooManyRequests,
+                new { error = "Too many login attempts. Please try again later." });
+        }
+
         var user = await _userManager.FindByEmailAsync(request.Email);
         if (user is null)
+        {
+            // Verify against a dummy hash so an unknown email costs the same as a wrong
+            // password, preventing timing-based account enumeration.
+            _passwordHasher.VerifyHashedPassword(new AppUser(), DummyPasswordHash, request.Password);
             return Unauthorized(new { error = "Invalid email or password." });
+        }
 
+        // Failure responses are intentionally identical for an unknown email, a wrong
+        // password, and a locked-out account so the endpoint never reveals whether an
+        // account exists. Lockout itself is enforced by Identity via lockoutOnFailure.
         var result = await _signInManager.PasswordSignInAsync(
-            user, request.Password, isPersistent: true, lockoutOnFailure: false);
+            user, request.Password, isPersistent: true, lockoutOnFailure: true);
 
         if (!result.Succeeded)
             return Unauthorized(new { error = "Invalid email or password." });

@@ -94,6 +94,18 @@ Secure
 SameSite=Lax
 ```
 
+Failed attempts are throttled twice:
+
+* Per client — the number of login requests from one client is limited; requests over the limit are rejected until the window resets.
+* Per account — after repeated failed attempts the account is locked for a fixed period. Lockout is released automatically once that period elapses; a correct password then succeeds.
+
+### Errors
+
+| Status | Body | When |
+|--------|------|------|
+| `401 Unauthorized` | `{ "error": "Invalid email or password." }` | The email is unknown, the password is wrong, or the account is temporarily locked. The response is intentionally identical in all three cases so it never reveals whether an account exists. |
+| `429 Too Many Requests` | `{ "error": "Too many login attempts. Please try again later." }` | The client exceeded the login rate limit. A `Retry-After` header states how many seconds to wait. |
+
 ---
 
 # POST /api/v1/auth/logout
