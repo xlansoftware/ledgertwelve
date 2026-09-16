@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "pi": "agentignore run pi",
+    "pi": "pi",
+    "pi:frontend": "agentignore run --source /workspaces/ledgertwelve/frontend pi",
     "pi:backend": "agentignore run --source /workspaces/ledgertwelve/backend pi",
     "dev:backend": "dotnet run --project backend/ledger12.API",
     "build:backend": "dotnet build backend/ledger12.API",
