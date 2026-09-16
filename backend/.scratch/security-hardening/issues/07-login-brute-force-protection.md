@@ -4,7 +4,7 @@
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] Exceeding a failed-attempt threshold locks the account for a defined period.
 - [ ] Login requests are rate limited, returning `429` when the limit is exceeded.
