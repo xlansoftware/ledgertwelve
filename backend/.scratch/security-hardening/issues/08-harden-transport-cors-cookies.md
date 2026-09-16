@@ -4,7 +4,7 @@
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] Auth cookies are issued with `Secure` in non-development environments.
 - [ ] HTTP requests are redirected to HTTPS and HSTS is emitted.

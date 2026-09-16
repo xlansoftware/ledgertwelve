@@ -14,6 +14,7 @@ using ledger12.Infrastructure.Services;
 using Microsoft.AspNetCore.DataProtection;
 
 var builder = WebApplication.CreateBuilder(args);
+var isDevelopment = builder.Environment.IsDevelopment();
 
 var connectionString = builder.Configuration.GetConnectionString("AppDbContextConnection") ?? throw new InvalidOperationException("Connection string 'AppDbContextConnection' not found.");
 
@@ -41,12 +42,32 @@ builder.Services.ConfigureApplicationCookie(options =>
 {
     options.Cookie.HttpOnly = true;
     options.Cookie.SameSite = SameSiteMode.Lax;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+    // Development still runs over plain HTTP, so only pin the cookie to HTTPS
+    // once the app is deployed behind TLS.
+    options.Cookie.SecurePolicy = isDevelopment
+        ? CookieSecurePolicy.SameAsRequest
+        : CookieSecurePolicy.Always;
     options.ExpireTimeSpan = TimeSpan.FromDays(7);
     options.LoginPath = "/login";
     options.SlidingExpiration = true;
     options.Cookie.MaxAge = TimeSpan.FromDays(7);
 });
+
+// ─── Transport security ─────────────────────────────────────────────
+// TLS is terminated by the reverse proxy (Cloudflare -> nginx). Requests that
+// still arrive over HTTP are redirected, and HSTS is advertised, once deployed.
+builder.Services.AddHttpsRedirection(options => options.HttpsPort = 443);
+
+// Outside Development the app must never accept an arbitrary Host header.
+if (!isDevelopment)
+{
+    var allowedHosts = builder.Configuration["AllowedHosts"];
+    if (string.IsNullOrWhiteSpace(allowedHosts) || allowedHosts.Trim() == "*")
+    {
+        throw new InvalidOperationException(
+            "AllowedHosts must be a restricted, semicolon-separated host list outside Development.");
+    }
+}
 
 // ─── HTTP context ───────────────────────────────────────────────────
 builder.Services.AddHttpContextAccessor();
@@ -98,20 +119,45 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
     });
 
-// ─── CORS (development) ─────────────────────────────────────────────
+// ─── CORS ───────────────────────────────────────────────────────────
+// Development stays permissive so a local dev server on any port can call the
+// API. Everywhere else only explicitly configured origins may call cross-origin.
+var allowedOrigins = builder.Configuration
+    .GetSection("Cors:AllowedOrigins")
+    .Get<string[]>()
+    ?.Where(origin => !string.IsNullOrWhiteSpace(origin))
+    .ToArray() ?? [];
+
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.AllowAnyOrigin()
-              .AllowAnyHeader()
-              .AllowAnyMethod();
+        if (isDevelopment)
+        {
+            policy.AllowAnyOrigin()
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        }
+        else
+        {
+            policy.WithOrigins(allowedOrigins)
+                  .AllowAnyHeader()
+                  .AllowAnyMethod()
+                  .AllowCredentials();
+        }
     });
 });
 
 var app = builder.Build();
 
 app.UseDefaultForwardedHeaders();
+
+// ─── Transport security middleware ──────────────────────────────────
+if (!isDevelopment)
+{
+    app.UseHsts();
+    app.UseHttpsRedirection();
+}
 
 // ─── Middleware pipeline ────────────────────────────────────────────
 app.UseMiddleware<ExceptionMiddleware>();
