@@ -15,7 +15,8 @@ public interface ITransactionRepository
         decimal? minValue = null,
         decimal? maxValue = null,
         int page = 1,
-        int pageSize = 50
+        int pageSize = 50,
+        List<Guid>? visibleBookIds = null
     );
     Task<int> GetSearchCountAsync(
         Guid? bookId = null,
@@ -25,7 +26,8 @@ public interface ITransactionRepository
         List<Guid>? createdBy = null,
         string? noteSearch = null,
         decimal? minValue = null,
-        decimal? maxValue = null
+        decimal? maxValue = null,
+        List<Guid>? visibleBookIds = null
     );
     Task AddAsync(Transaction transaction);
     Task UpdateAsync(Transaction transaction);

@@ -4,7 +4,7 @@
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] A search omitting `bookId` returns only the caller's own or shared-book transactions.
 - [ ] Supplying another user's `bookId` yields no data (not found), unchanged from today.

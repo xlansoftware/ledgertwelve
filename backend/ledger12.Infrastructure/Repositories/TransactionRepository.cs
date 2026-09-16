@@ -29,28 +29,11 @@ public class TransactionRepository : ITransactionRepository
         decimal? minValue = null,
         decimal? maxValue = null,
         int page = 1,
-        int pageSize = 50)
+        int pageSize = 50,
+        List<Guid>? visibleBookIds = null)
     {
-        var query = _context.Transactions.AsQueryable();
-
-        if (bookId.HasValue)
-            query = query.Where(t => t.BookId == bookId.Value);
-        if (from.HasValue)
-            query = query.Where(t => t.DateTime >= from.Value);
-        if (to.HasValue)
-            query = query.Where(t => t.DateTime < to.Value);
-        if (categories != null && categories.Count > 0)
-            query = query.Where(t => categories.Contains(t.CategoryName ?? ""));
-        if (createdBy != null && createdBy.Count > 0)
-            query = query.Where(t => createdBy.Contains(t.UserId));
-        if (!string.IsNullOrWhiteSpace(noteSearch))
-            query = query.Where(t => t.Note != null && EF.Functions.Like(t.Note, $"%{noteSearch}%"));
-        if (minValue.HasValue)
-            query = query.Where(t => t.Amount >= minValue.Value);
-        if (maxValue.HasValue)
-            query = query.Where(t => t.Amount <= maxValue.Value);
-
-        return await query
+        return await BuildSearchQuery(bookId, from, to, categories, createdBy, noteSearch,
+                minValue, maxValue, visibleBookIds)
             .OrderByDescending(t => t.DateTime)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
@@ -65,12 +48,31 @@ public class TransactionRepository : ITransactionRepository
         List<Guid>? createdBy = null,
         string? noteSearch = null,
         decimal? minValue = null,
-        decimal? maxValue = null)
+        decimal? maxValue = null,
+        List<Guid>? visibleBookIds = null)
+    {
+        return await BuildSearchQuery(bookId, from, to, categories, createdBy, noteSearch,
+                minValue, maxValue, visibleBookIds)
+            .CountAsync();
+    }
+
+    private IQueryable<Transaction> BuildSearchQuery(
+        Guid? bookId,
+        DateTimeOffset? from,
+        DateTimeOffset? to,
+        List<string>? categories,
+        List<Guid>? createdBy,
+        string? noteSearch,
+        decimal? minValue,
+        decimal? maxValue,
+        List<Guid>? visibleBookIds)
     {
         var query = _context.Transactions.AsQueryable();
 
         if (bookId.HasValue)
             query = query.Where(t => t.BookId == bookId.Value);
+        if (visibleBookIds != null)
+            query = query.Where(t => visibleBookIds.Contains(t.BookId));
         if (from.HasValue)
             query = query.Where(t => t.DateTime >= from.Value);
         if (to.HasValue)
@@ -86,7 +88,7 @@ public class TransactionRepository : ITransactionRepository
         if (maxValue.HasValue)
             query = query.Where(t => t.Amount <= maxValue.Value);
 
-        return await query.CountAsync();
+        return query;
     }
 
     public async Task AddAsync(Transaction transaction)

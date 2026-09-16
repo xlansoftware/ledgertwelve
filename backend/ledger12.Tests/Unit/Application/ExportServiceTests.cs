@@ -164,9 +164,10 @@ public class ExportServiceTests
             .Setup(r => r.SearchAsync(
                 It.IsAny<Guid?>(), It.IsAny<DateTimeOffset?>(), It.IsAny<DateTimeOffset?>(),
                 It.IsAny<List<string>?>(), It.IsAny<List<Guid>?>(), It.IsAny<string?>(),
-                It.IsAny<decimal?>(), It.IsAny<decimal?>(), It.IsAny<int>(), It.IsAny<int>()))
-            .Callback<Guid?, DateTimeOffset?, DateTimeOffset?, List<string>?, List<Guid>?, string?, decimal?, decimal?, int, int>(
-                (bookId, _, _, _, _, _, _, _, _, _) => searchedBookIds.Add(bookId))
+                It.IsAny<decimal?>(), It.IsAny<decimal?>(), It.IsAny<int>(), It.IsAny<int>(),
+                It.IsAny<List<Guid>?>()))
+            .Callback<Guid?, DateTimeOffset?, DateTimeOffset?, List<string>?, List<Guid>?, string?, decimal?, decimal?, int, int, List<Guid>?>(
+                (bookId, _, _, _, _, _, _, _, _, _, _) => searchedBookIds.Add(bookId))
             .ReturnsAsync(new List<Transaction>());
 
         var job = new ExportJob(ExportFormat.Csv, ExportContentType.Transactions, _userId);

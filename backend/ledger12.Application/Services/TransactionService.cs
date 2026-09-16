@@ -28,10 +28,16 @@ public class TransactionService : ITransactionService
             if (!visible) throw new NotFoundException("Book", bookId.Value);
         }
 
+        // When no book is requested, restrict the search to books the caller can see
+        // so filters such as createdBy, note and category cannot reach across tenants.
+        var visibleBookIds = bookId.HasValue
+            ? null
+            : (await _bookRepo.GetVisibleBooksAsync(userId)).Select(b => b.Id).ToList();
+
         var transactions = await _transactionRepo.SearchAsync(
-            bookId, from, to, categories, createdBy, note, minValue, maxValue, page, pageSize);
+            bookId, from, to, categories, createdBy, note, minValue, maxValue, page, pageSize, visibleBookIds);
         var total = await _transactionRepo.GetSearchCountAsync(
-            bookId, from, to, categories, createdBy, note, minValue, maxValue);
+            bookId, from, to, categories, createdBy, note, minValue, maxValue, visibleBookIds);
 
         var dtos = transactions.Select(MapToDto).ToList();
         return new PagedResponse<TransactionDto>(dtos, new Meta(page, pageSize, total));

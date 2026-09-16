@@ -968,6 +968,8 @@ Reopen closed book.
 
 Search transactions.
 
+Results are **always** limited to books visible to the authenticated caller — books they own or that are shared with them. This applies whether or not `bookId` is supplied, so filters such as `createdBy`, `note`, `category` and date ranges never match transactions from books the caller cannot see. `meta.total` counts only the same scoped result set. Supplying a `bookId` that is not visible to the caller returns `404 Not Found`.
+
 ### Query Parameters
 
 ```text

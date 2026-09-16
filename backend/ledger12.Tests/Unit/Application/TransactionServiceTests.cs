@@ -56,14 +56,43 @@ public class TransactionServiceTests
     [Fact]
     public async Task SearchAsync_WorksWithoutBookId()
     {
-        _transactionRepo.Setup(r => r.SearchAsync(null, null, null, null, null, null, null, null, 1, 20))
+        _bookRepo.Setup(r => r.GetVisibleBooksAsync(_userId)).ReturnsAsync(new List<Book>());
+        _transactionRepo.Setup(r => r.SearchAsync(null, null, null, null, null, null, null, null, 1, 20, It.IsAny<List<Guid>?>()))
             .ReturnsAsync(new List<Transaction>());
-        _transactionRepo.Setup(r => r.GetSearchCountAsync(null, null, null, null, null, null, null))
+        _transactionRepo.Setup(r => r.GetSearchCountAsync(null, null, null, null, null, null, null, null, It.IsAny<List<Guid>?>()))
             .ReturnsAsync(0);
 
         var result = await _service.SearchAsync(null, null, null, null, null, null, null, null, 1, 20, _userId);
 
         Assert.Empty(result.Data);
+    }
+
+    [Fact]
+    public async Task SearchAsync_ScopesToVisibleBooks_WhenNoBookIdSupplied()
+    {
+        var visibleBook = new Book("Visible", _userId);
+        var otherBook = new Book("Other", _userId);
+        List<Guid>? searchedBookIds = null;
+        List<Guid>? countedBookIds = null;
+        _bookRepo.Setup(r => r.GetVisibleBooksAsync(_userId))
+            .ReturnsAsync(new List<Book> { visibleBook, otherBook });
+        _transactionRepo
+            .Setup(r => r.SearchAsync(null, null, null, null, null, null, null, null, 1, 50, It.IsAny<List<Guid>?>()))
+            .Callback<Guid?, DateTimeOffset?, DateTimeOffset?, List<string>?, List<Guid>?, string?, decimal?, decimal?, int, int, List<Guid>?>(
+                (_, _, _, _, _, _, _, _, _, _, bookIds) => searchedBookIds = bookIds)
+            .ReturnsAsync(new List<Transaction>());
+        _transactionRepo
+            .Setup(r => r.GetSearchCountAsync(null, null, null, null, null, null, null, null, It.IsAny<List<Guid>?>()))
+            .Callback<Guid?, DateTimeOffset?, DateTimeOffset?, List<string>?, List<Guid>?, string?, decimal?, decimal?, List<Guid>?>(
+                (_, _, _, _, _, _, _, _, bookIds) => countedBookIds = bookIds)
+            .ReturnsAsync(0);
+
+        await _service.SearchAsync(null, null, null, null, null, null, null, null, 1, 50, _userId);
+
+        Assert.NotNull(searchedBookIds);
+        Assert.Equal(new[] { visibleBook.Id, otherBook.Id }, searchedBookIds);
+        Assert.NotNull(countedBookIds);
+        Assert.Equal(searchedBookIds, countedBookIds);
     }
 
     [Fact]
