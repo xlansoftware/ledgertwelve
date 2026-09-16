@@ -4,7 +4,7 @@
 
 **Blocked by:** 03 — Consolidate export generation into one user-scoped path.
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] `POST /api/v1/exports` with `contentType: "transactions"` and no `bookId` returns a validation error and creates no job.
 - [ ] A transaction export for a book the caller cannot see fails without exposing data.

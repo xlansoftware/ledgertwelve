@@ -64,6 +64,9 @@ public class ExportService : IExportService
         if (request.BookId != null && Guid.TryParse(request.BookId, out var bid))
             bookId = bid;
 
+        if (contentType == ExportContentType.Transactions && bookId is null)
+            throw new DomainException("bookId is required for transaction exports");
+
         var job = new ExportJob(format, contentType, userId, bookId);
         await _jobRepo.AddAsync(job);
 
@@ -129,11 +132,9 @@ public class ExportService : IExportService
                     fileName = $"categories-{dateStr}.{FormatExtension(job.Format)}";
                     break;
                 case ExportContentType.Transactions:
-                    content = await GenerateTransactionsExport(job.UserId, job.BookId, job.Format);
-                    var bookName = job.BookId.HasValue
-                        ? (await _bookRepo.GetByIdAsync(job.BookId.Value))?.Name ?? "Unknown"
-                        : "Unknown";
-                    fileName = $"transactions-{bookName}-{dateStr}.{FormatExtension(job.Format)}";
+                    var exportBook = await ResolveTransactionBookAsync(job.BookId, job.UserId);
+                    content = await GenerateTransactionsExport(exportBook.Id, job.Format);
+                    fileName = $"transactions-{SanitizeFileNameSegment(exportBook.Name)}-{dateStr}.{FormatExtension(job.Format)}";
                     break;
                 case ExportContentType.Books:
                     content = await GenerateBooksExport(job.UserId, job.Format);
@@ -149,7 +150,7 @@ public class ExportService : IExportService
                     break;
             }
 
-            var filePath = Path.Combine(_exportDir, fileName);
+            var filePath = GetSafeExportFilePath(fileName);
             await File.WriteAllTextAsync(filePath, content);
             job.SetCompleted(filePath);
             await _jobRepo.UpdateAsync(job);
@@ -191,18 +192,9 @@ public class ExportService : IExportService
         return csv;
     }
 
-    private async Task<string> GenerateTransactionsExport(Guid userId, Guid? bookId, ExportFormat format)
+    private async Task<string> GenerateTransactionsExport(Guid bookId, ExportFormat format)
     {
-        if (bookId.HasValue)
-        {
-            var visible = await _bookRepo.IsVisibleAsync(bookId.Value, userId);
-            if (!visible)
-                throw new NotFoundException("Book", bookId.Value);
-        }
-
-        var transactions = bookId.HasValue
-            ? await _transactionRepo.SearchAsync(bookId: bookId, page: 1, pageSize: int.MaxValue)
-            : await GetAllVisibleTransactionsAsync(userId);
+        var transactions = await _transactionRepo.SearchAsync(bookId: bookId, page: 1, pageSize: int.MaxValue);
 
         if (format == ExportFormat.Json)
         {
@@ -315,6 +307,46 @@ public class ExportService : IExportService
             all.AddRange(txs);
         }
         return all;
+    }
+
+    private async Task<Book> ResolveTransactionBookAsync(Guid? bookId, Guid userId)
+    {
+        if (bookId is null)
+            throw new DomainException("bookId is required for transaction exports");
+
+        return await _bookRepo.GetVisibleBookAsync(bookId.Value, userId)
+            ?? throw new NotFoundException("Book", bookId.Value);
+    }
+
+    private static readonly char[] UnsafeFileNameChars = { '<', '>', ':', '"', '/', '\\', '|', '?', '*', '\0' };
+
+    private static string SanitizeFileNameSegment(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return "Unknown";
+
+        var sanitized = new string(value
+            .Select(c => UnsafeFileNameChars.Contains(c) ? '_' : c)
+            .ToArray());
+
+        sanitized = sanitized.Trim().Trim('.');
+        sanitized = sanitized.Replace("..", ".");
+
+        return string.IsNullOrWhiteSpace(sanitized) ? "Unknown" : sanitized;
+    }
+
+    private string GetSafeExportFilePath(string fileName)
+    {
+        var root = Path.GetFullPath(_exportDir);
+        var fullPath = Path.GetFullPath(Path.Combine(root, fileName));
+        var rootWithSeparator = root.EndsWith(Path.DirectorySeparatorChar)
+            ? root
+            : root + Path.DirectorySeparatorChar;
+
+        if (!fullPath.StartsWith(rootWithSeparator, StringComparison.Ordinal))
+            throw new DomainException("Invalid export file path");
+
+        return fullPath;
     }
 
     private static string EscapeCsv(string? value) =>

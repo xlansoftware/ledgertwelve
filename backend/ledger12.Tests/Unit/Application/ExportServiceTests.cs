@@ -38,7 +38,7 @@ public class ExportServiceTests
     {
         _jobRepo.Setup(r => r.AddAsync(It.IsAny<ExportJob>())).Returns(Task.CompletedTask);
 
-        var request = new CreateExportRequest("csv", "transactions", null);
+        var request = new CreateExportRequest("csv", "transactions", Guid.NewGuid().ToString());
         var result = await _service.CreateExportJobAsync(request, _userId);
 
         Assert.NotNull(result.JobId);
@@ -47,11 +47,29 @@ public class ExportServiceTests
     }
 
     [Fact]
+    public async Task CreateExportJobAsync_ThrowsDomainException_WhenTransactionExportMissingBookId()
+    {
+        var request = new CreateExportRequest("csv", "transactions", null);
+
+        await Assert.ThrowsAsync<DomainException>(() => _service.CreateExportJobAsync(request, _userId));
+        _jobRepo.Verify(r => r.AddAsync(It.IsAny<ExportJob>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task CreateExportJobAsync_ThrowsDomainException_WhenTransactionExportBookIdIsInvalid()
+    {
+        var request = new CreateExportRequest("csv", "transactions", "not-a-guid");
+
+        await Assert.ThrowsAsync<DomainException>(() => _service.CreateExportJobAsync(request, _userId));
+        _jobRepo.Verify(r => r.AddAsync(It.IsAny<ExportJob>()), Times.Never);
+    }
+
+    [Fact]
     public async Task CreateExportJobAsync_DefaultsToJson_WhenUnsupportedFormat()
     {
         _jobRepo.Setup(r => r.AddAsync(It.IsAny<ExportJob>())).Returns(Task.CompletedTask);
 
-        var request = new CreateExportRequest("xml", "transactions", null);
+        var request = new CreateExportRequest("xml", "transactions", Guid.NewGuid().ToString());
         await _service.CreateExportJobAsync(request, _userId);
 
         _jobRepo.Verify(r => r.AddAsync(It.Is<ExportJob>(j => j.Format == ExportFormat.Json)), Times.Once);
@@ -154,36 +172,29 @@ public class ExportServiceTests
     }
 
     [Fact]
-    public async Task ProcessExportAsync_ScopesTransactionsToVisibleBooks_WhenNoBookIdSupplied()
+    public async Task ProcessExportAsync_SetsFailed_WhenBookIdMissingForTransactions()
     {
-        var visibleBook = new Book("Visible", _userId);
-        var searchedBookIds = new List<Guid?>();
-
-        _bookRepo.Setup(r => r.GetVisibleBooksAsync(_userId)).ReturnsAsync(new List<Book> { visibleBook });
-        _transactionRepo
-            .Setup(r => r.SearchAsync(
-                It.IsAny<Guid?>(), It.IsAny<DateTimeOffset?>(), It.IsAny<DateTimeOffset?>(),
-                It.IsAny<List<string>?>(), It.IsAny<List<Guid>?>(), It.IsAny<string?>(),
-                It.IsAny<decimal?>(), It.IsAny<decimal?>(), It.IsAny<int>(), It.IsAny<int>(),
-                It.IsAny<List<Guid>?>()))
-            .Callback<Guid?, DateTimeOffset?, DateTimeOffset?, List<string>?, List<Guid>?, string?, decimal?, decimal?, int, int, List<Guid>?>(
-                (bookId, _, _, _, _, _, _, _, _, _, _) => searchedBookIds.Add(bookId))
-            .ReturnsAsync(new List<Transaction>());
-
         var job = new ExportJob(ExportFormat.Csv, ExportContentType.Transactions, _userId);
         await _service.ProcessExportAsync(job);
 
-        Assert.Equal(ExportJobStatus.Completed, job.Status);
-        Assert.Contains(visibleBook.Id, searchedBookIds);
-        Assert.DoesNotContain(null, searchedBookIds);
+        Assert.Equal(ExportJobStatus.Failed, job.Status);
+        Assert.NotNull(job.ErrorMessage);
+        Assert.Null(job.FilePath);
+        _transactionRepo.Verify(
+            r => r.SearchAsync(
+                It.IsAny<Guid?>(), It.IsAny<DateTimeOffset?>(), It.IsAny<DateTimeOffset?>(),
+                It.IsAny<List<string>?>(), It.IsAny<List<Guid>?>(), It.IsAny<string?>(),
+                It.IsAny<decimal?>(), It.IsAny<decimal?>(), It.IsAny<int>(), It.IsAny<int>(),
+                It.IsAny<List<Guid>?>()),
+            Times.Never);
     }
 
     [Fact]
     public async Task ProcessExportAsync_ScopesTransactionsToRequestedBook_WhenBookIdSupplied()
     {
         var bookId = Guid.NewGuid();
-        _bookRepo.Setup(r => r.IsVisibleAsync(bookId, _userId)).ReturnsAsync(true);
-        _bookRepo.Setup(r => r.GetByIdAsync(bookId)).ReturnsAsync(new Book("Main", _userId));
+        var book = Book.Restore(bookId, "Main", _userId, null, BookStatus.Open);
+        _bookRepo.Setup(r => r.GetVisibleBookAsync(bookId, _userId)).ReturnsAsync(book);
         _transactionRepo
             .Setup(r => r.SearchAsync(
                 It.IsAny<Guid?>(), It.IsAny<DateTimeOffset?>(), It.IsAny<DateTimeOffset?>(),
@@ -204,18 +215,49 @@ public class ExportServiceTests
     public async Task ProcessExportAsync_SetsFailed_WhenRequestedBookIsNotVisible()
     {
         var bookId = Guid.NewGuid();
-        _bookRepo.Setup(r => r.IsVisibleAsync(bookId, _userId)).ReturnsAsync(false);
+        _bookRepo.Setup(r => r.GetVisibleBookAsync(bookId, _userId)).ReturnsAsync((Book?)null);
 
         var job = new ExportJob(ExportFormat.Csv, ExportContentType.Transactions, _userId, bookId);
         await _service.ProcessExportAsync(job);
 
         Assert.Equal(ExportJobStatus.Failed, job.Status);
         Assert.NotNull(job.ErrorMessage);
+        Assert.Null(job.FilePath);
         _transactionRepo.Verify(
             r => r.SearchAsync(
                 It.IsAny<Guid?>(), It.IsAny<DateTimeOffset?>(), It.IsAny<DateTimeOffset?>(),
                 It.IsAny<List<string>?>(), It.IsAny<List<Guid>?>(), It.IsAny<string?>(),
                 It.IsAny<decimal?>(), It.IsAny<decimal?>(), It.IsAny<int>(), It.IsAny<int>()),
             Times.Never);
+    }
+
+    [Fact]
+    public async Task ProcessExportAsync_SanitisesBookNameUsedInFileName()
+    {
+        var bookId = Guid.NewGuid();
+        var book = Book.Restore(bookId, "../../evil/name", _userId, null, BookStatus.Open);
+        _bookRepo.Setup(r => r.GetVisibleBookAsync(bookId, _userId)).ReturnsAsync(book);
+        _transactionRepo
+            .Setup(r => r.SearchAsync(
+                It.IsAny<Guid?>(), It.IsAny<DateTimeOffset?>(), It.IsAny<DateTimeOffset?>(),
+                It.IsAny<List<string>?>(), It.IsAny<List<Guid>?>(), It.IsAny<string?>(),
+                It.IsAny<decimal?>(), It.IsAny<decimal?>(), It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(new List<Transaction>());
+
+        var job = new ExportJob(ExportFormat.Csv, ExportContentType.Transactions, _userId, bookId);
+        await _service.ProcessExportAsync(job);
+
+        Assert.Equal(ExportJobStatus.Completed, job.Status);
+        Assert.NotNull(job.FilePath);
+
+        var fullPath = Path.GetFullPath(job.FilePath!);
+        var exportRoot = Path.GetFullPath(_testExportDir) + Path.DirectorySeparatorChar;
+        Assert.StartsWith(exportRoot, fullPath, StringComparison.Ordinal);
+
+        var savedFileName = Path.GetFileName(fullPath);
+        Assert.DoesNotContain("..", savedFileName);
+        Assert.DoesNotContain('/', savedFileName);
+        Assert.DoesNotContain('\\', savedFileName);
+        Assert.True(File.Exists(fullPath));
     }
 }

@@ -140,6 +140,14 @@ public class CreateExportRequestValidator : AbstractValidator<CreateExportReques
     public CreateExportRequestValidator()
     {
         RuleFor(x => x.ContentType).NotEmpty();
+
+        When(x => string.Equals(x.ContentType, "transactions", StringComparison.OrdinalIgnoreCase), () =>
+        {
+            RuleFor(x => x.BookId)
+                .NotEmpty().WithMessage("bookId is required for transaction exports")
+                .Must(value => string.IsNullOrWhiteSpace(value) || Guid.TryParse(value, out _))
+                .WithMessage("bookId must be a valid book ID");
+        });
     }
 }
 

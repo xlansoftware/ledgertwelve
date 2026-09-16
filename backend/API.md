@@ -1497,7 +1497,7 @@ For human-readable formats (CSV, XLSX), foreign-key ID columns are replaced with
 
 The `json` format retains raw IDs (`bookId`, `userId`, `ownerId`) for machine consumption.
 
-Download filenames for CSV/XLSX transaction exports use the **book name** instead of the `bookId`.
+Download filenames for CSV/XLSX transaction exports use the **book name** instead of the `bookId`. The book name is sanitised before it is used in a filename; path separators and other unsafe characters are replaced so the file always stays inside the export directory.
 
 ---
 
