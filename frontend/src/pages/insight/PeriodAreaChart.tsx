@@ -235,12 +235,13 @@ export function PeriodAreaChart({
             />
 
             {/* Projected line */}
-            <Line
-              type="monotone"
+            <Area
+              type="step"
               dataKey="projected"
               stroke="var(--primary)"
               strokeWidth={2}
               strokeDasharray="6 3"
+              fill="none"
               dot={false}
               connectNulls={false}
               isAnimationActive={false}
