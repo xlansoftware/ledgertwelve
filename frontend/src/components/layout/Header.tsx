@@ -27,7 +27,7 @@ export default function Header() {
     >
       <div className="container flex h-14 items-center">
         <div className="mr-4 flex">
-          <h1 className="text-xl font-semibold">Ledger Twelve</h1>
+          <h1 className="text-xl font-semibold">Ledger Eleven</h1>
         </div>
 
         {!isMobile && (
