@@ -17,7 +17,7 @@ docker run --rm -v ledger12data:/data -v $(pwd):/backup alpine sh -c "cp /data/l
 
 scp jll:/home/john/ledger12/ledger12_20260916_183533.db .
 
-docker run --rm -v ./ledger12data:/source -v ledger12data:/data busybox cp /source/ledger12_20260916_183533.db /data/ledger12.db
+docker run --rm -v ./ledger12data:/source -v ledger12data:/data busybox cp -fv /source/ledger12_20260916_183533.db /data/ledger12.db
 ```
 
 ```bash
