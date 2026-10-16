@@ -2,6 +2,7 @@
 import { createBrowserRouter } from "react-router-dom";
 import App from "../App";
 import NotFoundPage from "../pages/NotFoundPage";
+import ErrorPage from "../pages/ErrorPage";
 import LoginPage from "../pages/login/LoginPage";
 import HistoryPage from "@/pages/history/HistoryPage";
 import SettingsPage from "@/pages/settings/SettingsPage";
@@ -26,11 +27,15 @@ const router = createBrowserRouter([
     // Login sits as a sibling to the root layout — no Header / app chrome
     path: "/login",
     element: <LoginPage />,
+    errorElement: <ErrorPage />,
   },
   {
     path: "/",
     // Using 'Component' is preferred with the Data Router API
-    Component: App, 
+    Component: App,
+    // Catches render errors from any child route (e.g. the insight charts)
+    // and shows a friendly retry screen instead of React Router's default.
+    errorElement: <ErrorPage />,
     children: [
       {
         // This will be the default child route for the homepage
